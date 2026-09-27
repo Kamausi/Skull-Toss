@@ -67,9 +67,9 @@
 .who{margin:0 0 7px;text-align:center;font:900 10px/1.2 var(--ui);letter-spacing:.22em;text-transform:uppercase;color:var(--cream-faint)}
 .res-stats{margin:0;display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:1px 9px}
 .res-stats dt,.res-stats dd{margin:0;font:clamp(15px,4.3vw,21px)/1.45 var(--num);letter-spacing:.05em;color:var(--cream);text-transform:uppercase}
-.res-stats dt{display:flex;align-items:baseline;gap:7px}
+.res-stats dt{display:flex;align-items:baseline;gap:7px;white-space:nowrap}
 .res-stats dt::after{content:"";flex:1;min-width:12px;border-bottom:3px dotted rgba(242,231,201,.4);transform:translateY(-.25em)}
-.res-stats dd{text-align:right;white-space:nowrap}
+.res-stats dd{text-align:right;white-space:nowrap}.res-stats dd.long{white-space:normal;line-height:1.2}
 .res-stats .stars{color:var(--gold);letter-spacing:.06em}
 .grade{display:flex;align-items:center;gap:9px;margin:8px 0 0;padding-top:8px;border-top:2px solid rgba(242,231,201,.3);
   font:clamp(18px,5.4vw,26px)/1 var(--num);letter-spacing:.06em;text-transform:uppercase;color:var(--cream)}

@@ -168,7 +168,7 @@
     const n = $("prof-name"); if (document.activeElement !== n) n.value = profile.name;
     const bio = $("prof-bio"); if (document.activeElement !== bio) bio.value = profile.bio || ""; renderPicPick();
     $("profNameShow").textContent = profile.name || t("profile.nameless"); $("profBioShow").textContent = profile.bio || t("profile.noBio");   // (v50: name and bio beside the picture; the pencil edits them)
-    $("profBioShow").classList.toggle("empty", !profile.bio); $("profFragN").textContent = `${profile.fragments.length}/${MAP_COUNT}`; $("profPlus").hidden = !(profile.plusClears > 0); drawFragRing($("profFragCv"), profile.fragments);
+    $("profBioShow").classList.toggle("empty", !profile.bio); $("profFragN").textContent = `${profile.fragments.length}/${MAP_COUNT}`; { const pp = $("profPlus"), won = profile.plusClears > 0; pp.classList.toggle("locked", !won); pp.dataset.won = won ? "1" : ""; pp.setAttribute("aria-label", won ? t("plus.diamond.won") : t("plus.diamond.locked")); pp.title = pp.getAttribute("aria-label"); } drawFragRing($("profFragCv"), profile.fragments);
     const r = rankFor(profile.makes);
     $("rankName").textContent = r.name;
     $("profTitle").textContent = titleName();

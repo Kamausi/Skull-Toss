@@ -2662,8 +2662,8 @@
     assert(cats.slice(0, 9).join() === "skull,paint,eyes,teeth,mask,glasses,hair,beard,hat", `skull, then face, hair, beard, hat (${cats.slice(0, 9)})`);
     T.setStats(ZERO); T.toTitle(); T.openSheet("store"); const body = document.querySelector("#sheet-store .sheet-body") || $("sheet-store"); body.scrollTop = 400; T.closeSheet();
     T.openSheet("store"); assert(body.scrollTop === 0, "the Cart opens at its top again"); T.closeSheet();
-    T.openSheet("profile"); assert($("profPlus").hidden, "no diamond yet"); T.closeSheet();
-    T.setStats({ ...ZERO, plusClears: 1 }); T.openSheet("profile"); assert(!$("profPlus").hidden, "Adventure+ beaten: the diamond"); T.closeSheet();
+    T.openSheet("profile"); assert(!$("profPlus").hidden && $("profPlus").classList.contains("locked"), "the diamond shows, dim, before it is earned"); T.closeSheet();
+    T.setStats({ ...ZERO, plusClears: 1 }); T.openSheet("profile"); assert(!$("profPlus").hidden && !$("profPlus").classList.contains("locked"), "Adventure+ beaten: the diamond lights"); T.closeSheet();
     T.setStats({ ...ZERO, bossLog: { crow: 60 } }); T.openSheet("mastery"); document.querySelector('#masteryTabs [data-cat="boss"]').click();
     const pg = document.querySelector('#masteryList [data-m="boss:crow"]'); assert(pg.classList.contains("m-page") && pg.querySelectorAll(".m-line .m-tier").length === 8 && pg.querySelectorAll(".m-tier.got").length === 4, "a page, eight stops on its line, four reached at 60");
     T.closeSheet(); T.setStats(ZERO); T.toTitle();

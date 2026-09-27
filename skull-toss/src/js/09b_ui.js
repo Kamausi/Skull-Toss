@@ -206,7 +206,7 @@
       ...game.director.notes.map((N, i) => [noteText(N), r.director.met[i] ? "★" : "☆"]));
     else if (M.mini) rows.splice(0, rows.length, [t(`res.${mode}`), `<b id="final">${modeValueText(mode, r.modeValue || 0)}</b>`], ["Score", fmtN(game.score)], ["Perfect", `${r.perfects}/${game.throws}`], ["Best combo", `×${r.bestCombo}`]);
     if (r.season && r.season.xp) rows.push([t("season.row"), r.season.to > r.season.from ? t("season.rowStub", { xp: fmtN(r.season.xp), n: r.season.to }) : t("season.rowXp", { xp: fmtN(r.season.xp) })]);   // (07l_season.js)
-    $("resStats").innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join("");
+    $("resStats").innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd${String(v).replace(/<[^>]*>/g, "").length > 14 ? ' class="long"' : ""}>${v}</dd>`).join("");
     $("resGrade").textContent = g.grade;
     $("resGrade").parentElement.classList.toggle("top", g.v >= 0.69);
     const best = game.newBest && game.score > 0, longer = arcade && r.newTime && r.secs > 0;
