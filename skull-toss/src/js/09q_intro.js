@@ -4,7 +4,7 @@
   // SKULL TOSS one after the other and hold on it; then the band hits, the curtains are pulled open, and the lights go
   // off and slide away out of the corners. Nothing waits on it: the buttons work from the start, and a tap skips ahead.
   const INTRO = { on: false, t0: 0, raf: 0, open: 0, lights: [], done: null };
-  const INTRO_AT = { on: [0.6, 0.85], search: 0.9, find: [3.3, 3.6], lock: [3.9, 4.2], open: 4.7, end: 6.4 };
+  const INTRO_AT = { on: [0.6, 0.85], search: 0.9, find: [4.1, 4.4], lock: [4.7, 5.0], open: 5.5, end: 7.2 };   // (v63: the hunt runs 0.8 s longer before the lights find the title)
   const easeIO = k => (k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2);
   function playIntro(done) {
     const T = $("title"), cv = $("introCv");
@@ -60,13 +60,13 @@
     for (const B of beams) if (B.on > 0) {
       const g = c.createRadialGradient(B.aim.x, B.aim.y, B.R * 0.35, B.aim.x, B.aim.y, B.R);
       g.addColorStop(0, `rgba(0,0,0,${B.on})`); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.beginPath(); c.arc(B.aim.x, B.aim.y, B.R, 0, TAU); c.fill();
-      beamCone(c, B, `rgba(0,0,0,${0.45 * B.on})`);
+      beamCone(c, B, "0,0,0", 0.45 * B.on);
     }
     c.restore();
     // the warm light itself: a haze down each beam and a pool where it lands
     c.save(); c.globalCompositeOperation = "lighter";
     for (const B of beams) if (B.on > 0) {
-      beamCone(c, B, `rgba(255,214,140,${0.1 * B.on})`);
+      beamCone(c, B, "255,214,140", 0.1 * B.on);
       const g = c.createRadialGradient(B.aim.x, B.aim.y, 0, B.aim.x, B.aim.y, B.R); g.addColorStop(0, `rgba(255,226,160,${0.22 * B.on})`); g.addColorStop(1, "rgba(255,226,160,0)");
       c.fillStyle = g; c.beginPath(); c.arc(B.aim.x, B.aim.y, B.R, 0, TAU); c.fill();
     }
@@ -74,11 +74,17 @@
     for (const B of beams) drawStageLight(c, B.fx, B.fy, Math.atan2(B.aim.y - B.fy, B.aim.x - B.fx), B.on, Math.min(W, H) * 0.075);
     INTRO.raf = requestAnimationFrame(introFrame);
   }
-  function beamCone(c, B, fill) {
-    const a = Math.atan2(B.aim.y - B.fy, B.aim.x - B.fx), n = { x: -Math.sin(a), y: Math.cos(a) }, w0 = 10;
-    c.fillStyle = fill; c.beginPath();
-    c.moveTo(B.fx + n.x * w0, B.fy + n.y * w0); c.lineTo(B.aim.x + n.x * B.R * 0.9, B.aim.y + n.y * B.R * 0.9);
-    c.lineTo(B.aim.x - n.x * B.R * 0.9, B.aim.y - n.y * B.R * 0.9); c.lineTo(B.fx - n.x * w0, B.fy - n.y * w0); c.closePath(); c.fill();
+  // v63 (the owner's playtest: each beam ended in a hard line): the cone runs on past the pool and fades out along its
+  // length, full near the lamp, thinning through the pool, gone a little beyond it, so it reads as light in the air
+  function beamCone(c, B, rgb, al) {
+    const a = Math.atan2(B.aim.y - B.fy, B.aim.x - B.fx), d = { x: Math.cos(a), y: Math.sin(a) }, n = { x: -d.y, y: d.x }, w0 = 10;
+    const L = Math.hypot(B.aim.x - B.fx, B.aim.y - B.fy), far = L + B.R * 0.9, e = { x: B.fx + d.x * far, y: B.fy + d.y * far }, we = B.R * 0.9 * far / Math.max(1, L);
+    const g = c.createLinearGradient(B.fx, B.fy, e.x, e.y);
+    const A = k => `rgba(${rgb},${(al * k).toFixed(3)})`;   // (fixed: a colour stop won't parse an exponent)
+    g.addColorStop(0, A(1)); g.addColorStop(0.55 * L / far, A(1)); g.addColorStop(L / far, A(0.45)); g.addColorStop(1, A(0));
+    c.fillStyle = g; c.beginPath();
+    c.moveTo(B.fx + n.x * w0, B.fy + n.y * w0); c.lineTo(e.x + n.x * we, e.y + n.y * we);
+    c.lineTo(e.x - n.x * we, e.y - n.y * we); c.lineTo(B.fx - n.x * w0, B.fy - n.y * w0); c.closePath(); c.fill();
   }
   // a 1930s stage lantern on a yoke: a black can, a brass rim, a lens that glows when it's on
   function drawStageLight(c, x, y, ang, on, s) {

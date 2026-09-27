@@ -252,6 +252,7 @@
     throwThrough(x, y, z) { const a = this.aimFor(x, y, z); return this.throwAt(a.AX, a.AY); },
     // v62 (the difficulty model, tools/balance.mjs): the aim that meets the ring's middle as it arrives (ringAhead: where
     // it will be), flown the way the game flies it (the wind, the machinery, the water), and what a player times a throw by
+    stageFilter: () => cvs.style.filter, camMoveNow: k => camMove(k), mischiefPool: () => MISCHIEF.kinds.slice(), moonNow: () => ({ ...moon }), stageOpeningNow: () => stageOpening(),   // (v63)
     bankPark: () => PARK.at && { ...PARK.at }, banksSync() { banksAfterThrow(); },   // (v62: a sealed ring waits for its bank)
     seedsLive: () => seeds.some(sd => !sd.live || sd.z > 0) || (!!boss && !!boss.volley && (boss.volley.tell > 0 || boss.spit > 0)),   // (a volley told, on its way, or still in front of the pouch)
     volleyTold: () => !!boss && ((!!boss.volley && (boss.volley.tell > 0 || boss.spit > 0)) || (boss.pathAt && (boss.pathAt(boss.t).tell || 0) > 0)),   // (a volley or a change of the ring's way, told)

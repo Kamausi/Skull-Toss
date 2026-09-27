@@ -275,15 +275,15 @@
       },
       {
         "kind": "bank",
-        "_doc": "a headstone laid along the lane: stone, so it gives back less; from its third ring, every third ring is sealed until a throw banks in",
+        "_doc": "a headstone laid along the lane: stone, so it gives back less; from its third ring, every third ring is sealed until a throw banks in (v63, the owner's playtest: it looked huge; now a plaque 1.3 m by 1.6 m on a post, where a bank still reaches the ring)",
         "at": [
           1.75,
           4.4
         ],
-        "len": 2.0,
+        "len": 1.3,
         "y": [
-          1.0,
-          4.2
+          1.5,
+          3.1
         ],
         "mat": "stone",
         "seal": {
@@ -296,15 +296,15 @@
     "B": [
       {
         "kind": "bank",
-        "_doc": "a gilded plaque that slides in and out on its rail: a moving bank, and gold gives back nearly all of it",
+        "_doc": "a gilded plaque that slides in and out on its rail: a moving bank, and gold gives back nearly all of it (v63, the owner's playtest: it looked huge; now a plaque 1.3 m by 1.6 m on a post, where a bank still reaches the ring)",
         "at": [
           -1.75,
           4.4
         ],
-        "len": 2.0,
+        "len": 1.3,
         "y": [
-          1.0,
-          4.2
+          1.5,
+          3.1
         ],
         "mat": "metal",
         "slide": [

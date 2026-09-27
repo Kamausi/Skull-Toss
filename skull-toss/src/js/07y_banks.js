@@ -170,6 +170,12 @@
       const quad = (a, b, c, d) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); };
       obShadow(B.x, B.z, 0.25 + hl * 0.2);
       const p00 = at(0, 0), p10 = at(1, 0), p11 = at(1, 1), p01 = at(0, 1), s = (p00.s + p10.s) / 2;
+      if (I.y[0] > 0.2 && I.mat !== "ghost") {   // v63: it stands on a post, a plaque on a stand, not a slab hung in the air
+        const g0 = project(B.x - B.n.x * th * 0.5, 0, B.z - B.n.z * th * 0.5), g1 = at(0.5, 0.02, 0.5), pw = Math.max(2, 0.07 * s);
+        ctx.strokeStyle = INK; ctx.lineWidth = pw + 2; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(g0.x, g0.y); ctx.lineTo(g1.x, g1.y); ctx.stroke();
+        ctx.strokeStyle = I.mat === "metal" ? "#6A4E1A" : "#4A4640"; ctx.lineWidth = pw; ctx.beginPath(); ctx.moveTo(g0.x, g0.y); ctx.lineTo(g1.x, g1.y); ctx.stroke();
+        ctx.fillStyle = INK; ctx.beginPath(); ctx.ellipse(g0.x, g0.y, pw * 1.8, pw * 0.5, 0, 0, TAU); ctx.fill(); ctx.strokeStyle = INK;
+      }
       ctx.lineWidth = Math.max(1.5, 0.025 * s);
       ctx.fillStyle = L.top; quad(p01, p11, at(1, 1, 1), at(0, 1, 1)); ctx.fill(); ctx.stroke();   // (the top edge)
       ctx.fillStyle = L.face; quad(p00, p10, p11, p01); ctx.fill();

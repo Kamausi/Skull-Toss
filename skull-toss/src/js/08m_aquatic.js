@@ -41,7 +41,7 @@
     const c = { kind, x: out(r() * 7), y: 0, z, vx: 0, vy: 0, vz: 0, ph: r() * TAU, seed: r() * 100, s: 1, st: "idle", t: r() * 5, dir: -side };
     switch (kind) {
       case "school": { const n = 5 + ((r() * 4) | 0); c.y = 1 + r() * 2.8; c.s = 0.16 + r() * 0.08; c.m = Array.from({ length: n }, () => ({ ox: (r() - 0.5) * 1.2, oy: (r() - 0.5) * 0.6, oz: (r() - 0.5) * 1.2, x: 0, y: 0, z: 0, ph: r() * TAU })); c.col = ["#E8B04A", "#8AB8C8", "#D8D0B0"][(r() * 3) | 0]; break; }
-      case "fish": c.y = 0.6 + r() * 3; c.s = 0.3 + r() * 0.25; c.col = ["#D8683A", "#6A9AB0", "#C8A040", "#9A6AA8"][(r() * 4) | 0]; break;
+      case "fish": c.y = 0.6 + r() * 3; c.s = 0.4 + r() * 0.25; c.col = ["#D8683A", "#6A9AB0", "#C8A040", "#9A6AA8"][(r() * 4) | 0]; if (first) c.z = 3 + r() * 14; break;   // (v63: the owner wants the fish seen: bigger, and in the nearer half of the house)
       case "crab": c.x = (r() * 2 - 1) * 6; c.s = 0.22 + r() * 0.1; c.st = "walk"; c.hide = 0; break;
       case "eel": c.x = out(0.4 + r() * 4); c.y = 0.15 + r() * 0.4; c.s = 0.5 + r() * 0.3; c.ext = 0; c.st = "in"; c.t = 2 + r() * 6; break;
       case "jelly": c.y = 2.5 + r() * 3.5; c.s = 0.28 + r() * 0.2; c.col = ["#E8B8E0", "#B8D8F0", "#F0D0A8"][(r() * 3) | 0]; break;

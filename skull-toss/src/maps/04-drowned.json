@@ -197,11 +197,8 @@
     "weather": "bubbles",
     "tint": "#2A7A8A",
     "ambient": {
-      "walkers": [
-        "skeleton",
-        "ghost"
-      ],
-      "ghost": true,
+      "walkers": [],
+      "ghost": false,
       "bats": 0,
       "witch": false,
       "digger": false,
@@ -622,8 +619,8 @@
       "murk": 1.0
     },
     "fauna": {
-      "school": 3,
-      "fish": 4,
+      "school": 4,
+      "fish": 7,
       "crab": 3,
       "eel": 2,
       "jelly": 3,
@@ -639,11 +636,9 @@
     ]
   },
   "ecosystem": {
-    "_doc": "v58 MAP → ECOSYSTEM → CAST (blueprint.json: ecosystem): who and what lives here, and nowhere else it doesn't belong.",
+    "_doc": "v58 MAP → ECOSYSTEM → CAST (blueprint.json: ecosystem): who and what lives here, and nowhere else it doesn't belong. v63 (the owner's playtest): no skeleton or ghost wandering the stalls under the sea; the house belongs to the fish.",
     "teaches": "Water",
     "cast": [
-      "skeleton",
-      "ghost",
       "fish",
       "crab",
       "eel",

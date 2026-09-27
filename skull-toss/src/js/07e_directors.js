@@ -143,9 +143,12 @@
   const hazardsLive = () => !boss && game.state !== "title" && game.state !== "cine" && hazardsAllowed();
   function hazardsReset() {
     PARK.at = null; HZ.kind = mapData(game.stage || 1).mechanic.kind; HZ.wind = 0; HZ.windMul = 1; HZ.fog = 0; HZ.fogT = 0; HZ.list = []; HZ.since = 0; HZ.pendT = 0; HZ.lastTick = 0;
-    if (HZ.kind === "balloons") for (let i = 0; i < 2; i++) HZ.list.push(newBalloon(rrIn(0.3, 3.8)));
+    if (HZ.kind === "balloons") for (let i = 0, n = hzBubbles() ? 1 : 2; i < n; i++) HZ.list.push(newBalloon(rrIn(0.3, 3.8)));   // (v63: under the sea, one bubble at a time)
     renderWind(); obstaclesReset(); encReset(); encSync();
   }
+  // v63 (the owner's playtest: too many balloons in the Drowned Theater): under the sea the map's balloons are what its
+  // sheet always said they were, air rising from the wreck (mechanic.skin: "bubble"), one at a time, drawn as a bubble
+  const hzBubbles = () => mapData(game.stage || 1).mechanic.skin === "bubble";
   const newBalloon = y => ({ kind: "balloon", x: rrIn(-2.2, 2.2), y, z: rrIn(2.4, 4.8), vy: rrIn(0.28, 0.42), col: ["#A94332", "#C49A42", "#356B68", "#F2E7C9"][(runRand() * 4) | 0], r: 0.24 });
   const windNow = () => (HZ.kind === "wind" && (hazardsAllowed() || attrWind()) ? HZ.wind : plusWind());   // (v51: Adventure+'s crosswind)   // (v50: Gale Force's own gale)   // m/s² across the throw (positive pushes right)
   // the pendulum: a pivot high over the lane, swinging across it; its bob is what hits
@@ -331,6 +334,15 @@
         if (h.t >= h.at && !h.landed) { ctx.fillStyle = `rgba(0,0,0,${0.15 + 0.3 * grow})`; ctx.beginPath(); ctx.ellipse(g.x, g.y, 0.3 * s * grow, 0.08 * s * grow, 0, 0, TAU); ctx.fill(); }
         if (h.t > h.at + 0.9) { const p = project(h.x, h.y, h.z), L = 0.36 * p.s; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(h.landed ? 1.4 : h.t * 7); ctx.fillStyle = "#E4DAC4"; ctx.strokeStyle = INK; ctx.lineWidth = Math.max(1.2, L * 0.08);
           ctx.beginPath(); rr(ctx, -L * 0.5, -L * 0.08, L, L * 0.16, L * 0.06); ctx.fill(); ctx.stroke(); for (const e of [-1, 1]) for (const f of [-1, 1]) { ctx.beginPath(); ctx.arc(e * L * 0.5, f * L * 0.08, L * 0.09, 0, TAU); ctx.fill(); ctx.stroke(); } ctx.restore(); }
+      } else if (h.kind === "balloon" && hzBubbles()) {   // a wobbling bubble of air, clear, with the light caught in it
+        if (h.y > 5) continue;
+        const p = project(h.x, h.y, h.z), r = h.r * p.s, w = Math.sin(game.time * 5 + h.z * 3) * 0.06;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.scale(1 + w, 1 - w);
+        const g = ctx.createRadialGradient(-r * 0.25, -r * 0.3, r * 0.1, 0, 0, r); g.addColorStop(0, "rgba(230,250,255,.35)"); g.addColorStop(0.75, "rgba(170,225,240,.12)"); g.addColorStop(1, "rgba(200,240,250,.55)");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, TAU); ctx.fill();
+        ctx.strokeStyle = "rgba(225,248,255,.8)"; ctx.lineWidth = Math.max(1.2, r * 0.07); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.beginPath(); ctx.ellipse(-r * 0.35, -r * 0.38, r * 0.2, r * 0.12, -0.6, 0, TAU); ctx.fill();
+        ctx.restore();
       } else if (h.kind === "balloon") {
         if (h.y > 5) continue;
         const p = project(h.x, h.y, h.z), r = h.r * p.s; ctx.strokeStyle = INK; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(p.x, p.y + r); ctx.quadraticCurveTo(p.x + r * 0.3, p.y + r * 2, p.x, p.y + r * 3); ctx.stroke();

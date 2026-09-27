@@ -10,7 +10,11 @@
   //   blot       an ink blot lands on the lens and slides off
   // All of it is picture only: nothing touches a throw. Settings → Mischief turns it off; reduced motion skips the
   // slip and the wrong reel; the Flashes setting dims the burn.
-  const MISCHIEF = { chance: 0.07, minThrows: 5, arcadeGap: 40, kinds: ["jam", "slip", "hand", "wrong", "wall", "blot"] };
+  // v63 (the owner's playtest: intentional glitches must never get in the way of the throw): only the hand and the aside
+  // are rolled now. The jam held the game and burned a hole where the ring is, the slip dropped the whole picture out of
+  // the gate, the wrong reel covered the play with a card and the blot sat on the lens; they stay here (misbehave, for
+  // the Codex and the spec) but never come up in play. And the hand draws back the moment a throw is being aimed.
+  const MISCHIEF = { chance: 0.07, minThrows: 5, arcadeGap: 40, kinds: ["hand", "wall"], retired: ["jam", "slip", "wrong", "blot"] };
   const misc = { kind: null, t0: 0, dur: 0, lastMap: 0, lastThrow: -99, log: [], x: 0, y: 0 };
   const MISC_DUR = { jam: 1.0, slip: 0.6, hand: 1.8, wrong: 0.5, wall: 0.1, blot: 2.4 };   // (game seconds: a jam's 0.7 s hold comes on top)
   const mischiefOn = () => settings.mischief !== false && !(sandbox && !sandbox.mischiefOn);
@@ -19,7 +23,7 @@
     if (!mischiefOn() || misc.kind || boss || game.state !== "ready" || (game.mode !== "story" && game.mode !== "arcade") || game.throws < MISCHIEF.minThrows) return null;
     if (game.mode === "story" ? misc.lastMap === game.stage : game.throws - misc.lastThrow < MISCHIEF.arcadeGap) return null;
     if (runRand() > Flags.get("mischief.chance")) return null;   // (the live config can tune it: 03d_flags.js)
-    let pool = MISCHIEF.kinds; if (reduceMotion) pool = pool.filter(k => k !== "slip" && k !== "wrong");
+    const pool = MISCHIEF.kinds;
     return misbehave(pool[Math.floor(runRand() * pool.length)]);
   }
   function misbehave(kind) {
@@ -37,6 +41,7 @@
   }
   function updateMischief() {
     if (!misc.kind) return;
+    if (misc.kind === "hand" && aim.active && misc.dur - (game.time - misc.t0) > 0.3) misc.t0 = game.time - misc.dur + 0.3;   // (it's in the way: away it goes)
     if (game.time - misc.t0 >= misc.dur) { if (misc.kind === "wrong") reelEl.hidden = true, reelEl.classList.remove("wrong"); misc.kind = null; }
   }
   // the spliced-in card: the reel card, stamped WRONG REEL, for half a second (it holds nothing up)

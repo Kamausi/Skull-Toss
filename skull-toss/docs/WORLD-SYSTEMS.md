@@ -643,3 +643,23 @@ The owner, 2026-09-27: "Make wind affect the line", and the difficulty curve of 
 - **Tests:** "v62 Wind in the line", "v62 The Adventure's curve", "v62 Sealed rings wait", "v62 Checkpoints"; the
   woods wind test and the v61 aim-line test check the guide bends with the wind.
 
+## The playtest's look-and-feel fixes (v63)
+
+- **Bank plaques** (`src/maps/02-gilded.json`, `07y_banks.js: OB_DRAW.bank`). Both boards on the Gilded Graveyard are
+  `len` 1.3 m and `y` [1.5, 3.1] (were 2.0 and [1.0, 4.2]), and anything above the ground stands on a post drawn to the
+  ground (a ghost-glass one still floats). The park spot (a metre out) stays in a bank's reach.
+- **The intro** (`09q_intro.js`). `beamCone` takes the colour and alpha apart and fills the cone with a gradient along
+  the beam: full to 55% of the way to the pool, 45% at the pool, nothing 0.9 R beyond it. `INTRO_AT` finds the title at
+  4.1/4.4 s and locks at 4.7/5.0 s (was 3.3/3.6 and 3.9/4.2); the curtains open at 5.5 s.
+- **The reel's grade** (`07h_shots.js: reelGrade`). The inline camera blur is prefixed with the equipped reel's
+  stylesheet filter, read once per reel with the inline filter cleared, so `#stage` and `#gpuFx` keep the grade.
+- **Mischief** (`09l_mischief.js`). `MISCHIEF.kinds` is `["hand", "wall"]`; `retired` keeps the other four for the
+  Codex and the spec (`misbehave`). A hand in the picture while a throw is aimed leaves within 0.3 s.
+- **The Drowned Theater** (`04-drowned.json`, `07e_directors.js`, `05_layers.js`, `05b_scene_sky.js`, `08m_aquatic.js`).
+  `mechanic.skin: "bubble"` (`hzBubbles`) means one hazard at a time, drawn as a wobbling air bubble. Under the sea the
+  "screen" moon is sized and placed from `stageOpening()`, inside the arch, with no gilt frame of its own. The ambient
+  walkers and the cast lose the skeleton and the ghost. Fish: 7 (was 4) and schools 4 (was 3), a fish 0.4–0.65 m (was
+  0.3–0.55), spawned in the nearer 3–17 m of the house.
+- **Replays** are version 5.
+- **Tests:** "v63 The reel's grade", "v63 Mischief", "v63 The Drowned Theater", "v63 The bank plaques".
+

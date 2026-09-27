@@ -2793,6 +2793,38 @@
     assert(T.chainPitch(1) === 1 && T.chainPitch(2) > 1 && T.chainPitch(3) > T.chainPitch(2), "and a chain of bounces or hits climbs in pitch");
     T.toTitle(); T.setStats(ZERO);
   });
+  // ── v63: the playtest's look-and-feel fixes ──
+  test("v63 The reel's grade stays on through a camera blur (a perfect throw's whip no longer flashes back to the plain print)", () => {
+    T.setStats({ ...ZERO, unlocked: ["reel:noir"] }); T.equip("reel", "noir"); fresh();
+    T.camMoveNow("whip"); T.step(0.2); let f = T.stageFilter();
+    assert(/grayscale/.test(f) && /blur\(/.test(f), `the noir grade rides with the blur (${f})`);
+    T.step(1); assert(T.stageFilter() === "", "and once it's over, the stylesheet has it again");
+    T.equip("reel", "standard"); T.camMoveNow("whip"); T.step(0.2); f = T.stageFilter();
+    assert(/^blur\(/.test(f), `the plain print: just the blur (${f})`);
+    T.toTitle(); T.setStats(ZERO);
+  });
+  test("v63 Mischief: only the animator's hand and Morty's aside come up in play, and the hand draws back the moment a throw is aimed", () => {
+    assert(JSON.stringify(T.mischiefPool()) === JSON.stringify(["hand", "wall"]), `the pool (${T.mischiefPool()})`);
+    fresh(); T.clearMisc(); T.misbehave("hand"); T.step(0.3); assert(T.misc().kind === "hand", "the hand comes in");
+    T.holdAim(0, 0.5); T.step(0.35); assert(T.misc().kind === null, "aim, and it's gone"); T.letGo(); T.step(3);
+    T.toTitle();
+  });
+  test("v63 The Drowned Theater: one air bubble at a time, drawn as air; no skeleton or ghost in the stalls; one screen, in the stage's arch; fish near enough to see", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); T.startAt(3); T.step(0.5);
+    const b = T.hz().list.filter(h => h.kind === "balloon"); assert(b.length === 1, `one bubble (${b.length})`);
+    assert(!T.cast().walkers.length && !T.cast().eco.cast.includes("skeleton") && !T.cast().eco.cast.includes("ghost"), `nobody walking the stalls (${JSON.stringify(T.cast().walkers)})`);
+    const M = T.moonNow(), O = T.stageOpeningNow(); assert(M.kind === "screen" && Math.abs(M.x - O.x) < 1 && Math.abs(M.y - O.y) < 1 && Math.abs(M.r - O.r) < 1, `the screen is the arch's (${JSON.stringify(M)} vs ${JSON.stringify(O)})`);
+    const fish = T.aqua().list.filter(c => c.k === "fish"); assert(fish.length >= 6 && fish.filter(c => c.z < 18).length >= 4, `fish, and most of them near (${fish.map(c => c.z)})`);
+    T.toTitle(); T.startAt(0); T.step(0.5); assert(T.hz().list.filter(h => h.kind === "balloon").length === 0, "(Crow Hollow has none)");
+    T.toTitle(); T.setStats(ZERO);
+  });
+  test("v63 The bank plaques: 1.3 m by 1.6 m on a post (not a slab hung in the air), and a bank off one still reaches the sealed ring", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.unfreezeRing(); T.setStage(2); T.calm(); T.setHits(22); T.syncObstacles(); T.obOn(); T.banksSync(); T.step(1.2);
+    const B = T.boardsNow()[0]; assert(B && B.len === 1.3 && B.y[0] === 1.5 && B.y[1] === 3.1, `the plaque (${JSON.stringify(B)})`);
+    const A = T.aimVia(1.0, C.RING_Y, 2.4, C.RING_Y); assert(Math.abs(A.AX) <= 2.8 && T.bankedAim(A.AX, A.AY), `a bank reaches the waiting ring (${A.AX.toFixed(2)})`);
+    T.throwAt(A.AX, A.AY); T.step(C.FLIGHT_T + 0.4); assert(T.state().lastResult.make, `banked in (${T.state().lastResult.kind})`); T.step(3);
+    T.toTitle(); T.setStats(ZERO);
+  });
   // ── v62: wind in the line, and an Adventure a person can finish ──
   test("v62 The Adventure's curve: a gentle climb over all eight maps (never the old top speed by the second); the Arcade keeps its own", () => {
     T.setStats({ ...ZERO, bestStage: 9 });

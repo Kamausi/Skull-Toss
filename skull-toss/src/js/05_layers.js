@@ -62,9 +62,10 @@
     const rnd = mulberry32(1931 + sceneMap * 7), x0 = -B, x1 = W + B, kind = L.moon === "art" && !MOON_ART ? "full" : L.moon;
     sceneFX.screen = null;
     // the drawn moon has a face to read, so it is hung a size up from the plain disc; a harvest moon sits big and low
-    const mr = kind === "harvest" ? U * 0.13 : kind === "screen" ? U * 0.25 : kind === "eclipse" ? U * 0.1 : U * (kind === "art" ? 0.09 : 0.065);
-    const mx = kind === "screen" ? W / 2 : W / 2 - Math.min(W * 0.33, U * 0.8);
-    const my = kind === "harvest" ? HY - mr * 0.55 : kind === "screen" ? Math.max(HY * 0.45, H * BLUEPRINT.hudSafe.top + mr * 0.65 + 12) : Math.max(HY * 0.3, 96 + mr);   // (the screen hangs clear of the HUD)
+    let mr = kind === "harvest" ? U * 0.13 : kind === "screen" ? U * 0.25 : kind === "eclipse" ? U * 0.1 : U * (kind === "art" ? 0.09 : 0.065);
+    let mx = kind === "screen" ? W / 2 : W / 2 - Math.min(W * 0.33, U * 0.8);
+    let my = kind === "harvest" ? HY - mr * 0.55 : kind === "screen" ? Math.max(HY * 0.45, H * BLUEPRINT.hudSafe.top + mr * 0.65 + 12) : Math.max(HY * 0.3, 96 + mr);   // (the screen hangs clear of the HUD)
+    if (kind === "screen" && underSea()) { const O = stageOpening(); mr = O.r; mx = O.x; my = O.y; }   // (v63: under the sea the screen is the one in the stage's arch, not a second one hung above it)
     moon = { x: mx, y: my, r: kind === "none" ? 0 : mr, kind };
     if (sceneMap === 0 && sceneArt(b, "sky")) { if (!MOON_ART) moon.r = 0; buildMoon(); return; }   // (the plane artwork is Moonshine's)
     buildMoon();

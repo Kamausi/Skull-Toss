@@ -85,6 +85,14 @@
     if (!camFxAmp()) return;
     Object.assign(camfx, { kind, t0: game.time, dur: M.dur, amp: camFxAmp() });
   }
+  // v63 (the owner's playtest: the reel filter flashed back to the plain one on a perfect throw): a camera blur is set
+  // on the canvas itself, which replaced the reel's grade (a stylesheet filter) for as long as it lasted. The blur now
+  // carries the reel's own grade in front of it, read from the stylesheet once per reel.
+  function reelGrade() {
+    const reel = document.body.dataset.reel || "standard";
+    if (camfx.gradeFor !== reel) { const was = cvs.style.filter; cvs.style.filter = ""; const f = getComputedStyle(cvs).filter; cvs.style.filter = was; camfx.grade = f && f !== "none" ? f + " " : ""; camfx.gradeFor = reel; }
+    return camfx.grade;
+  }
   function updateCamFx() {
     let css = "", blur = 0;
     if (camfx.kind) {
@@ -97,6 +105,6 @@
     }
     if (misc.kind === "jam" && game.time - misc.t0 < misc.dur * 0.55) css += ` translateY(${(Math.sin(performance.now() * 0.09) * 2.2).toFixed(1)}px)`;   // (real time: the game's clock is held)
     else if (misc.kind === "slip") css += ` translateY(${(-(1 - clamp((game.time - misc.t0) / misc.dur, 0, 1)) * H).toFixed(1)}px)`;
-    const key = css + "|" + blur.toFixed(1);
-    if (key !== camfx.applied) { camfx.applied = key; cvs.style.transform = css; cvs.style.filter = blur > 0.2 ? `blur(${blur.toFixed(1)}px)` : ""; }
+    const key = css + "|" + blur.toFixed(1) + "|" + (document.body.dataset.reel || "");
+    if (key !== camfx.applied) { camfx.applied = key; cvs.style.transform = css; cvs.style.filter = blur > 0.2 ? `${reelGrade()}blur(${blur.toFixed(1)}px)` : ""; }
   }

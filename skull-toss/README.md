@@ -1,8 +1,25 @@
-# SKULL TOSS v62
+# SKULL TOSS v63
 
 Lob the skull through a ring in a haunted graveyard. Play **Story** to climb through the stages and beat the bosses, or **Arcade** to pick any map and see how long you can last. Three misses and you're buried.
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
+
+## New in v63: the playtest's look-and-feel fixes
+
+From the owner's playtest (Notion, QA & Playtesting).
+
+- **Bank plaques, not billboards.** Each bank board is now a plaque 1.3 m by 1.6 m on a post (it was a 2 m by 3.2 m
+  slab hanging in the air). A bank off it still reaches the waiting sealed ring.
+- **The intro's spotlights fade out.** Each beam runs on past its pool of light and thins away instead of ending in a
+  hard line, and the lights hunt for the title 0.8 s longer before they find it.
+- **The reel filter stays on.** A camera blur on a perfect throw used to replace the equipped reel's grade for a
+  moment, flashing back to the plain print. The blur now carries the reel's grade with it.
+- **No glitches in the way.** Of the old print's misbehaviours only the animator's hand and Morty's aside still come
+  up, and the hand draws back the moment you start aiming. The jam (which held the game and burned a hole over the
+  ring), the slipped frame, the wrong reel's card and the ink blot are retired.
+- **The Drowned Theater, cleaned up.** Its hazard is air rising from the wreck, one bubble at a time, drawn as a bubble
+  (it was two party balloons). There's one screen, the one inside the stage's arch (a second, framed one used to hang
+  over it). No skeleton or ghost wanders the stalls. More fish, nearer and a little bigger.
 
 ## New in v62: wind in the line, and an Adventure you can finish
 

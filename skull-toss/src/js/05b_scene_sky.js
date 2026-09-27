@@ -9,9 +9,9 @@
   // ── the moon, by kind: the drawn moon (art), or a coded crescent, harvest moon, full moon, or a picture-house screen
   function paintMoonKind(b, kind, x, y, r, col) {
     const rgb = rgbOf(col);
-    if (kind === "screen") {   // the picture palace: a screen in a gilt frame, with the reel playing on it
+    if (kind === "screen") {   // the picture palace: a screen in a gilt frame, with the reel playing on it (under the sea, the stage's arch is its frame)
       const w = r * 2.2, h = r * 1.3;
-      b.fillStyle = "#6A4A1E"; b.strokeStyle = INK; b.lineWidth = 3; b.beginPath(); rr(b, x - w / 2 - 10, y - h / 2 - 10, w + 20, h + 20, 6); b.fill(); b.stroke();
+      if (!underSea()) { b.fillStyle = "#6A4A1E"; b.strokeStyle = INK; b.lineWidth = 3; b.beginPath(); rr(b, x - w / 2 - 10, y - h / 2 - 10, w + 20, h + 20, 6); b.fill(); b.stroke(); }
       const g = b.createLinearGradient(0, y - h / 2, 0, y + h / 2); g.addColorStop(0, `rgba(${rgb},.96)`); g.addColorStop(1, `rgba(${rgb},.78)`);
       b.fillStyle = g; b.fillRect(x - w / 2, y - h / 2, w, h);
       b.fillStyle = "rgba(23,19,15,.13)";   // the faint picture: Morty's silhouette, the way the last print left him
@@ -176,6 +176,13 @@
   // screen lit inside it (the map's "screen" moon), the curtains either side heavy with weed, coral grown up round the
   // arch's feet and along the apron (the stage is the most overgrown place in the house), balconies either side with
   // weed hanging from them, the house's columns barnacled. Drawn softened, as far things are under water.
+  const underSea = () => !!aquaBiome() && aquaBiome().kind === "submerged";
+  // v63 (the owner's playtest: two movie screens, one over the other): the screen is the one inside the arch, between the
+  // curtains drawn back and under the header, sized to fit it
+  function stageOpening() {
+    const sw = Math.min(W * 0.36, U * 0.72), top = HY - U * 0.32 + U * 0.06, bot = HY + U * 0.01 - U * 0.03;
+    return { x: W / 2, y: (top + bot) / 2, r: Math.min(sw * 1.0 / 2.2, (bot - top) / 1.3) };
+  }
   function drownedStage(b, rnd, x0, x1, base, SIL) {
     const cx = W / 2, sw = Math.min(W * 0.36, U * 0.72), top = HY - U * 0.32, apron = HY + U * 0.01, ink = "rgba(8,20,26,.9)";
     b.fillStyle = "rgba(10,30,38,.85)"; b.fillRect(x0, HY - U * 0.02, x1 - x0, base - HY + U * 0.02);   // the back of the house
