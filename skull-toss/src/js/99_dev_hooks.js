@@ -263,7 +263,7 @@
     skullPathAt(AX, AY, t) { const v = aimVelocity(AX, AY); return { x: v.x * t + 0.5 * windNow() * t * t, y: START_Y + v.y * t - 0.5 * G * t * t, z: v.z * t }; }, say(pool = "grab") { voice.test = true; const s = sayLine(pool); voice.test = false; return s; },
     voiceLines: () => { const o = {}; for (const id of lineIds("morty.")) { const pool = id.split(".").slice(1, -1).join("."); (o[pool] = o[pool] || []).push(t(id)); } return o; },
     voiceTest(on = true) { voice.test = on; voice.bags = {}; voice.last = -99; }, voice: () => ({ text: voice.text, id: voice.id, pool: voice.pool, said: voice.said, mood: mortyMood() }),
-    lang: l => (l ? setLang(l) : LANG), missingStrings: () => [...t.missing], grab() { return skullGrabbed(); }, hat: () => ({ ...hatSpring }), digger: () => GY.digger && { t: GY.digger.t, dirt: GY.digger.dirt.length }, cat: () => GY.cat && { x: GY.cat.x, z: GY.cat.z, state: GY.cat.state },
+    lang: l => (l ? setLang(l) : LANG), missingStrings: () => [...t.missing], grab() { return skullGrabbed(); }, hat: () => ({ ...hatSpring }), digger: () => GY.digger && { t: GY.digger.t, dirt: GY.digger.dirt.length }, cat: () => GY.cat && { id: GY.cat.id, x: GY.cat.x, z: GY.cat.z, state: GY.cat.state },
     music() {
       const out = { want: reel.want, on: reel.on, synth: !!mus, tracks: {} };
       for (const [k, t] of Object.entries(reel.tracks)) out.tracks[k] = { live: t.live, paused: t.el ? t.el.paused : null, at: t.el ? +t.el.currentTime.toFixed(2) : null, gain: t.gain ? +t.gain.gain.value.toFixed(3) : null };

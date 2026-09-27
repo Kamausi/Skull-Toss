@@ -2637,7 +2637,7 @@
   });
   test("v53 the cat keeps its place in the world as the camera travels", () => {
     T.setStats(ZERO); fresh(); T.calm(); T.step(2); T.catNow(); const c0 = T.cat(), d0 = T.travel().D; assert(c0, "a cat");   // (the world settled first)
-    T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); T.step(1.5); const c1 = T.cat(), d1 = T.travel().D;
+    T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); T.step(1.5); const c1 = T.cat() && T.cat().id === c0.id ? T.cat() : null, d1 = T.travel().D;   // (a fresh cat that wandered in since isn't this one)
     assert(d1 > d0 + 0.1, `the world travelled on a make (${d0} → ${d1}, ${T.state().hits} hits)`);
     assert(!c1 || Math.abs(c0.z - c1.z - (d1 - d0)) < 0.03, `the cat is passed by as far as the world moved, not carried along (${c0.z.toFixed(2)} → ${c1 ? c1.z.toFixed(2) : "gone"}; the world ${(d1 - d0).toFixed(2)})`);
     T.toTitle();

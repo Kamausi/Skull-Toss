@@ -272,7 +272,7 @@
   // ── the black cat: now and then it strolls across between you and the ring, stops, stares, and moves on
   function spawnCat() {
     const dir = Math.random() < 0.5 ? 1 : -1, z = rand(2.6, 3.6), hw = halfWidthAt(z) + 0.8;
-    GY.cat = { x: -dir * hw, z, dir, end: dir * hw, t: 0, state: "walk", sitAt: rand(-0.5, 0.5) * hw * 0.6, sat: false, sitT: 0, scare: 0, meowed: false };
+    GY.cat = { id: (GY.catN = (GY.catN || 0) + 1), x: -dir * hw, z, dir, end: dir * hw, t: 0, state: "walk", sitAt: rand(-0.5, 0.5) * hw * 0.6, sat: false, sitT: 0, scare: 0, meowed: false };
   }
   function updateCat(dt) {
     const w = world;
