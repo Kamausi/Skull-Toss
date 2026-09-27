@@ -10,7 +10,7 @@ The budget lives in code as `PERF` (`src/js/01_data.js`), so the game, the build
 | Comic bursts | 18 live | Same place and spec |
 | Contact stars | 24 live | `04e_director.js` |
 | Page elements | 2,500 | Spec counts `document.getElementsByTagName("*")` |
-| Light build | 2,600 KB | `build.py` refuses a bigger `index.html` |
+| Light build | no ceiling (removed 2026-09-27) | `build.py` reports the size of `index.html`; it is tracked, not capped |
 
 Rules that keep the numbers down:
 

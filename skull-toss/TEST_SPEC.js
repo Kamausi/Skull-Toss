@@ -1099,7 +1099,7 @@
     assert(T.settings().flashes === "reduced", `the arrow should pick the next choice (${T.settings().flashes})`);
     T.setSetting("flashes", "full"); T.closeSheet();
   });
-  test("The performance budget: effects are capped, a game step is cheap, the page stays small", () => {
+  test("The performance budget: effects are capped, a game step is cheap, the page stays within its element count", () => {
     fresh(); T.spray(2000); T.step(1 / 60);
     const P = T.perf();
     assert(P.now.particles <= P.particles && P.now.bursts <= P.bursts, `over budget: ${JSON.stringify(P.now)}`);

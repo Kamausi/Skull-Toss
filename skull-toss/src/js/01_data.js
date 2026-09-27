@@ -37,7 +37,7 @@
 
   // ── the performance budget (docs/PERFORMANCE.md). The effects are capped to it and the spec checks it.
   // frameMs: a whole frame at 60 Hz; stepMs: one 1/240 s step of the game, on average; the rest are live counts.
-  const PERF = { frameMs: 16.7, stepMs: 0.5, particles: 360, inkStars: 24, bursts: 18, domNodes: 2500, lightKB: 2600 };
+  const PERF = { frameMs: 16.7, stepMs: 0.5, particles: 360, inkStars: 24, bursts: 18, domNodes: 2500 };
   function level(score) {
     return {
       amp: Math.min(0.55 + score * 0.11, 1.5),

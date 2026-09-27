@@ -8,6 +8,9 @@ Open `index.html` in any browser, on a phone or a desktop. The fonts and all the
 
 Every throw goes RING → THROW → WORLD INTERACTION → CONSEQUENCE, and nothing takes the ring's job.
 
+- **No page-size ceiling.** The build used to refuse an `index.html` over 2,600 KB. The owner retired that limit on
+  2026-09-27: the build still prints the page's size so it can be tracked, but it never refuses a build or forces a cut.
+
 - **The Ring Interaction.** On three rings in every six, something optional hangs just behind the ring, off to one side,
   swinging on its own pendulum. Each map has its own:
 
