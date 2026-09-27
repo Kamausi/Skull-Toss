@@ -56,46 +56,29 @@
   // way is a miss. The map says which kinds each half uses; the tier says how often gold and secrets turn up.
   const tgR = T => TARGET_R * (T.sz || 1);
   function targetPos(T) {
-    if (T.arm) return armTargetPos(T);
-    const t = T.t + T.ph;
-    const out = T.corner == null ? 0 : Math.sign(T.x);   // (in a corner, it only ever moves outward from the ring)
-    if (T.type === "swinging") { const a = 0.45 * Math.sin(t * 1.8); return { x: T.x + (out ? out * Math.abs(Math.sin(a)) : Math.sin(a)) * 0.8, y: T.y + (1 - Math.cos(a)) * 0.8, z: T.z, rope: { x: T.x, y: T.y + 0.8, z: T.z } }; }
-    if (T.type === "runaway") return { x: out ? T.x + out * (0.35 + 0.35 * Math.sin(t * 1.3)) + (T.flee || 0) : clamp(T.x + 1.1 * Math.sin(t * 1.3) + (T.flee || 0), -2.2, 2.2), y: T.y + Math.abs(Math.sin(t * 7)) * 0.06, z: T.z };
-    if (T.type === "popup") { const u = ((t % 3.4) + 3.4) % 3.4, up = u < 1.9 ? 1 : u < 2.2 ? 1 - (u - 1.9) / 0.3 : u > 3.1 ? (u - 3.1) / 0.3 : 0; return { x: T.x + (out ? out * (1 - up) * 0.9 : 0), y: T.y - (out ? 0 : (1 - up) * 1.3), z: T.z, up, tell: u > 2.8 && u <= 3.1 }; }
-    return { x: T.x, y: T.y + Math.sin(T.t * 2 + T.ph) * 0.06, z: T.z };
+    const t = T.t + T.ph, post = T.y < 1.5, XS = (1.95 * T.z) / RING_Z - tgR(T);
+    const rise = T.corner != null && T.t < STAGE_IN ? (1 - smooth(T.t / STAGE_IN)) * (post ? -1.3 : 1.5) : 0;   // (v65: it comes up out of the ground, or down on its cord)
+    const P = (() => {
+      if (T.type === "swinging") { const a = 0.45 * Math.sin(t * 1.8); return { x: T.x + Math.sin(a) * 0.8, y: T.y + (1 - Math.cos(a)) * 0.8, z: T.z, rope: { x: T.x, y: T.y + 0.8, z: T.z } }; }
+      if (T.type === "runaway") return { x: clamp(T.x + 0.45 * Math.sin(t * 1.3) + (T.flee || 0), -XS, XS), y: T.y + Math.abs(Math.sin(t * 7)) * 0.06, z: T.z };
+      if (T.type === "popup") { const u = ((t % 3.4) + 3.4) % 3.4, up = u < 1.9 ? 1 : u < 2.2 ? 1 - (u - 1.9) / 0.3 : u > 3.1 ? (u - 3.1) / 0.3 : 0; return { x: T.x, y: T.y + (1 - up) * (post ? -1.1 : 1.3), z: T.z, up, tell: u > 2.8 && u <= 3.1 }; }
+      return { x: T.x, y: T.y + Math.sin(T.t * 2 + T.ph) * 0.06, z: T.z };
+    })();
+    P.y += rise; P.mount = post ? "post" : "cord"; P.foot = T.y; return P;
   }
-  const targetLive = T => !T.pop && (T.type !== "popup" || targetPos(T).up > 0.6);
+  const targetLive = T => !T.pop && !(T.corner != null && T.t < STAGE_IN * 0.8) && (T.type !== "popup" || targetPos(T).up > 0.6);
   function targetTypesNow() { const M = mapData(game.stage || 1); return (M.targetTypes && M.targetTypes[game.phase === "A" ? "A" : "B"]) || ["standard"]; }
-  // v54: targets ride beside the ring, on iron arms bolted to it, instead of waiting in the corners of the play where
-  // you had to go looking for them. Each hangs 1.25–1.6× the ring's drawn radius from its centre (never on the ring
-  // itself), above or below it at an angle the run's dice pick, in slots kept apart from one another. As the ring slides
-  // towards a side of the screen an arm on that side swings upright, keeping its target on screen and within a throw's
-  // reach, and never closer to the ring than the ring's drawn edge. The target types move on their arm: a swinging
-  // one's arm sways, a runaway slides along its arm, a pop-up flips down on its hinge and back up.
-  const ARM_SLOTS = [[1, -0.55], [1, 0.55], [-1, -0.55], [-1, 0.55], [1, 0], [-1, 0]];   // [up or down, tilt from upright]
-  const armOuter = () => { const A = RING_ART[cos.ring]; return A ? Math.max(0.1, ring.rc - RING_TUBE) / A.inner * (A.outer || 0.96) : ring.rc + RING_TUBE * 1.2; };   // the ring as drawn, in metres (from the art's measurements, not the loaded picture, so a replay places them the same)
-  function armSpot(used) {
-    const free = ARM_SLOTS.map((c, i) => i).filter(i => !used.includes(i)), i = free.length ? free[(runRand() * free.length) | 0] : (runRand() * ARM_SLOTS.length) | 0;
-    const [up, a] = ARM_SLOTS[i];
-    return { corner: i, arm: { up, a: a + rrIn(-0.18, 0.18), f: rrIn(1.25, 1.6) } };
-  }
-  function armGeom(T, da = 0, dd = 0) {
-    const A = T.arm, O = armOuter(), dmin = O + TARGET_R * (T.sz || 1) + 0.12, d = Math.max(dmin, O * A.f + dd), z = ring.z - 0.3;
-    const XS = 1.95 * z / RING_Z, YT = AIM_Y_MAX - 0.45, YB = 0.62;
-    const at = a => ({ hx: d * Math.sin(a), vy: A.up * d * Math.cos(a) }), fits = q => Math.abs(ring.x + q.hx) <= XS && ring.y + q.vy <= YT && ring.y + q.vy >= YB;
-    // its own angle if that's on screen and in reach; if not, the arm swings to the nearest angle that is (towards the
-    // middle of the screen first), a little at a time, so it moves smoothly as the ring does
-    const a0 = A.a + da, toward = ring.x > 0 ? -A.up : A.up;   // (the way that swings it towards the middle)
-    let q = at(a0);
-    if (!fits(q)) for (let k = 1; k <= 40; k++) { const c1 = at(a0 + toward * k * 0.08); if (fits(c1)) { q = c1; break; } const c2 = at(a0 - toward * k * 0.08); if (fits(c2)) { q = c2; break; } }
-    return { x: ring.x + q.hx, y: ring.y + q.vy, z, base: { x: ring.x, y: ring.y, z: ring.z }, O };
-  }
-  function armTargetPos(T) {
-    const t = T.t + T.ph;
-    if (T.type === "swinging") return { ...armGeom(T, 0.32 * Math.sin(t * 1.8)), arm: true };
-    if (T.type === "runaway") return { ...armGeom(T, 0, 0.22 * Math.sin(t * 1.3) + (T.flee || 0) * 0.3), arm: true };
-    if (T.type === "popup") { const u = ((t % 3.4) + 3.4) % 3.4, up = u < 1.9 ? 1 : u < 2.2 ? 1 - (u - 1.9) / 0.3 : u > 3.1 ? (u - 3.1) / 0.3 : 0; return { ...armGeom(T), up, tell: u > 2.8 && u <= 3.1, arm: true }; }
-    const G = armGeom(T); return { ...G, y: G.y + Math.sin(T.t * 2 + T.ph) * 0.04, arm: true };
+  // v65 (the owner's playtest: the targets were welded to the ring): the targets are staged round the ring's play in
+  // the world, each on its own mount, and the ring moves on past them. v54 had hung them on iron arms bolted to the
+  // ring, so that you never had to go looking for them in the corners (v49); the spots here keep that: all of them
+  // are close about where the ring rests, on screen on a phone and within a throw's aim, and each spot is used once.
+  // Low ones stand on a post from the ground, high ones hang on a cord from the flies; a new one comes up out of the
+  // ground or down on its cord, and isn't there to hit until it's arrived. Their depth varies a little either side of
+  // the ring's, so the ring passes in front of some and behind others.
+  const STAGE_SPOTS = [[-1.25, 3.6], [1.25, 3.6], [0, 3.95], [-1.25, 1.05], [1.25, 1.05], [-1.3, 2.35], [1.3, 2.35]], STAGE_IN = 0.45;
+  function stageSpot(used) {
+    const free = STAGE_SPOTS.map((c, i) => i).filter(i => !used.includes(i)), i = free.length ? free[(runRand() * free.length) | 0] : (runRand() * STAGE_SPOTS.length) | 0;
+    const [x, y] = STAGE_SPOTS[i]; return { corner: i, x: x + rrIn(-0.1, 0.1), y: y + rrIn(-0.08, 0.08), z: RING_Z - 0.3 + rrIn(-0.2, 0.3) };
   }
   function spawnTarget(forceType) {
     const M = mapData(game.stage || 1), kind = M.target, T0 = tierNow();
@@ -104,10 +87,8 @@
     if (!forceType) { const r = runRand(); if (r < (T0.golden || 0) || (targetTypesNow().includes("golden") && r < 0.12)) type = "golden"; else if (r < (T0.golden || 0) + (T0.secret || 0) || (targetTypesNow().includes("secret") && r > 0.86)) type = "secret"; }
     if (type === "decoy" && has("decoy")) type = "standard";
     sawIt("target", type);
-    const S = armSpot(targets.filter(T => !T.pop && T.arm).map(T => T.corner));
-    const T1 = { kind, type, corner: S.corner, arm: S.arm, t: 0, left: type === "golden" ? 3 : 6, pop: 0, ph: rrIn(0, TAU), shield: type === "shielded", sz: type === "secret" ? 0.9 : 1 };
-    const P = armGeom(T1); Object.assign(T1, { x: P.x, y: P.y, z: P.z });
-    targets.push(T1);
+    const S = stageSpot(targets.filter(T => !T.pop && T.corner != null).map(T => T.corner));
+    targets.push({ kind, type, corner: S.corner, x: S.x, y: S.y, z: S.z, t: 0, left: type === "golden" ? 3 : 6, pop: 0, ph: rrIn(0, TAU), shield: type === "shielded", sz: type === "secret" ? 0.9 : 1 });
   }
   function refillTargets() {
     const want = boss || game.state === "title" || game.phase === "crossing" ? 0 : tierNow().targets * directorTargets();
@@ -265,14 +246,10 @@
       const p = project(P.x, P.y, P.z), r = tgR(T) * p.s, pop = T.pop ? clamp(T.pop / 0.4, 0, 1) : 0;
       if (pop >= 1) continue;
       if (P.rope) { const q = project(P.rope.x, P.rope.y, P.rope.z); ctx.strokeStyle = "rgba(20,14,8,.8)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(p.x, p.y - r); ctx.stroke(); }
-      if (P.arm && pop < 0.5) drawTargetArm(P, p, r);
-      if (T.type === "popup" && !P.arm) { if (P.up < 0.05) { if (P.tell) { ctx.fillStyle = "rgba(242,231,201,.7)"; ctx.fillRect(p.x - r, p.y + r * 1.4 * 1.3, r * 2, 2); } continue; } }
+      if (T.type === "popup" && P.up < 0.05) { if (P.tell) { const q = project(T.x, T.y, P.z); ctx.fillStyle = "rgba(242,231,201,.7)"; ctx.fillRect(q.x - r, q.y + (P.mount === "post" ? r * 1.2 : -r * 1.3), r * 2, 2); } continue; }   // (down its hole or up in the flies: a rustle where it'll come back)
       const secret = T.type === "secret" && !T.pop;
       ctx.save(); ctx.translate(p.x, p.y); ctx.globalAlpha = (1 - pop) * (secret ? 0.1 + 0.08 * Math.sin(T.t * 3) : 1); ctx.scale(1 + pop * 0.8, 1 + pop * 0.8);
-      if (!pop) {   // (v54: alive on its arm: a slight squash and stretch on twos, and a flip on the hinge for a pop-up)
-        const k = Math.sin(Math.floor((T.t + T.ph) * 12) / 12 * 5) * 0.035; ctx.scale(1 + k, 1 - k);
-        if (T.type === "popup" && P.arm) { if (P.up < 0.05 && !P.tell) { ctx.restore(); continue; } ctx.scale(1, Math.max(0.08, P.up)); }
-      }
+      if (!pop) { const k = Math.sin(Math.floor((T.t + T.ph) * 12) / 12 * 5) * 0.035; ctx.scale(1 + k, 1 - k); }   // (alive on its mount: a slight squash and stretch on twos)
       ctx.lineWidth = Math.max(1.5, r * 0.14); ctx.strokeStyle = INK; ctx.lineJoin = "round";
       if (T.type === "golden") { const g = ctx.createRadialGradient(0, 0, r * 0.3, 0, 0, r * 2.2); g.addColorStop(0, "rgba(255,220,110,.6)"); g.addColorStop(1, "rgba(255,220,110,0)"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r * 2.2, 0, TAU); ctx.fill(); ctx.filter = "sepia(1) saturate(4) brightness(1.15)"; }
       if (T.type === "decoy") { ctx.fillStyle = "#C8B28A"; ctx.beginPath(); ctx.rect(-r * 0.06, r * 0.8, r * 0.12, r * 1.2); ctx.fill(); ctx.stroke(); }
@@ -285,25 +262,13 @@
       if (!T.pop && P.y > 0.4 && !secret) { const g = project(P.x + shadowShift(P.y), 0, P.z); ctx.fillStyle = "rgba(0,0,0,.25)"; ctx.beginPath(); ctx.ellipse(g.x, g.y, r * 0.8, r * 0.18, 0, 0, TAU); ctx.fill(); }
     }
   }
-  // v54: the arm: a painted iron rod from a bracket on the ring's rim to a collar round the target, inked
-  function drawTargetArm(P, p, r) {
-    const B = P.base, bq = project(B.x, B.y, B.z), dx = p.x - bq.x, dy = p.y - bq.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
-    const edge = P.O * bq.s * 0.92, x0 = bq.x + ux * edge, y0 = bq.y + uy * edge, x1 = p.x - ux * r * 0.9, y1 = p.y - uy * r * 0.9, w = Math.max(2, r * 0.16);
-    if ((x1 - x0) * ux + (y1 - y0) * uy <= 0) return;
-    ctx.save(); ctx.lineCap = "round";
-    ctx.strokeStyle = INK; ctx.lineWidth = w + 3; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
-    ctx.strokeStyle = "#6E6A72"; ctx.lineWidth = w; ctx.stroke();
-    ctx.strokeStyle = "rgba(255,240,220,.35)"; ctx.lineWidth = Math.max(1, w * 0.3); ctx.beginPath(); ctx.moveTo(x0 - uy * w * 0.2, y0 + ux * w * 0.2); ctx.lineTo(x1 - uy * w * 0.2, y1 + ux * w * 0.2); ctx.stroke();
-    ctx.fillStyle = "#4E4A52"; ctx.strokeStyle = INK; ctx.lineWidth = 1.5;
-    for (const [bx, by, k] of [[x0, y0, 1.3], [x1, y1, 1]]) { ctx.beginPath(); ctx.arc(bx, by, w * 0.75 * k, 0, TAU); ctx.fill(); ctx.stroke(); ctx.fillStyle = "#C9B58E"; ctx.beginPath(); ctx.arc(bx, by, w * 0.2, 0, TAU); ctx.fill(); ctx.fillStyle = "#4E4A52"; }
-    ctx.restore();
-  }
   // v49: every target is a bullseye (gold for the golden ones), on a post when it's low and on a cord when it's high
   function drawBullseye(r, T, P) {
     const gold = T.type === "golden", rings = gold ? ["#E3B64B", "#FFF1B8", "#E3B64B", "#FFF1B8", "#C8942E"] : ["#C0392B", "#F2E7C9", "#C0392B", "#F2E7C9", "#C0392B"];
-    if (T.corner != null && !P.rope && !T.arm) {
-      if (T.y < 1.5) { ctx.fillStyle = "#6A4A30"; ctx.beginPath(); ctx.rect(-r * 0.1, r * 0.8, r * 0.2, r * 2.4); ctx.fill(); ctx.stroke(); }
-      else { ctx.strokeStyle = "rgba(20,14,8,.8)"; ctx.lineWidth = Math.max(1, r * 0.06); ctx.beginPath(); ctx.moveTo(0, -r * 0.95); ctx.lineTo(0, -r * 4); ctx.stroke(); ctx.strokeStyle = INK; ctx.lineWidth = Math.max(1.5, r * 0.12); }
+    if (T.corner != null && !P.rope) {   // (v65: the post goes all the way down to the ground; the cord up out of the picture)
+      const m = r / tgR(T);
+      if (P.mount === "post") { ctx.fillStyle = "#6A4A30"; ctx.beginPath(); ctx.rect(-r * 0.1, r * 0.8, r * 0.2, Math.max(r * 0.4, P.y * m - r * 0.8)); ctx.fill(); ctx.stroke(); }
+      else { ctx.strokeStyle = "rgba(20,14,8,.8)"; ctx.lineWidth = Math.max(1, r * 0.06); ctx.beginPath(); ctx.moveTo(0, -r * 0.95); ctx.lineTo(0, -Math.max(r * 4, 6 * m)); ctx.stroke(); ctx.strokeStyle = INK; ctx.lineWidth = Math.max(1.5, r * 0.12); }
     }
     ctx.save(); ctx.scale(1, 0.94);
     rings.forEach((c, i) => { const rr2 = r * (1 - i * 0.2); ctx.beginPath(); ctx.arc(0, 0, rr2, 0, TAU); ctx.fillStyle = c; ctx.fill(); if (i === 0) ctx.stroke(); });

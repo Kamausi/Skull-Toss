@@ -8,7 +8,7 @@
   //   PORTAL_OPEN → (throw) → RIFT_TRAVEL → RIFT_EXIT → the destination (its set-up runs behind the rift) → play
   // A throw that misses the portal costs nothing: the skull comes back and you throw again. The portal is bigger than
   // any ring. In the spec's older tests (sandbox) the hand-over is instant unless a test asks for portals.
-  const PORTAL = { phase: null, t: 0, dest: null, then: null, r: 1.02, y: RING_Y + 0.15, miss: 0, exitAt: 0, spin: 0 };
+  const PORTAL = { phase: null, t: 0, dest: null, then: null, r: 1.02, y: RING_Y + 0.15, miss: 0, exitAt: 0, spin: 0, seen: [] };
   const RIFT = { dur: 2.3, exit: 0.6, open: 0.6, arrive: 0.52 };   // (arrive: how far into the rift the destination is set up, far ahead)
   const portalsOn = () => !(sandbox && !sandbox.portalsOn);
   const portalOpen = () => PORTAL.phase === "open";
@@ -34,7 +34,7 @@
     caption(t("portal.again"), W / 2, H * 0.3); Sound.toon("boing");
   }
   function portalEnter() {
-    PORTAL.phase = "rift"; PORTAL.t = 0; game.endTimer = 1e9; Sound.flightStop(); Sound.toon("iris"); buzz([12, 40, 12]);   // (the throw doesn't end: it goes on through the rift)
+    PORTAL.phase = "rift"; PORTAL.t = 0; PORTAL.seen = []; game.endTimer = 1e9; Sound.flightStop(); Sound.toon("iris"); buzz([12, 40, 12]);   // (the throw doesn't end: it goes on through the rift)
     hideStageCard(); setHint("");   // (nothing of the arena's comes with him: not its card, not its hint)
     Telemetry.emit("portal_enter", { dest: PORTAL.dest, tries: PORTAL.miss + 1 });
     PORTAL.arrived = false; PORTAL.entry = portalSnap(PORTAL.entry); PORTAL.at = project(ring.x, ring.y, ring.z);   // (the last frame of the old place, for the camera to be pulled into)
@@ -197,5 +197,6 @@
     for (let i = 3; i >= 1; i--) { const f = ctx.globalAlpha; ctx.globalAlpha = f * 0.14 * (4 - i); drawSkull(ctx, sx, sy + i * r * 0.4, r * (1 - i * 0.07), { ang: ang - i * 0.05, t: V.t, look: cos, face: faceFor("excited", V.t), jaw: 0.4 }); ctx.globalAlpha = f; }
     drawSkull(ctx, sx, sy, r, { ang, a: V.a, dir: V.dir, t: V.t, look: cos, face: faceFor("excited", V.t), jaw: 0.4 });
     drawHat(ctx, sx, sy, r, ang, V.t, hatState(), 1, hatOf(cos), V.a, V.dir);
+    if (ctx.globalAlpha > 0.05) PORTAL.seen.push({ u: +u.toFixed(3), x: Math.round(sx), y: Math.round(sy), r: Math.round(r), a: +ctx.globalAlpha.toFixed(2) });   // (v65: the QA page asked to see him on the way through; the spec checks this)
     ctx.restore();
   }

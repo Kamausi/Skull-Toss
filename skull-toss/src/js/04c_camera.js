@@ -30,7 +30,7 @@
   const effZ = zc => (RING_Z + CAM_BACK) * Math.pow(Math.max(0.3, zc) / (RING_Z + CAM_BACK), PARALLAX);
   function camAt(zc, plane) {            // how a plane at camera distance zc sits in the current exposure
     const ze = effZ(zc), d = Math.max(0.6, ze - camS.z), sl = plane ? camS.slip[plane] : null;
-    return { k: ze / d, ox: -camS.x * F / d + (sl ? sl.x : 0), oy: camS.y * F / d + (sl ? sl.y : 0) };
+    return { k: ze / d, ox: -camS.x * F / d + (sl ? sl.x : 0) + roadYawOx(zc, plane), oy: camS.y * F / d + (sl ? sl.y : 0) };   // (v65: the camera turns with the road, 06h_land.js)
   }
   const planeOf = zc => (zc < 5 ? "near" : zc < 13 ? "play" : "world");
   function projectBase(x, y, z) {        // the locked-off camera: layout, physics helpers and the painted layers use this

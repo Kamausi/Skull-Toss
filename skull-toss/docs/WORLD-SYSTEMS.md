@@ -663,6 +663,28 @@ The owner, 2026-09-27: "Make wind affect the line", and the difficulty curve of 
 - **Replays** are version 5.
 - **Tests:** "v63 The reel's grade", "v63 Mischief", "v63 The Drowned Theater", "v63 The bank plaques".
 
+## The road turns, the targets stand on their own (v65)
+
+- **Road yaw** (`06h_land.js: ROADYAW, roadYaw, roadYawOx`). The camera's heading is a quarter of the road's direction
+  where it stands, `h = 0.25 · (landCx(D+1) − landCx(D−1)) / 2`, clamped so the pan never exceeds 70% of the painted
+  planes' bleed. `camAt` (04c_camera.js) adds `−F·h` to the sky and far planes and `−F·h·landKC(z)` to the ground
+  strips; `landAt` and `landSlices` take `h·z` off the bend, so everything beyond the play turns together and only the
+  curvature is left. Off with the "Still" camera (`camOn`), as every camera move is.
+- **The road from the ring** (`06h_land.js: PATH_HALF, PATH_FROM, PATH_FULL, LAND_NEAR_Z`). The land's road strips now
+  start at `RING_Z + 0.8` (three road-only strips nearer than the first land slice) and fade in to full by
+  `LAND_NEAR + 1`, at each lane's own half-width. `buildGround` (05_layers.js) paints the lane on its own plate and
+  masks it with the inverse fade, and thins the painted grass past the ring by the same curve; the travel decals'
+  tufts (laid on the land) carry on beyond.
+- **Staged targets** (`07e_directors.js: STAGE_SPOTS, stageSpot, STAGE_IN`). Seven spots round the resting ring (three
+  high, two low, two either side), each used once; `z = RING_Z − 0.3 + [−0.2, 0.3]`. A spot under 1.5 m stands on a post
+  drawn to the ground, one above hangs on a cord; a new target rises or drops in over 0.45 s and isn't live until 80%
+  of the way. Types move on their mounts: a swinging one on a rope, a runaway along a short rail (clamped on screen),
+  a pop-up down its hole or up into the flies. The v54 arms (`armSpot`, `armGeom`, `drawTargetArm`) are gone.
+- **The rift** (`07t_portal.js: PORTAL.seen`). Each rift frame Morty is drawn in is recorded (journey fraction, screen
+  position, size, alpha) for the spec.
+- **Tests:** "v65: targets are staged round the ring…", "v54 portals…" (with the rift frames), "v65 The camera turns
+  with the road…", "v65 The near road…".
+
 ## The mini-games, from the playtest (v64)
 
 - **Timed or untimed** (`07i_modes.js: MODES.curtain.timed`, `miniTimedK`). The booth tile carries a `.tm` chip

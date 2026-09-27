@@ -6,7 +6,13 @@
   const LAND = { hills: 0, roll: 0, wave: 90, curve: 0, bend: 150, ph: [0, 0, 0, 0, 0, 0], on: false, flat: true, slices: null };
   const LAND_NEAR = 9, LAND_H_FULL = 48, LAND_C_FULL = 22;   // (the hills ease in slowly, so the scenery coming toward you isn't walled off)
   const LAND_Z = [170, 140, 115, 96, 82, 70, 60, 52, 45, 39, 34, 30, 26.5, 23.5, 21, 18.8, 16.8, 15, 13.4, 12, 10.6, 9.6, LAND_NEAR];
-  const PATH_HALF = 1.15;
+  // v65 (the owner's playtest: the painted road stopped at the ring's post and the bent road only came in behind it, so
+  // the near road read as a prop pinned to the post): the road is drawn from just past the ring, the width of each
+  // map's own lane, and the painted lane fades out over the same few metres it fades in (05_layers.js buildGround)
+  const PATH_HALF = { dirt: 0.75, flagstone: 0.8, sand: 0.75, rails: 0.8, void: 0.65, seabed: 1.5, boardwalk: 0.7 }, PATH_FROM = RING_Z + 0.8, PATH_FULL = LAND_NEAR + 1;
+  const LAND_NEAR_Z = [8.2, 7.4, PATH_FROM];   // (road only, nearer than the land's first slice: the ground there is the painted plate)
+  const pathHalf = () => PATH_HALF[look().lane] || 0.8;
+  const landCurves = () => { const Tv = mapData(sceneMap + 1).travel; return !!(Tv && Tv.land && Tv.land.curve); };
   function landSetup(Tv) {
     const L = (Tv && Tv.land) || {}, rnd = mulberry32(5150 + sceneMap * 97);
     Object.assign(LAND, { hills: L.hills || 0, roll: L.roll || 0, wave: L.wave || 90, curve: L.curve || 0, bend: L.bend || 150, ph: [0, 0, 0, 0, 0, 0].map(() => rnd() * TAU) });
@@ -28,10 +34,28 @@
   const landKH = z => smooth(clamp((z - LAND_NEAR) / (LAND_H_FULL - LAND_NEAR), 0, 1));
   const landKC = z => smooth(clamp((z - (LAND_NEAR - 1)) / (LAND_C_FULL - LAND_NEAR + 1), 0, 1));
   const landD = () => (TRAVEL.on ? TRAVEL.D : 0);
+  // ── v65 (the owner's playtest: on a bend everything slid sideways under a sky that stood still): the camera turns
+  // with the road. Its heading is the road's direction where the camera stands (a quarter of it, so a bend is felt,
+  // not a swing of the whole picture); the sky, the far planes and the far ground pan against it, and the land takes
+  // the same turn off what it bends by, so beyond the play everything turns together and only the bend itself is
+  // left. Within the play (nearer than the land's first slices) nothing moves: the ring, Morty and the throw stay put.
+  const ROADYAW = { gain: 0.25, max: 0.7, key: "", h: 0 };
+  function roadYaw() {   // the camera's turn (radians, right positive), clamped to what the painted planes have to spare
+    if (!LAND.on || !LAND.curve || !camOn) return 0;
+    const D = landD(), key = D.toFixed(4) + "|" + sceneMap + "|" + W;
+    if (key !== ROADYAW.key) { const h = ((landCx(D + 1) - landCx(D - 1)) / 2) * ROADYAW.gain, lim = (bleed() * ROADYAW.max) / F; ROADYAW.key = key; ROADYAW.h = clamp(h, -lim, lim); }
+    return ROADYAW.h;
+  }
+  // how far a painted plane pans for it (04c_camera.js camAt): the sky and far planes all the way, the ground by depth
+  function roadYawOx(zc, plane) {
+    if (plane !== "sky" && plane !== "far" && plane !== "ground") return 0;
+    const h = roadYaw(); if (!h) return 0;
+    return -F * h * (plane === "ground" ? landKC(zc - CAM_BACK) : 1);
+  }
   // where something at (x across its road, z from the camera) stands: how far the bend moves it, and how high the land is
   function landAt(x, z) {
     if (!LAND.on || z < LAND_NEAR - 1) return { dx: 0, y: 0 };
-    const D = landD(), d = D + z, kc = landKC(z), dx = (landCx(d) - landCx(D)) * kc;
+    const D = landD(), d = D + z, kc = landKC(z), dx = (landCx(d) - landCx(D) - roadYaw() * z) * kc;
     const kh = LAND.flat ? 0 : landKH(z), y = kh ? (landH(d, x) - landH(D, 0)) * kh : 0;
     return { dx, y };
   }
@@ -43,15 +67,15 @@
   // ── the slices, worked out once a frame: each one's skyline across the screen, and how far down it has to paint
   const landRgb = s => { const c = rgbaOf(s); return [c[0], c[1], c[2]]; };
   function landSlices() {
-    const D = landD(), out = [], N = 26, base = LAND.flat ? 0 : landH(D, 0);
+    const D = landD(), out = [], N = 26, base = LAND.flat ? 0 : landH(D, 0), yaw = roadYaw(), PH = pathHalf();
     for (const z of LAND_Z) {
-      const s0 = projectBase(0, 0, z).s, half = (W / 2 + U * 0.3) / s0, cxz = (landCx(D + z) - landCx(D)) * landKC(z), kh = LAND.flat ? 0 : landKH(z);
+      const s0 = projectBase(0, 0, z).s, half = (W / 2 + U * 0.3) / s0, cxz = (landCx(D + z) - landCx(D) - yaw * z) * landKC(z), kh = LAND.flat ? 0 : landKH(z);
       const pts = [], ys = []; let lo = 0, hi = 0;
       for (let i = 0; i <= N; i++) {
         const x = -half + (2 * half * i) / N, u = x - cxz, y = kh ? (landH(D + z, u) - base) * kh : 0;
         const p = project(x, y, z); pts.push(p); ys.push(y); lo = Math.min(lo, y); hi = Math.max(hi, y);
       }
-      const path = [-PATH_HALF, PATH_HALF].map(u => { const y = kh ? (landH(D + z, u) - base) * kh : 0; return project(cxz + u, y, z); });
+      const path = [-PH, PH].map(u => { const y = kh ? (landH(D + z, u) - base) * kh : 0; return project(cxz + u, y, z); });
       out.push({ z, pts, ys, lo, hi, path, flatY: project(0, 0, z).y });
     }
     // how far down each slice must paint: to the highest point any nearer slice reaches at that x (below that, the
@@ -60,6 +84,7 @@
     for (let i = out.length - 1; i >= 0; i--) { const S = out[i]; S.bottom = S.pts.map((p, j) => Math.max(p.y, run[j])); run = run.map((v, j) => Math.min(v, S.pts[j].y)); }
     let dipBeyond = false;   // a flat slice still has to paint if something beyond it dips (it hides the dip's near edge)
     for (const S of out) { S.skip = LAND.flat || (S.hi < 0.03 && S.lo > -0.03 && !dipBeyond); if (S.lo < -0.03) dipBeyond = true; }
+    for (const z of LAND_NEAR_Z) out.push({ z, pts: [], ys: [], lo: 0, hi: 0, skip: true, pathOnly: true, path: [-PH, PH].map(u => project(u, 0, z)) });   // (v65: straight, flat)
     return (LAND.slices = out);
   }
   // ── drawing a slice: the ground's curtain, lit a little on the rise, its skyline rimmed; then the road over it
@@ -91,9 +116,11 @@
     }
     if (next) drawLandPath(S, next);
   }
-  // the road: a strip from this slice to the next nearer one, in the lane's own material, fading in beyond the ring
+  // the road: a strip from this slice to the next nearer one, in the lane's own material, fading in just past the ring
+  // as the painted lane fades out (v65: it used to start three metres behind the post)
+  const pathIn = z => smooth(clamp((z - PATH_FROM) / (PATH_FULL - PATH_FROM), 0, 1));
   function drawLandPath(S, N) {
-    const kind = look().lane, a = clamp((N.z - LAND_NEAR) / 4, 0, 1) * clamp((150 - S.z) / 60, 0, 1);
+    const kind = look().lane, a = pathIn((S.z + N.z) / 2) * clamp((150 - S.z) / 60, 0, 1);
     if (a <= 0.02 || kind === "none") return;
     const [l0, r0] = S.path, [l1, r1] = N.path;
     ctx.save(); ctx.globalAlpha *= a; ctx.beginPath(); ctx.moveTo(l0.x, l0.y); ctx.lineTo(r0.x, r0.y); ctx.lineTo(r1.x, r1.y); ctx.lineTo(l1.x, l1.y); ctx.closePath();
@@ -105,7 +132,7 @@
       ctx.beginPath(); for (const k of [0.33, 0.66]) { ctx.moveTo(l0.x + (l1.x - l0.x) * k, l0.y + (l1.y - l0.y) * k); ctx.lineTo(r0.x + (r1.x - r0.x) * k, r0.y + (r1.y - r0.y) * k); } ctx.stroke();
     } else if (kind === "rails") {   // two rails on their ties
       ctx.strokeStyle = "rgba(200,190,170,.5)"; ctx.beginPath();
-      for (const k of [0.3, 0.7]) { ctx.moveTo(l0.x + (r0.x - l0.x) * k, l0.y + (r0.y - l0.y) * k); ctx.lineTo(l1.x + (r1.x - l1.x) * k, l1.y + (r1.y - l1.y) * k); } ctx.stroke();
+      for (const k of [0.2, 0.8]) { ctx.moveTo(l0.x + (r0.x - l0.x) * k, l0.y + (r0.y - l0.y) * k); ctx.lineTo(l1.x + (r1.x - l1.x) * k, l1.y + (r1.y - l1.y) * k); } ctx.stroke();
     } else if (kind === "flagstone") { ctx.strokeStyle = "rgba(23,19,15,.25)"; ctx.beginPath(); ctx.moveTo((l0.x + r0.x) / 2, (l0.y + r0.y) / 2); ctx.lineTo((l1.x + r1.x) / 2, (l1.y + r1.y) / 2); ctx.stroke(); }
     else if (kind === "void") { ctx.strokeStyle = "rgba(180,140,255,.3)"; ctx.beginPath(); ctx.moveTo((l0.x + r0.x) / 2, (l0.y + r0.y) / 2); ctx.lineTo((l1.x + r1.x) / 2, (l1.y + r1.y) / 2); ctx.stroke(); }
     ctx.restore();

@@ -4,6 +4,25 @@ Lob the skull through a ring in a haunted graveyard. Play **Story** to climb thr
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
 
+## New in v65: the road turns, the targets stand on their own
+
+From the owner's playtest (Notion, QA & Playtesting).
+
+- **The camera turns with the road.** On a bend the sky, the far scenery and the far ground now pan the other way as
+  the road ahead swings off, so it reads as turning a corner, not as the world sliding sideways under a sky that
+  stands still. Only the bend itself is left in how the road and its scenery lie. Nothing within the play moves:
+  the ring, Morty and the throw are where they were. (The "Still" camera setting keeps the old, unturned view.)
+- **The near road hands over to the far road.** The painted lane used to stop at the ring's post while the real,
+  bending road only began three metres behind it; the two ran side by side into the distance on some maps (the
+  mine's rails, the film strip). Now the road is drawn from just past the ring at the lane's own width, and the
+  painted lane and its grass fade out over the same few metres, so there is one road that bends.
+- **Targets are staged round the ring, not welded to it.** They stand in the world on their own mounts: low ones on
+  a post from the ground, high ones on a cord from the flies, at spots close about where the ring rests. The ring
+  moves on past them (in front of some, behind others). A new one comes up out of the ground or down on its cord and
+  can't be hit until it has arrived.
+- **Morty in the rift, proven.** The portal already drew Morty flying through the rift; the spec now records each
+  rift frame he is drawn in and checks he is there, on screen, from the start of the journey to the end.
+
 ## New in v64: the mini-games, from the playtest
 
 - **Timed or not, said up front.** Every mini-game's booth card and opening card say whether it's against the clock,

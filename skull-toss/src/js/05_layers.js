@@ -120,7 +120,12 @@
         b.beginPath(); for (let x = x0; x <= x1 + 8; x += 8) (x === x0 ? b.moveTo(x, yAt(x)) : b.lineTo(x, yAt(x))); b.stroke();
       }
     }
-    LANES[L.lane](b, x0, x1);
+    if (landCurves()) {   // v65: the painted lane hands over to the road (06h_land.js) over the few metres past the ring
+      const Lp = plate(P.x0, P.y0, P.w, P.h), m = Lp.g.createLinearGradient(0, projectBase(0, 0, PATH_FULL).y, 0, projectBase(0, 0, PATH_FROM).y);
+      LANES[L.lane](Lp.g, x0, x1);
+      m.addColorStop(0, "rgba(0,0,0,0)"); m.addColorStop(1, "#000"); Lp.g.globalCompositeOperation = "destination-in"; Lp.g.fillStyle = m; Lp.g.fillRect(x0, P.y0 - 4, x1 - x0, P.h + 8); Lp.g.globalCompositeOperation = "source-over";
+      b.drawImage(Lp.c, Lp.x0, Lp.y0, Lp.w, Lp.h);
+    } else LANES[L.lane](b, x0, x1);
     g = b.createLinearGradient(0, HY - U * 0.05, 0, HY + U * 0.1);
     g.addColorStop(0, "rgba(200,210,225,0)"); g.addColorStop(0.45, "rgba(200,210,225,.1)"); g.addColorStop(1, "rgba(200,210,225,0)");
     b.fillStyle = g; b.fillRect(x0, HY - U * 0.05, x1 - x0, U * 0.15);
@@ -130,9 +135,10 @@
     g.addColorStop(0, L.light); g.addColorStop(1, "rgba(0,0,0,0)");
     b.fillStyle = g; b.save(); b.translate(lp.x, lp.y); b.scale(1, 0.32); b.translate(-lp.x, -lp.y); b.beginPath(); b.arc(lp.x, lp.y, U * 0.7, 0, TAU); b.fill(); b.restore();
     if (!L.grass.length) return;
-    const zMin = Math.max(0, (CAMY * F) / (H + B - HY) - CAM_BACK);
+    const zMin = Math.max(0, (CAMY * F) / (H + B - HY) - CAM_BACK), bends = landCurves();
     for (let i = 0; i < 700; i++) {   // painted grass: little inked ticks, bigger as they come nearer
       const x = (rnd() * 2 - 1) * 14, z = zMin + Math.pow(rnd(), 1.5) * 40, p = projectBase(x, 0, z);
+      if (bends && z > PATH_FROM && rnd() > 1 - pathIn(z)) continue;   // (v65: past the ring the grass thins out: the road's own tufts, laid on the land, take over)
       if (p.y > H + B || p.y < HY || p.x < x0 || p.x > x1) continue;
       if (L.lane === "boardwalk" && Math.abs(x) < 0.9 && z < RING_Z + 1.3) continue;
       const len = 0.09 * p.s, lean = (rnd() - 0.5) * len * 0.8;

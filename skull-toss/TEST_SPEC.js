@@ -2401,24 +2401,27 @@
     fresh(); T.setStage(4); T.calm(); T.spawnTargetType("popup"); let up = 0, down = 0; for (let i = 0; i < 40; i++) { T.step(0.1); if (T.targetLive(0)) up++; else down++; } assert(up > 5 && down > 5, `it ducks and comes back (${up}/${down})`);
     fresh(); T.setStage(8); T.calm(); const b = T.bones(); T.spawnTargetType("golden"); T.hitTargetNow(0); assert(T.bones() >= b + 25, "gold pays bones");
     const secrets = T.profile().secretTargets || 0; T.spawnTargetType("secret"); T.hitTargetNow(1); assert((T.profile().secretTargets || 0) === secrets + 1, "a secret found counts");
-    fresh(); T.setStage(3); T.calm(); T.freezeRing(0, C.RING_Y); const { a, q } = pathAt(3.6); const d = T.spawnTargetType("decoy"); assert(d.corner != null && d.arm, "v54: a decoy rides on an arm beside the ring like the rest");
+    fresh(); T.setStage(3); T.calm(); T.freezeRing(0, C.RING_Y); const { a, q } = pathAt(3.6); const d = T.spawnTargetType("decoy"); assert(d.corner != null && !d.arm, "v65: a decoy is staged round the ring like the rest");
     void a; void q; T.toTitle();
   });
-  test("v54: targets ride beside the ring on arms, 1.25–1.6× its drawn size out, never on it, on screen and within reach wherever it goes; a throw straight at one hits it and isn't a miss (v50)", () => {
+  test("v65: targets are staged round the ring in the world, not welded to it: each spot its own, close about where the ring rests, on screen and within reach; the ring moves on past them; a new one arrives before it can be hit; a throw straight at one hits it and isn't a miss (v50)", () => {
+    const home = T.stageSpots();
     for (const n of [2, 4, 6, 8]) {
-      const R = T.maps()[n - 1].sheet.zones.ring;
-      for (const [rx, ry] of [[0, C.RING_Y], [R.x[0], R.y[1]], [R.x[1], R.y[0]]]) {
-        fresh(); T.setStage(n); T.calm(); T.freezeRing(rx, ry); for (let i = 0; i < 4; i++) T.spawnTargetType("standard");
-        const Ts = T.targetsFull(), O = T.armOuter(); assert(new Set(Ts.map(q => q.corner)).size === 4, `map ${n}: four slots of their own (${Ts.map(q => q.corner)})`);
-        for (const q of Ts) {
-          const d = Math.hypot(q.x - rx, q.y - ry);
-          assert(d >= O + 0.26 && d <= O * 1.6 + 0.3, `map ${n}, ring at ${rx},${ry}: beside the ring, clear of its drawn edge (${d.toFixed(2)} from its centre; drawn ${O.toFixed(2)})`);
-          assert(Math.abs(q.x) <= 1.95 * q.z / 6 + 0.01, `map ${n}: on screen even on a phone (${q.x.toFixed(2)})`);
-          const a = T.aimFor(q.x, q.y, q.z); assert(Math.abs(a.AX) <= 2.8 && a.AY <= 5 && a.AY >= 0.35, `map ${n}: within a throw's aim (${JSON.stringify(a)})`);
-        }
+      fresh(); T.setStage(n); T.calm(); T.freezeRing(0, C.RING_Y); for (let i = 0; i < 4; i++) T.spawnTargetType("standard");
+      let Ts = T.targetsFull(); assert(new Set(Ts.map(q => q.corner)).size === 4 && Ts.every(q => !q.arm), `map ${n}: four spots of their own, none on an arm (${Ts.map(q => q.corner)})`);
+      assert(!T.targetLive(0), "just arrived: not there to hit yet"); T.step(0.6); Ts = T.targetsFull(); assert(T.targetLive(0), "and then it is");
+      for (const q of Ts) {
+        const d = Math.hypot(q.x, q.y - C.RING_Y); assert(d >= 1.1 && d <= 2.0, `map ${n}: close about where the ring rests, clear of it (${d.toFixed(2)})`);
+        assert(Math.abs(q.x) + 0.26 <= 1.95 * q.z / 6 + 0.01, `map ${n}: on screen even on a phone (${q.x.toFixed(2)}, z ${q.z.toFixed(2)})`);
+        const a = T.aimFor(q.x, q.y, q.z); assert(Math.abs(a.AX) <= 2.8 && a.AY <= 5 && a.AY >= 0.35, `map ${n}: within a throw's aim (${JSON.stringify(a)})`);
+        assert(q.mount === (q.foot < 1.5 ? "post" : "cord"), `a low one on a post, a high one on a cord (${q.mount}, ${q.foot})`);
       }
+      const before = JSON.stringify(Ts.map(q => [q.x.toFixed(3), q.z.toFixed(3)]));
+      const R = T.maps()[n - 1].sheet.zones.ring; T.freezeRing(R.x[1], R.y[0]); T.step(0.05);
+      assert(JSON.stringify(T.targetsFull().map(q => [q.x.toFixed(3), q.z.toFixed(3)])) === before, `map ${n}: the ring moves; the targets stay where they stand`);
     }
-    fresh(); T.setStage(3); T.calm(); T.spawnTargetType("standard"); const q = T.targetsFull()[0], a = T.aimFor(q.x, q.y, q.z), lives = T.state().lives, pts = T.profile().targetHits || 0;
+    assert(home.every(([x, y]) => Math.hypot(x, y - C.RING_Y) >= 1.1), "every spot clear of the resting ring");
+    fresh(); T.setStage(3); T.calm(); T.spawnTargetType("standard"); T.step(0.6); const q = T.targetsFull()[0], a = T.aimFor(q.x, q.y, q.z), lives = T.state().lives, pts = T.profile().targetHits || 0;
     void q;
     T.setStreak(4); T.freezeRing(0, C.RING_Y); T.throwAt(a.AX, a.AY); T.step(3);
     assert((T.profile().targetHits || 0) === pts + 1 && !T.state().lastResult.make && T.state().lastResult.target && T.state().lives === lives && T.state().streak === 4, `straight at a corner: the bullseye pays, and it isn't a miss (${T.profile().targetHits}, ${T.state().lastResult.kind}, lives ${T.state().lives}/${lives})`);
@@ -2797,6 +2800,30 @@
     assert(T.chainPitch(1) === 1 && T.chainPitch(2) > 1 && T.chainPitch(3) > T.chainPitch(2), "and a chain of bounces or hits climbs in pitch");
     T.toTitle(); T.setStats(ZERO);
   });
+  // ── v65: the road turns, the targets stand on their own ──
+  test("v65 The camera turns with the road: on a bend the sky, the far planes and the far ground pan against the turn, the play doesn't move, and the pan stays inside the painted planes", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(7); T.calm(); T.step(0.1);
+    let bestD = 0, bestH = 0; for (let D = 0; D < 300; D += 3) { T.travelTo(D); const h = Math.abs(T.roadYawNow().h); if (h > bestH) { bestH = h; bestD = D; } }
+    T.travelTo(bestD); const Y = T.roadYawNow();
+    assert(Math.abs(Y.h) > 0.02, `a bend turns the camera (${Y.h.toFixed(3)} rad at ${bestD} m)`);
+    near(Y.sky, -Y.F * Y.h, 1e-6, "the sky pans against the turn"); near(Y.far, Y.sky, 1e-6, "and the far planes with it");
+    assert(Math.abs(Y.groundNear) < 1e-9 && Math.abs(Y.groundFar - Y.sky) < 1e-6, `the ground by depth: none at the play, all of it far off (${Y.groundNear}, ${Y.groundFar.toFixed(1)})`);
+    assert(Y.world === 0 && Y.play === 0 && T.land(0, 7).dx === 0, "the ring, Morty and the throw don't move");
+    assert(Math.abs(Y.sky) <= Y.bleed * 0.7 + 1e-6, `never more than the painted planes have to spare (${Y.sky.toFixed(1)} of ${Y.bleed})`);
+    T.setSetting("camera", "still"); T.step(0.1); assert(T.roadYawNow().h === 0, "the Still camera keeps the old view"); T.setSetting("camera", "full");
+    T.toTitle(); T.setStats(ZERO);
+  });
+  test("v65 The near road: the bending road is drawn from just past the ring at the lane's own width, and the painted lane fades out as it fades in, on every map", () => {
+    T.setStats({ ...ZERO, bestStage: 9 });
+    for (let n = 1; n <= 8; n++) {
+      fresh(); T.setStage(n); T.step(0.1); const P = T.landPathNow();
+      assert(T.laneFades(), `map ${n}: its lane hands over`);
+      const nearS = P.filter(S => S.pathOnly); assert(nearS.length === 3 && Math.min(...nearS.map(S => S.z)) <= C.RING_Z + 0.81, `map ${n}: road from just past the ring (${nearS.map(S => S.z)})`);
+      assert(P.every(S => S.half > 0.6 && S.half < 1.6), `map ${n}: at the lane's width (${[...new Set(P.map(S => S.half.toFixed(2)))]})`);
+    }
+    assert(T.pathInAt(C.RING_Z + 0.8) === 0 && T.pathInAt(10) === 1 && T.pathInAt(8.4) > 0.3 && T.pathInAt(8.4) < 0.7, "fading in over the few metres past the ring");
+    T.toTitle(); T.setStats(ZERO);
+  });
   // ── v64: the mini-games, from the owner's playtest ──
   test("v64 Every mini-game says whether it's against the clock: only Curtain Call is; the opening card and the first hint say so", () => {
     T.setStats(OPENED);
@@ -3062,7 +3089,7 @@
     assert(lift > 0.8, `the land rises away from the road (${lift.toFixed(2)} m)`);
     let lane = 0, side = 0; for (let d = 0; d < 400; d += 7) { lane += Math.abs(T.landRaw(d, 0).h - T.landRaw(d, 0.5).h); side += T.landRaw(d, 22).h - T.landRaw(d, 0).h; }
     assert(side / 58 > 1 && lane / 58 < 0.2, `hills either side, the lane itself level across (${(side / 58).toFixed(2)}, ${(lane / 58).toFixed(3)})`);
-    assert(T.land().slices === 23, `drawn in 23 slices (${T.land().slices})`);
+    assert(T.land().slices === 26, `drawn in 23 slices, and three strips of road nearer than them (v65) (${T.land().slices})`);
     T.setStage(4); T.step(0.5); const W = T.land(15, 60); assert(W.flat && W.y === 0, `the Drowned Theater: the water stays flat (${JSON.stringify(W)})`);
     T.calm(); T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); assert(T.state().lastResult.make, "and a throw is a throw, as ever");
     T.toTitle();
@@ -3203,6 +3230,9 @@
     const lives = T.state().lives; T.throwAt(2.4, 4.6); T.step(3); assert(T.state().lives === lives && T.portal().phase === "open", "a miss: nothing lost, try again");
     T.throwAt(0, T.portal().y); for (let i = 0; i < 60 && T.portal().phase === "open"; i++) T.step(0.05);
     assert(T.portal().phase === "rift" && T.state().state === "cine", "through: the rift");
+    for (let i = 0; i < 12 && T.portal().phase === "rift"; i++) T.step(0.2);   // (v65: a frame drawn at each step)
+    const seen = T.portal().seen; assert(seen.length >= 8 && seen.some(f => f.u < 0.3) && seen.some(f => f.u > 0.7), `v65: Morty is in the rift, drawn from the start of the journey to the end (${seen.length} frames: ${JSON.stringify(seen.map(f => f.u))})`);
+    assert(seen.every(f => f.x > 0 && f.x < innerWidth && f.y > 0 && f.y < innerHeight && f.r > 2), `and on screen, the camera behind him (${JSON.stringify(seen.slice(0, 3))})`);
     T.step(3.5); assert(T.state().stage === 2 && T.state().state === "ready" && !T.portal().phase, `and out on the next map (${JSON.stringify(T.portal())}, stage ${T.state().stage})`);
     T.portalsOn(false); T.toTitle();
   });
