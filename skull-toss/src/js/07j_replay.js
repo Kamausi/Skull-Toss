@@ -7,8 +7,10 @@
   // Rush's list, the Director's note). A replay plays on a copy of the profile, so watching one changes nothing of yours, never posts to
   // the board and never touches a run you could resume. Share one as a link (#replay=…) and whoever opens it
   // watches the same run.
-  // v47 made the maps 80 hits, so a recording from before plays out differently: those are version 1, and no longer open
-  const REPLAY_V = 2;
+  // v47 made the maps 80 hits, so a recording from before plays out differently: those are version 1, and no longer open.
+  // v60 did it again (the Drowned Theater under water, bank boards, ghost-glass urns, a bank no longer counting for every
+  // throw after it): version 2 no longer opens either
+  const REPLAY_V = 3;
   const Replay = {
     rec: null, last: null, play: null, speed: 1,
     begin(opts) {

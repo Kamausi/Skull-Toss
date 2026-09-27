@@ -1687,7 +1687,7 @@
     T.setStats(ZERO); T.toTitle();
   });
   test("The Codex notes things as they turn up: a boss when you meet it, a power-up when you grab it, each map's hazard and target", () => {
-    T.setStats(ZERO); let K = T.codex(); assert(K.total === 119 && K.count === 2, `119 entries (v50: 32 areas; v54 and v57: six more power-ups each), only Crow Hollow and its first act known at first (${K.count}/${K.total})`);
+    T.setStats(ZERO); let K = T.codex(); assert(K.total === 123 && K.count === 2, `123 entries (v50: 32 areas; v54 and v57: six more power-ups each; v60: four more obstacles), only Crow Hollow and its first act known at first (${K.count}/${K.total})`);
     fresh(); toHit(C.STAGE_MINI); assert(T.codex().seen.includes("boss:crow"), "meeting the Crow King notes him");
     T.givePower("rush"); assert(T.codex().seen.includes("power:rush"), "grabbing a power-up notes it");
     fresh(); T.setStage(2); T.setHits(10); T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y);
@@ -1708,7 +1708,7 @@
     assert(ends.length === 8 && ends.every(r => r.classList.contains("unseen")) && ends.find(r => r.dataset.entry === "boss:reaper").textContent.startsWith("???"), "8 end bosses, none met");
     tabs.find(b => b.dataset.cat === "area").click(); const areas = [...document.querySelectorAll("#codexList .entry")];
     assert(areas.length === 32 && areas.filter(r => !r.classList.contains("unseen")).length === 5, `32 areas, map 1's four and map 2's first seen (${areas.filter(r => !r.classList.contains("unseen")).length})`);
-    assert(/of 119 found/.test($("codexCount").textContent), $("codexCount").textContent);
+    assert(/of 123 found/.test($("codexCount").textContent), $("codexCount").textContent);
     T.closeSheet(); T.setStats(ZERO); T.toTitle();
   });
   test("The Production Archive unseals the studio's paperwork as the story goes on", () => {
@@ -2362,8 +2362,8 @@
   });
   test("A gilded urn bounces the skull instead of stopping it; the rest knock it out of the air, and Ghost Toss slips through", () => {
     fresh(); T.setStage(2); T.calm(); T.freezeRing(0, C.RING_Y); let { a, q } = pathAt(3.4);
-    T.plantObstacle({ kind: "bumper", at: [q.x + 0.1, q.y, q.z], r: 0.3, from: 0 }); T.throwAt(a.AX, a.AY); T.step(2.5);
-    assert(T.banked() >= 1 && !["bumper"].includes(T.state().lastResult.kind), `BOING (${T.banked()}, ${T.state().lastResult.kind})`);
+    T.plantObstacle({ kind: "bumper", at: [q.x + 0.1, q.y, q.z], r: 0.3, from: 0 }); T.throwAt(a.AX, a.AY); T.step(0.9); const bk = T.banked(); T.step(1.6);   // (v60: read in flight; the next skull starts with none)
+    assert(bk >= 1 && !["bumper"].includes(T.state().lastResult.kind), `BOING (${bk}, ${T.state().lastResult.kind})`);
     const blockers = [["bar", q => ({ kind: "bar", at: [q.x, q.y, q.z], len: 1.2, spin: 0 })], ["spikes", q => ({ kind: "spikes", span: [-2, 2], z: q.z, h: q.y + 0.4, cycle: [99, 1] })],
       ["crusher", q => ({ kind: "crusher", box: [q.x - 0.6, q.x + 0.6, q.z - 0.3, q.z + 0.3], top: q.y - 1.1, low: q.y - 1.1, cycle: [0.01, 99, 1] })], ["barrier", q => ({ kind: "barrier", box: [-2, 2, 0.5, 4.5, q.z], cycle: [99, 1] })],
       ["magnet", q => ({ kind: "magnet", at: [q.x, q.y, q.z], k: 0, R: 0.5 })]];
@@ -2420,10 +2420,10 @@
     assert(T.targets().filter(x => !x.pop).length === 0, "and no new bullseye turns up until a make");
     T.toTitle();
   });
-  test("A decoy in the throw's way is a miss; the Codex knows all nine targets and eleven obstacles (v60: the undertow, the bilge vent and the air pocket)", () => {
+  test("A decoy in the throw's way is a miss; the Codex knows all nine targets and twelve obstacles (v60: the undertow, the bilge vent, the air pocket and the bank board)", () => {
     fresh(); T.setStage(3); T.calm(); T.freezeRing(0, C.RING_Y); const { a, q } = pathAt(3.6); T.plantDecoy(q.x, q.y, q.z); const lives = T.state().lives;
     T.throwAt(a.AX, a.AY); T.step(2.5); assert(T.state().lastResult.kind === "decoy" && T.state().lives === lives - 1, `HONK (${T.state().lastResult.kind})`);
-    T.setStats(ZERO); T.openSheet("codex"); document.querySelector('#codexTabs [data-cat="obstacle"]').click(); assert(document.querySelectorAll("#codexList .entry").length === 11, "eleven obstacles");
+    T.setStats(ZERO); T.openSheet("codex"); document.querySelector('#codexTabs [data-cat="obstacle"]').click(); assert(document.querySelectorAll("#codexList .entry").length === 12, "twelve obstacles");
     document.querySelector('#codexTabs [data-cat="target"]').click(); assert(document.querySelectorAll("#codexList .entry").length === 9, "nine targets");
     T.closeSheet(); T.toTitle();
   });
@@ -2678,7 +2678,10 @@
     T.throwAt(A[0], A[1]); T.step(0.05); const W = T.water(); assert(W.wet && Math.abs(W.g - W.g0 * 0.5) < 1e-9, `half its weight (${JSON.stringify(W)})`);
     T.step(C.FLIGHT_T); const X = T.state().lastCross;
     near(X.x, P.x, 1e-4, "the guide's crossing x is the throw's"); near(X.y, P.y, 1e-4, "the guide's crossing y is the throw's");
-    assert(X.x < dry.x * 0.9, `the drag shortens it across (${X.x.toFixed(3)} vs ${dry.x})`);
+    near(X.x, dry.x, 2e-3, "in still water the aim still means where it crosses (across)"); near(X.y, dry.y, 2e-3, "and (up)");
+    T.step(3); T.throwAt(A[0], A[1]); const v0 = T.water().v0; T.step(C.FLIGHT_T / 2); const half = T.water().pos;
+    assert(v0.x > dry.x / C.FLIGHT_T * 1.1, `it goes out quicker across, to beat the drag (${v0.x.toFixed(2)} vs ${(dry.x / C.FLIGHT_T).toFixed(2)} m/s)`);
+    assert(half.x > dry.x * 0.5 * 1.08, `and the drag front-loads it: halfway there it's more than halfway across (${half.x.toFixed(3)} of ${dry.x})`); T.step(3);
     assert(Math.abs(X.t - C.FLIGHT_T) < 0.02, `still reaches the ring plane on time (${X.t.toFixed(3)})`);
     fresh(); T.setStage(4); T.step(0.5); T.calm(); T.freezeRing(0.6, 2.6); const a = T.aimFor(0.6, 2.6); const r = throwAndSettle(a.AX, a.AY);
     assert(r.lastResult.make, `aimed for the water, it goes in (${r.lastResult.kind})`);
@@ -2700,6 +2703,51 @@
     T.throwAt(A.AX, A.AY); let inAir = false; for (let i = 0; i < 60; i++) { T.step(1 / 60); const w = T.water(); if (w.pocket && w.g === w.g0 && !w.wet) inAir = true; }
     assert(inAir, "inside the pocket: full weight, no drag"); T.step(3);
     T.clearObstacles(); T.toTitle(); T.setStats(ZERO);
+  });
+  test("v60 Surfaces: what a thing is made of decides its bounce (bone, stone, metal, ghost-glass, mud), and each map's ground is one", () => {
+    const S = T.surfaces(); assert(S.bone.e === 0.85 && S.stone.e === 0.65 && S.metal.e === 0.95 && S.ghost.e === 1.1 && S.mud.e === 0.2, `the five (${JSON.stringify(S)})`);
+    const v = { x: -4, y: 0, z: 5 }, n = { x: 1, y: 0, z: 0 }, off = m => T.surfaceBounce(v, n, m);
+    near(off("metal").x, 3.8, 1e-9, "metal gives back nearly all of it"); near(off("metal").z, 4.75, 1e-9, "and loses little along it");
+    assert(off("ghost").x > 4, "ghost-glass gives back more than it got"); near(off("mud").x, 0.8, 1e-9, "mud swallows it"); near(off("mud").z, 2, 1e-9, "and drags along it");
+    assert(off("bone").x > off("stone").x && off("stone").x > off("mud").x, "bone, then stone, then mud");
+    const at = st => { fresh(); T.setStage(st); T.step(0.2); return T.bank().ground; };
+    assert(at(1) === null && at(2) === "stone" && at(5) === "mud" && at(6) === "bone" && at(8) === "ghost", "each map's ground");
+    const rebound = st => { fresh(); T.setStage(st); T.calm(); T.throwAt(0, 0.6); for (let i = 0; i < 240 && T.bank().bounces < 1; i++) T.step(1 / 240); return T.bank().vy; };
+    const r2 = rebound(2), r8 = rebound(8); assert(r8 > r2 * 1.5, `the Black Abyss's floor is springy (${r2.toFixed(2)} → ${r8.toFixed(2)})`);
+    T.toTitle();
+  });
+  test("v60 A bank board: the flight meets its face exactly, bounces by what it's made of, and goes where the guide said", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(2); T.calm(); T.freezeRing(1.0, C.RING_Y);
+    const A0 = T.aimFor(1.0, C.RING_Y), board = mat => ({ kind: "bank", at: [1.75, 4.4], len: 2, y: [1.0, 4.2], mat, from: 0 });
+    T.plantObstacle(board("stone")); const D = T.predictCrossing(A0.AX, A0.AY);
+    near(D.x, 1.0, 1e-3, "a straight throw doesn't touch it"); assert(T.bank().live, "a board is up");
+    const A = T.aimVia(1.0, C.RING_Y, 2.5, A0.AY), P = T.predictCrossing(A.AX, A.AY);
+    assert(A.AX > 2 && Math.hypot(P.x - 1.0, P.y - C.RING_Y) < 1e-3, `the guide finds the bank (${A.AX.toFixed(2)} → ${P.x.toFixed(3)}, ${P.y.toFixed(3)})`);
+    T.throwAt(A.AX, A.AY); T.step(C.FLIGHT_T + 0.4); const s = T.state();
+    assert(T.bank().banked === 1, "it banked once"); near(s.lastCross.x, P.x, 1e-3, "and the throw goes where the guide said"); near(s.lastCross.y, P.y, 1e-3, "at the height it said");
+    assert(s.lastResult.make, `through the ring off the headstone (${s.lastResult.kind})`); T.step(3);
+    assert(T.bank().banked === 0, "and the next skull starts with no banks (a bank no longer counts forever)");
+    T.clearObstacles(); T.plantObstacle(board("metal")); const M = T.predictCrossing(A.AX, A.AY);
+    assert(M.x < P.x - 0.1, `gold gives back more: the same throw comes further back across (${P.x.toFixed(2)} → ${M.x.toFixed(2)})`);
+    T.clearObstacles(); T.plantObstacle({ ...board("metal"), slide: [0.3, 4] }); T.obClock(1); const S1 = T.predictCrossing(A.AX, A.AY); T.obClock(3); const S3 = T.predictCrossing(A.AX, A.AY);
+    assert(Math.abs(S1.x - S3.x) > 0.1, `a sliding plaque banks differently as it moves (${S1.x.toFixed(2)} / ${S3.x.toFixed(2)})`);
+    T.clearObstacles(); T.toTitle(); T.setStats(ZERO);
+  });
+  test("v60 Bank Rings: a sealed ring throws back anything that hasn't banked, and opens to a throw that has; the Gilded Graveyard teaches it", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(2); T.calm(); T.freezeRing(1.0, C.RING_Y);
+    const plant = () => { T.clearObstacles(); T.plantObstacle({ kind: "bank", at: [1.75, 4.4], len: 2, y: [1.0, 4.2], mat: "stone", seal: { need: 1, every: 1 }, from: 0 }); };   // (a settled throw drops what the spec planted)
+    plant(); assert(T.bank().need === 1, "the ring is sealed: one bank");
+    const A0 = T.aimFor(1.0, C.RING_Y), lives = T.state().lives, hits = T.state().stageHits;
+    T.throwAt(A0.AX, A0.AY); T.step(C.FLIGHT_T + 0.2); let s = T.state();
+    assert(s.lastResult.kind === "sealed" && !s.lastResult.make, `straight through the middle: the film throws it back (${s.lastResult.kind})`); T.step(3);
+    assert(T.state().lives === lives - 1 && T.state().stageHits === hits, `a miss (${T.state().lives}/${lives}, ${T.state().stageHits}/${hits})`); plant(); assert(T.bank().need === 1, "and the ring stays sealed");
+    const A = T.aimVia(1.0, C.RING_Y, 2.5, A0.AY); T.throwAt(A.AX, A.AY); T.step(C.FLIGHT_T + 0.4); s = T.state();
+    assert(T.bank().seal === 1 && T.bank().banked === 1 && s.lastResult.make, `banked in: it opens (${s.lastResult.kind})`); T.step(3);
+    T.clearObstacles(); fresh(); T.setStage(2);
+    const need = h => { T.setHits(h); T.syncObstacles(); T.obOn(); return T.bank().need; };
+    assert(need(19) === 0 && T.obstacles().every(o => o.kind !== "bank"), "no board before Act III");
+    assert(need(20) === 0 && need(21) === 0 && need(22) === 1 && need(23) === 0 && need(25) === 1, "the headstone: two free looks, then every third ring is sealed");
+    T.toTitle(); T.setStats(ZERO);
   });
   // ── v58: the sky keeps time with the road; one ring reflection; every mode travels ──
   test("v58 The sky: the further the road has come, the lower the moon (setting on its own side, clear of the ring) and the later the night; the picture-house screen stays put", () => {

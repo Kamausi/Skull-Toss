@@ -50,6 +50,7 @@
   }
   function obCentre(I) {
     if (I.kind === "jet") return [I.at[0], I.h * 0.5, I.at[1]];   // (v60: a jet's at is its vent on the sea bed, [x, z])
+    if (I.kind === "bank") { const B = boardAt(I); return [B.x, (I.y[0] + I.y[1]) / 2, B.z]; }   // (v60: a bank board's, too: 07y_banks.js)
     if (I.kind === "pocket") { const c = pocketAt(I); return [c.x, c.y, c.z]; }
     if (I.at) return I.at;
     if (I.kind === "spikes") return [(I.span[0] + I.span[1]) / 2, I.h * 0.6, I.z];
@@ -125,13 +126,15 @@
   // the flight a throw would take through the fans and lodestones (and, v60, through the water), stepped the way the
   // game steps it (for the aim guide). o.forces: false leaves out the obstacles' pushes; o.pockets: false the air pockets
   function forcedPath(v, tEnd, o = {}) {
-    const out = [], dt = SIM_STEP, wx = windNow(), G0 = gNow(), forces = o.forces !== false, pockets = o.pockets !== false, wet = waterFlight();
+    const out = [], dt = SIM_STEP, wx = windNow(), G0 = gNow(), forces = o.forces !== false, pockets = o.pockets !== false, wet = waterFlight(), banks = o.banks !== false && banksLive();
     let p = { x: 0, y: START_Y, z: 0 }, u = { ...v }, T = OB.t;   // (v57: under the throw's own gravity)
     for (let t = 0; t < tEnd; t += dt) {
+      T += dt * obSpeed();   // (v60: the obstacles' clock ticks before the flight's step, as it does in the game's update)
       if (forces && OB.list.length) { const f = obstacleForce(p, T); u = { x: u.x + f.x * dt, y: u.y + f.y * dt, z: Math.max(0.5, u.z + f.z * dt) }; }
       const G = wet ? mediumStep(u, p, G0, dt, T, pockets) : G0;
-      p = { x: p.x + u.x * dt + 0.5 * wx * dt * dt, y: p.y + u.y * dt - 0.5 * G * dt * dt, z: p.z + u.z * dt }; u = { x: u.x + wx * dt, y: u.y - G * dt, z: u.z };
-      T += dt * obSpeed(); out.push({ ...p, t: t + dt });
+      let h = dt; const b = banks && bankStep(p, u, wx, G, h, T); if (b) { p = b.p; u = b.u; h -= b.t; }   // (v60: off a bank board, 07y_banks.js)
+      p = { x: p.x + u.x * h + 0.5 * wx * h * h, y: p.y + u.y * h - 0.5 * G * h * h, z: p.z + u.z * h }; u = { x: u.x + wx * h, y: u.y - G * h, z: u.z };
+      out.push({ ...p, t: t + dt });
       if (p.y < SKULL_R) break;
     }
     return out;
@@ -174,13 +177,14 @@
     return false;
   }
   function bumperBounce(s, I, c, d) {
-    const v = velAt(s, s.t), n = d > 1e-6 ? { x: (s.pos.x - c.x) / d, y: (s.pos.y - c.y) / d, z: (s.pos.z - c.z) / d } : { x: 0, y: 1, z: 0 }, vn = v.x * n.x + v.y * n.y + v.z * n.z;
-    const out = vn < 0 ? { x: v.x - 2 * vn * n.x, y: v.y - 2 * vn * n.y, z: v.z - 2 * vn * n.z } : v;
+    const v = velAt(s, s.t), n = d > 1e-6 ? { x: (s.pos.x - c.x) / d, y: (s.pos.y - c.y) / d, z: (s.pos.z - c.z) / d } : { x: 0, y: 1, z: 0 };
+    const out = surfaceBounce(v, n, I.mat || "metal");   // (v60: what it's made of: a gilded urn is metal, 07y_banks.js)
     s.p0 = { x: c.x + n.x * (I.r + SKULL_R + 0.01), y: c.y + n.y * (I.r + SKULL_R + 0.01), z: c.z + n.z * (I.r + SKULL_R + 0.01) };
-    s.v0 = { x: out.x * 0.95 + n.x * 0.8, y: out.y * 0.95 + n.y * 0.8, z: Math.max(0.6, out.z * 0.95 + n.z * 0.8) }; s.t = 0; s.pos = { ...s.p0 };
+    s.v0 = { x: out.x + n.x * 0.8, y: out.y + n.y * 0.8, z: Math.max(0.6, out.z + n.z * 0.8) }; s.t = 0; s.pos = { ...s.p0 };   // (and the urn's own spring)
     s.spin = -s.spin * 1.3 - 2; I.hitAt = OB.t; s.banked = (s.banked || 0) + 1;
-    const p = project(c.x, c.y, c.z); impact("BOING!", p.x, p.y - I.r * p.s * 1.4, { fill: GOLD, text: INK, scale: 0.55, bits: false });
-    Sound.toon("boing", panOf(c.x)); VisualSystem.triggerImpact("bounce", { at: p, strength: 0.8, pan: panOf(c.x) });
+    const p = project(c.x, c.y, c.z); impact(s.banked > 1 ? `BOING! ×${s.banked}` : "BOING!", p.x, p.y - I.r * p.s * 1.4, { fill: GOLD, text: INK, scale: 0.55, bits: false });
+    Sound.toon("boing", panOf(c.x)); if (I.mat && I.mat !== "metal") Sound.surface(I.mat, 0.7, panOf(c.x), chainPitch(s.banked)); VisualSystem.triggerImpact("bounce", { at: p, strength: 0.8, pan: panOf(c.x) });
+    bankProgress(s);
   }
   function obstacleKnock(s, I, q) {
     const p = project(s.pos.x, s.pos.y, s.pos.z);

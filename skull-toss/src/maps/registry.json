@@ -12,7 +12,7 @@
   "mechanic": ["none", "bats", "wind", "bonefall", "fog", "balloons", "pendulum", "jumpcut"],
   "skin": ["bubble"],
   "anchor": ["branch", "arch", "sign", "rope", "post", "hand", "gear", "chain"],
-  "obstacle": ["bar", "spikes", "cannon", "fan", "magnet", "crusher", "barrier", "bumper", "current", "jet", "pocket"],
+  "obstacle": ["bar", "spikes", "cannon", "fan", "magnet", "crusher", "barrier", "bumper", "current", "jet", "pocket", "bank"],
   "targetType": ["standard", "swinging", "runaway", "popup", "shielded", "split", "decoy", "golden", "secret"],
   "reaction": ["move", "rotate", "bend", "crack", "fall", "squeak", "shake", "react"],
   "bodySlot": ["hair", "beard", "wings"],

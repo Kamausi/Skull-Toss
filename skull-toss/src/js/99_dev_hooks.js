@@ -223,7 +223,7 @@
     act: () => ({ act: game.act || 0, name: actName(game.act || 0), card: $("stagecard").hidden ? "" : $("stagecard").textContent, catchDue: !!game.run.catchDue }),
     fgAlphaAt(pts) { let a = 0; for (const P of fgLayer) { const g = P.c.getContext("2d"); for (const q of pts) { const x = Math.round((q.x - P.x0) * P.c.width / P.w), y = Math.round((q.y - P.y0) * P.c.height / P.h); if (x < 0 || y < 0 || x >= P.c.width || y >= P.c.height) continue; a = Math.max(a, g.getImageData(x, y, 1, 1).data[3] / 255); } } return a; },
     ringScreen: (x, y, z) => { const p = projectBase(x, y, z); return { x: p.x, y: p.y }; },
-    obstacles: () => OB.list.map(I => ({ kind: I.kind, key: I.key, balls: I.balls.length })), syncObstacles() { obstaclesSync(true); }, obClock(t) { if (t != null) OB.t = t; return OB.t; }, obForce: (x, y, z) => obstacleForce({ x, y, z }), water: () => ({ on: waterFlight(), g: skull.g, g0: skull.g0, wet: !!skull.wet, pocket: inPocket(skull.pos) }),
+    obstacles: () => OB.list.map(I => ({ kind: I.kind, key: I.key, balls: I.balls.length })), syncObstacles() { obstaclesSync(true); }, obClock(t) { if (t != null) OB.t = t; return OB.t; }, obForce: (x, y, z) => obstacleForce({ x, y, z }), water: () => ({ on: waterFlight(), g: skull.g, g0: skull.g0, wet: !!skull.wet, pocket: inPocket(skull.pos), pos: { ...skull.pos }, v0: { ...skull.v0 } }),
     anchor: () => ({ kind: anchorKind(), holds: anchorHolds(), z0: ringZ0() }), envReacts: () => ENV.reacts, light: () => LIGHT(),
     stageCheck() { return modeCheck() || stageCheck(); }, endThrow() { if (game.state === "ready") { powersAfterThrow(); if (boss && boss.after) boss.after(); modeCheck() || stageCheck() || pickupSchedule(); } },
     boss: () => boss && { kind: boss.kind, hp: boss.hp, max: boss.max, dead: boss.dead, flawless: boss.flawless, t: boss.t },
@@ -240,7 +240,7 @@
       const T = flightT(), tc = z * T / RING_Z, vy = (y - START_Y + 0.5 * G * tc * tc) / tc, A = { AX: x * RING_Z / z, AY: START_Y + vy * T - 0.5 * G * T * T };
       if (!waterFlight()) return A;
       // v60: under the sea, solve the aim through the water's own curve (drag and buoyancy; not the currents, jets or pockets)
-      const at = (AX, AY) => { const v = aimVelocity(AX, AY), P = forcedPath(v, z / v.z + 0.2, { forces: false, pockets: false }), k = P.findIndex(q => q.z >= z); if (k < 1) return null; const a = P[k - 1], b = P[k], u = (z - a.z) / (b.z - a.z); return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u }; };
+      const at = (AX, AY) => { const v = aimVelocity(AX, AY), P = forcedPath(v, z / v.z + 0.2, { forces: false, pockets: false, banks: false }), k = P.findIndex(q => q.z >= z); if (k < 1) return null; const a = P[k - 1], b = P[k], u = (z - a.z) / (b.z - a.z); return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u }; };
       for (let i = 0; i < 12; i++) {
         const c = at(A.AX, A.AY); if (!c) break; const ex = x - c.x, ey = y - c.y; if (Math.hypot(ex, ey) < 1e-4) break;
         const h = 0.01, cx = at(A.AX + h, A.AY), cy = at(A.AX, A.AY + h); if (!cx || !cy) break;
@@ -249,8 +249,21 @@
       return A;
     },
     throwThrough(x, y, z) { const a = this.aimFor(x, y, z); return this.throwAt(a.AX, a.AY); },
+    // v60: aim through (x, y) at the ring by way of whatever the guide shows (a bank board's bounce), from a first guess
+    aimVia(x, y, AX, AY) {
+      const A = { AX, AY };
+      for (let i = 0; i < 16; i++) {
+        const c = this.predictCrossing(A.AX, A.AY), ex = x - c.x, ey = y - c.y; if (Math.hypot(ex, ey) < 1e-5) break;
+        const h = 0.004, cx = this.predictCrossing(A.AX + h, A.AY), cy = this.predictCrossing(A.AX, A.AY + h);
+        const a = (cx.x - c.x) / h, b = (cy.x - c.x) / h, cc = (cx.y - c.y) / h, d = (cy.y - c.y) / h, det = a * d - b * cc; if (Math.abs(det) < 1e-9) break;
+        A.AX += (d * ex - b * ey) / det; A.AY += (a * ey - cc * ex) / det;
+      }
+      return A;
+    },
+    bank: () => ({ banked: skull.banked || 0, seal: skull.seal || 0, need: bankSeal(), live: banksLive(), ground: groundMat(), bounces: skull.bounces, vy: skull.v0.y }),
+    surfaces: () => JSON.parse(JSON.stringify(SURFACES)), surfaceBounce: (v, n, mat) => surfaceBounce(v, n, mat),
     aimFromDrag(dx, dy) { const m = mapDrag(dx, dy); return { ...m, ...aimPoint(m.nx, m.ny) }; },
-    predictCrossing(AX, AY) { const v = aimVelocity(AX, AY), tc = ring.z / v.z; if (obstacleForcesLive() || waterFlight()) { const P = forcedPath(v, tc * 1.6 + 0.8), k = P.findIndex(q => q.z >= ring.z); if (k > 0) { const a = P[k - 1], b = P[k], u = (ring.z - a.z) / (b.z - a.z); return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, z: ring.z }; } } return { x: v.x * tc + 0.5 * windNow() * tc * tc, y: START_Y + v.y * tc - 0.5 * G * tc * tc, z: ring.z }; },
+    predictCrossing(AX, AY) { const v = aimVelocity(AX, AY), tc = ring.z / v.z; if (obstacleForcesLive() || waterFlight() || banksLive()) { const P = forcedPath(v, tc * 1.6 + 0.8), k = P.findIndex(q => q.z >= ring.z); if (k > 0) { const a = P[k - 1], b = P[k], u = (ring.z - a.z) / (b.z - a.z); return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, z: ring.z }; } } return { x: v.x * tc + 0.5 * windNow() * tc * tc, y: START_Y + v.y * tc - 0.5 * G * tc * tc, z: ring.z }; },
     previewInfo(AX, AY) { const p = buildPreview(AX, AY, settings.guide); return { dots: p.front.length + p.back.length, crosshair: !!p.cross }; },
     ringAhead(sec) { return ringAt(ring.phase + ring.omega * sec); },
     state() {

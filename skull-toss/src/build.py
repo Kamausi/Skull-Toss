@@ -206,6 +206,7 @@ def map_problems(m, fname):
     if m["mechanic"].get("kind") not in REG["mechanic"]: bad.append(f"mechanic \"{m['mechanic'].get('kind')}\" isn't implemented")
     if m["mechanic"].get("skin") and m["mechanic"]["skin"] not in REG["skin"]: bad.append(f"mechanic skin \"{m['mechanic']['skin']}\" isn't drawn")
     # ── obstacles (V19): each registered, each inside the hazard zone (cannons stand outside the corridor and fire into it)
+    SURF = ("bone", "stone", "metal", "ghost", "mud")   # (v60: what things are made of, 07y_banks.js SURFACES)
     O = m["obstacles"]
     for ph in ["A", "B", "boss"]:
         if not isinstance(O.get(ph), list): bad.append(f"obstacles.{ph} must be a list"); continue
@@ -214,7 +215,7 @@ def map_problems(m, fname):
             if k not in REG["obstacle"]: bad.append(f"obstacle \"{k}\" isn't one the code has"); continue
             if not isinstance(o.get("from"), int) or o["from"] < 0: bad.append(f"obstacle {k}: \"from\" is the hit count it comes in at")
             pts = []
-            if "at" in o and k != "jet": pts.append(o["at"])
+            if "at" in o and k not in ("jet", "bank"): pts.append(o["at"])
             if "box" in o and k in ("fan", "current"): x0, x1, y0, y1, z0, z1 = o["box"]; pts += [[x0, y0, z0], [x1, y1, z1]]
             if "box" in o and k == "barrier": x0, x1, y0, y1, z = o["box"]; pts += [[x0, y0, z], [x1, y1, z]]
             if "box" in o and k == "crusher": x0, x1, z0, z1 = o["box"]; pts += [[x0, o.get("low", 1), z0], [x1, o.get("top", 4), z1]]
@@ -223,6 +224,17 @@ def map_problems(m, fname):
             if k == "jet": pts += [[o["at"][0], 0, o["at"][1]], [o["at"][0], o["h"], o["at"][1]]]   # (v60: a vent in the sea bed and its column)
             if k == "pocket" and not (isinstance(o.get("r"), (int, float)) and 0.3 <= o["r"] <= 1.2): bad.append("obstacle pocket: r (its radius) must be 0.3–1.2 m")
             if k in ("current", "jet", "pocket") and not isinstance(m.get("medium"), dict): bad.append(f"obstacle {k} belongs under water: the map needs a water medium")
+            if "mat" in o and o["mat"] not in SURF: bad.append(f"obstacle {k}: mat must be a surface ({', '.join(SURF)})")
+            if k == "bank":   # (v60: a bank board, 07y_banks.js: its face's middle [x, z], len along the lane, y [low, high])
+                L, Y, amp = o.get("len"), o.get("y"), (o.get("slide") or [0])[0]
+                if o.get("mat") not in SURF: bad.append("obstacle bank: mat (what it's made of) is required")
+                if not (isinstance(o.get("at"), list) and len(o["at"]) == 2 and abs(o["at"][0]) >= 0.8): bad.append("obstacle bank: at is [x, z], standing beside the lane (|x| ≥ 0.8)")
+                elif not (isinstance(L, (int, float)) and 0.6 <= L <= 3 and isinstance(Y, list) and len(Y) == 2 and Y[0] < Y[1]): bad.append("obstacle bank: len 0.6–3 m and y [low, high]")
+                else: x, z = o["at"]; pts += [[x - amp, Y[0], z - L / 2], [x + amp, Y[1], z + L / 2]]
+                if "slide" in o and not (isinstance(o["slide"], list) and len(o["slide"]) == 2 and 0 < o["slide"][0] <= 0.6 and o["slide"][1] >= 1.5): bad.append("obstacle bank: slide is [amp ≤ 0.6 m, period ≥ 1.5 s]")
+                if abs(o.get("yaw", 0)) > 30: bad.append("obstacle bank: yaw is at most 30°")
+                sl = o.get("seal")
+                if sl is not None and not (isinstance(sl, dict) and sl.get("need") in (1, 2) and isinstance(sl.get("every"), int) and 1 <= sl["every"] <= 6): bad.append("obstacle bank: seal is {need: 1 or 2, every: 1–6}")
             for (x, y, z) in pts:
                 if not (inside(x, HZ["x"][0] - 0.05, HZ["x"][1] + 0.05) and inside(y, HZ["y"][0] - 0.05, HZ["y"][1] + 0.4) and inside(z, HZ["z"][0] - 1.2, HZ["z"][1] + 0.1)):
                     bad.append(f"obstacle {k} ({x}, {y}, {z}) leaves the map's hazard zone")
@@ -238,6 +250,13 @@ def map_problems(m, fname):
         if isinstance(o.get("from"), int) and o["from"] >= SB["mini"]: bad.append(f"obstacle {o.get('kind')} comes in at hit {o['from']}, after the first half's {SB['mini']}")
     for o in O.get("B", []):
         if isinstance(o.get("from"), int) and o["from"] >= SB["boss"] - SB["loose"]: bad.append(f"obstacle {o.get('kind')} comes in {o['from']} hits into the approach, which is only {SB['boss'] - SB['loose']} long")
+    LN = m["ring"].get("lanes")   # (v60: depth lanes, 07z_lanes.js: near, mid and far, each inside the ring's zone)
+    if LN is not None:
+        RZ = m["sheet"]["zones"]["ring"]["z"]
+        if not (isinstance(LN, dict) and isinstance(LN.get("z"), list) and len(LN["z"]) == 3 and all(isinstance(z, (int, float)) and RZ[0] <= z <= RZ[1] for z in LN["z"]) and LN["z"][0] < LN["z"][1] < LN["z"][2]): bad.append(f"ring.lanes.z must be three depths, near to far, inside the ring's zone {RZ}")
+        elif LN["z"][2] - LN["z"][0] < 1.5: bad.append("ring.lanes: near to far must be at least 1.5 m, or the lanes don't read")
+        if not (isinstance(LN.get("from"), int) and 0 <= LN["from"] < BLUEPRINT["structure"]["mini"]): bad.append("ring.lanes.from is the first half's hit the lanes start at")
+    if "ground" in m and m["ground"] not in SURF: bad.append(f"ground must be a surface ({', '.join(SURF)})")   # (v60: 07y_banks.js)
     # ── v60: the medium (07x_water.js): a map under the sea throws through water
     if "medium" in m:
         M = m["medium"]

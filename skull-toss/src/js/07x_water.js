@@ -30,6 +30,28 @@
     const d = M.drag || SEA.drag; u.x *= Math.exp(-d[0] * dt); u.y *= Math.exp(-d[1] * dt);
     return g0 * (M.g != null ? M.g : SEA.g);
   }
+  // the aim still means where the throw crosses the ring plane, as it does under a Gravity Flip (aimVelocity, 04_state.js):
+  // in still water the launch is solved through the drag and the buoyancy, stepped exactly as the flight is. The
+  // crossing is linear in the launch, so two runs give it; the undertow, the vents and the pockets are the player's to read.
+  const WAIM = { key: "", k: null };
+  function waterAim(AX, AY) {
+    const M = mediumDef(); if (!M) return null;
+    const T = flightT(), g0 = gNow(), wx = windNow(), vz = RING_Z / T, dt = SIM_STEP, key = `${T}|${g0}|${wx}|${M.g}|${M.drag}`;
+    if (WAIM.key !== key) {
+      const run = (vx, vy) => {
+        let p = { x: 0, y: START_Y, z: 0 }, u = { x: vx, y: vy, z: vz };
+        for (let i = 0; i < 4000; i++) {
+          const G = mediumStep(u, p, g0, dt, 0, false), q = { x: p.x + u.x * dt + 0.5 * wx * dt * dt, y: p.y + u.y * dt - 0.5 * G * dt * dt, z: p.z + u.z * dt };
+          u = { x: u.x + wx * dt, y: u.y - G * dt, z: u.z };
+          if (q.z >= RING_Z) { const f = (RING_Z - p.z) / (q.z - p.z); return { x: p.x + (q.x - p.x) * f, y: p.y + (q.y - p.y) * f }; }
+          p = q;
+        }
+        return p;
+      };
+      const c0 = run(0, 0), c1 = run(1, 1); WAIM.key = key; WAIM.k = { ax: c0.x, bx: c1.x - c0.x, ay: c0.y, by: c1.y - c0.y };
+    }
+    const K = WAIM.k; return { x: (AX - K.ax) / K.bx, y: (AY - K.ay) / K.by, z: vz };
+  }
   // (called at the top of each flight step, after the obstacles' push: exactly and replayably, like obstaclePush)
   function waterPush(s, dt) {
     if (!waterFlight() || s.resting || s.hang > 0 || s.sub || s.vine || s.rew) return;

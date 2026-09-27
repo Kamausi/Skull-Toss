@@ -245,6 +245,7 @@
     "kind": "balloons",
     "skin": "bubble"
   },
+  "ground": "mud",
   "obstacles": {
     "A": [
       {

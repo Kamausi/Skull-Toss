@@ -254,6 +254,7 @@
   "mechanic": {
     "kind": "fog"
   },
+  "ground": "mud",
   "obstacles": {
     "A": [
       {

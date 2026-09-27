@@ -82,6 +82,7 @@
     const now = performance.now() / 1000, dtH = clamp(now - ringHeatAt, 0, 0.1); ringHeatAt = now;
     ringHeat += (ringHeatGoal() - ringHeat) * Math.min(1, dtH * (ringHeatGoal() > ringHeat ? 4 : 2.5));
     if (ringHeat > 0.02) { const E = ringOuter(r, lw, cos.ring); if (!gpuRingFire(p.x, p.y, E, lw, ringHeat)) drawRingFire(p.x, p.y, r, lw, ringHeat, T.t); Gpu.fire = { x: p.x, y: p.y, r: E, heat: ringHeat }; }   // (v49: the GPU draws the fire when it's on, and its embers: 08j_gpu.js)
+    drawSeal(p, r, lw);   // (v60: a Bank Ring's film, behind the rim: 07y_banks.js)
     const rim = drawRingLight(p.x, p.y, r, lw);   // a soft glow in its own colour outside it (v54: no dark backing), and its rim light
     drawRingShape(ctx, p.x, p.y, r, lw, cos.ring, T.t, ring.flash); rim();
     if (crossOn() && crossGolden()) {   // the crossing's golden rings (07q_crossing.js): a gilt band and a light
@@ -117,7 +118,7 @@
     const reaches = tg >= tc;
     if (guide === "off") return { front, back, cross: null, land: null };
     const tEnd = guide === "short" ? Math.min(tg, tc * 0.36) : Math.min(tg, tc + 0.7);
-    if (obstacleForcesLive() || waterFlight()) return forcedPreview(v, guide, tc, tEnd);   // fans and lodestones bend it (07m_obstacles.js); v60: so does the water (07x_water.js)
+    if (obstacleForcesLive() || waterFlight() || banksLive()) return forcedPreview(v, guide, tc, tEnd);   // fans and lodestones bend it (07m_obstacles.js); v60: so does the water (07x_water.js), and a bank board turns it (07y_banks.js)
     const rest = project(0, START_Y, 0), off = pullOffset(), kx = rest.x + off.x, ky = rest.y + off.y, kr = SKULL_R * rest.s * 1.35;
     let lx = null, ly = null, i = 0;
     for (let t = 0.004; t < tEnd; t += 0.004) {

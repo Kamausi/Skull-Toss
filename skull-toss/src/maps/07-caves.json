@@ -253,6 +253,7 @@
   "mechanic": {
     "kind": "pendulum"
   },
+  "ground": "stone",
   "obstacles": {
     "A": [
       {

@@ -7,8 +7,8 @@
   "identity": {
     "visual": "Gold-domed mausoleums, gilded angels and urns, moonlight on marble.",
     "spatial": "The lane runs under a gilded arch; urns and bells stand close by it, near enough to touch.",
-    "mechanic": "Environmental interaction: gilded urns bounce the skull, and bank shots count.",
-    "throw": "Play the urns: a bounce off gold can still find the ring.",
+    "mechanic": "Environmental interaction: gilded urns bounce the skull and bank shots count; a headstone and a gilded plaque stand beside the lane to bank off, and every few rings the ring is sealed until a throw banks in.",
+    "throw": "Play the urns and the boards: a bounce off gold or stone can still find the ring, and a sealed ring wants one.",
     "boss": "The Count drags the urns into his waltz: they circle with him, so the banks change every lap.",
     "targets": "Braziers swinging on chains between the tombs.",
     "hazards": "Bats out of the crypts.",
@@ -20,7 +20,7 @@
     "reward": "The Count's Gilded Handlebar and the second shard."
   },
   "sheet": {
-    "concept": "Introduce the environment talking back: things by the lane move when Morty hits them, and gold bounces.",
+    "concept": "Introduce the environment talking back: things by the lane move when Morty hits them, and gold bounces; then bank shots on purpose: a board to bank off, and rings that only open to a bank.",
     "plane": "The throw lane under the gilded arch (z 0–7.8); the urns stand in the hazard zone either side of the line.",
     "launcher": [
       0,
@@ -260,6 +260,7 @@
   "mechanic": {
     "kind": "bats"
   },
+  "ground": "stone",
   "obstacles": {
     "A": [
       {
@@ -273,33 +274,47 @@
         "from": 10
       },
       {
-        "kind": "bumper",
+        "kind": "bank",
+        "_doc": "a headstone laid along the lane: stone, so it gives back less; from its third ring, every third ring is sealed until a throw banks in",
         "at": [
-          1.6,
-          2.2,
-          5.0
+          1.75,
+          4.4
         ],
-        "r": 0.3,
-        "drift": [
-          0.25,
-          5.0
+        "len": 2.0,
+        "y": [
+          1.0,
+          4.2
         ],
+        "mat": "stone",
+        "seal": {
+          "need": 1,
+          "every": 3
+        },
         "from": 20
       }
     ],
     "B": [
       {
-        "kind": "bumper",
+        "kind": "bank",
+        "_doc": "a gilded plaque that slides in and out on its rail: a moving bank, and gold gives back nearly all of it",
         "at": [
-          -1.4,
-          2.8,
+          -1.75,
           4.4
         ],
-        "r": 0.3,
-        "drift": [
+        "len": 2.0,
+        "y": [
+          1.0,
+          4.2
+        ],
+        "mat": "metal",
+        "slide": [
           0.3,
           4.4
         ],
+        "seal": {
+          "need": 1,
+          "every": 3
+        },
         "from": 0
       },
       {

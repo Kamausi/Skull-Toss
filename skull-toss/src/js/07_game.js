@@ -19,7 +19,7 @@
     const v = aimVelocity(AX, AY);
     Object.assign(skull, { launchRing: { x: ring.x, y: ring.y, z: ring.z }, ax0: windNow(), close: false, shots: [] });   // (what the signature shots read: 07h_shots.js)
     Object.assign(skull, { sub: null, sink: 0, canHit: false, canHits: 0, g: gNow(), g0: gNow(), wet: false, vine: null, vined: false, swung: false, homed: false, clones: null, cloneJudged: false, cloned: false, rew: null,
-      p0: { x: 0, y: START_Y, z: 0 }, v0: v, t: 0, crossed: false, resting: false, bounces: 0, ax: windNow(), tHit: false,
+      p0: { x: 0, y: START_Y, z: 0 }, v0: v, t: 0, crossed: false, resting: false, bounces: 0, ax: windNow(), tHit: false, banked: 0, seal: bankSeal(),
       spin: (1.3 + Math.abs(v.x) * 0.5) * (v.x < 0 ? -1 : 1), hang: 0, take: 0, alpha: 1, flightTime: 0, trail: [], spawn: 1, emit: 0, missed: false });
     skull.pos = { ...skull.p0 }; cloneLaunch(skull, v); rewindMark(skull);   // (v57: the Clone Skull's clones, the Rewind Bone's mark: 07v_newpowers.js)
     game.state = "flying"; game.result = null; game.endTimer = 0; game.throws++; ghostLaunch();
@@ -74,9 +74,10 @@
       let tE = Infinity, kind = null;
       if (!s.crossed && s.v0.z > 0 && !attrOn()) { const e0 = elapsed, t0 = s.t, tc = crossTime(s, remaining, tau => phase0 + ring.omega * (e0 + tau - t0)); if (tc < Infinity) { tE = tc; kind = "ring"; } }
       if (!s.resting) { const tg = groundTime(s); if (tg > s.t + 1e-7 && tg <= s.t + remaining && tg < tE) { tE = tg; kind = "ground"; } }
+      if (!s.crossed) { const tb = bankTime(s, remaining), I = BANK.next; if (tb < tE) { tE = tb; kind = I; } }   // (v60: off a bank board, 07y_banks.js)
       if (!kind) { s.t += remaining; break; }
       const adv = tE - s.t; remaining -= adv; elapsed += adv; rebase(s, tE);
-      if (kind === "ring") hitRing(s, ringAt(phase0 + ring.omega * elapsed)); else hitGround(s);
+      if (kind === "ring") hitRing(s, ringAt(phase0 + ring.omega * elapsed)); else if (kind === "ground") hitGround(s); else bankBounce(s, kind);
       if (s.hang > 0) break;
     }
     const prevPos = s.pos; if (s.sub) waterStep(s, dt); else if (s.vine) vineStep(s, dt); else s.pos = posAt(s, s.t); ghostRecord(s);
@@ -117,6 +118,7 @@
     const ux = d > 1e-6 ? dx / d : 0, uy = d > 1e-6 ? dy / d : 1;
     if (d > inner && boss && boss.eyeAt) { const e = boss.eyeAt(s.p0); if (e >= 0) {   // the Pumpkin King's eyes: a hit, not a miss
       const ep = boss.eyePos(e), eP = project(ep.x, ep.y, ep.z); boss.eyeHit(e, eP); s.v0 = { x: (s.p0.x - ep.x) * 4, y: 1.5, z: -Math.abs(s.v0.z) * 0.3 }; resolve("eye", eP, eP); return; } }
+    if (d < rc && sealHolds(s)) { sealBounce(s, rp, at); return; }   // (v60: a Bank Ring's film: bank first, 07y_banks.js)
     if (d <= inner) { const kind = d <= perfR ? "perfect" : "swish"; VisualSystem.triggerImpact(kind, { at, strength, pan }); resolve(kind, at, null, d); }
     else if (d >= outer) {
       if (hasPost() && dy < -(rc + RING_TUBE) && Math.abs(dx) < POST_HALF + SKULL_R) {
@@ -157,7 +159,9 @@
       setMood(rig, "dizzy", game.time); rig.dots = 0;
       game.endTimer = clamp(game.endTimer, 0.45, 0.6);
     }
-    s.v0 = { x: s.v0.x * 0.55, y: -s.v0.y * 0.36, z: s.v0.z * 0.55 }; s.spin *= 0.5;
+    const gm = groundMat(), ke = surf(gm).e / SURFACES.stone.e, kf = (1 - surf(gm).f) / (1 - SURFACES.stone.f);   // (v60: what the map's ground is made of, 07y_banks.js)
+    if (gm && Math.abs(s.v0.y) > 1) surfaceHit(gm, { x: p.x, y: SKULL_R, z: p.z }, 0.6 * clamp(Math.abs(s.v0.y) / GROUND_REF, 0.4, 1.2), 1);
+    s.v0 = { x: s.v0.x * 0.55 * kf, y: -s.v0.y * 0.36 * ke, z: s.v0.z * 0.55 * kf }; s.spin *= 0.5;
     if (skullG(s) > 0 && (s.v0.y < 0.9 || s.bounces >= 3)) { s.resting = true; s.ax = 0; s.v0 = { x: 0, y: 0, z: 0 }; s.p0.y = SKULL_R; s.spin = 0; }
   }
   const bonkWord = () => (IMPACTS[cos.impact] || IMPACTS.classic).word;
@@ -183,7 +187,8 @@
     magnet:  { make: false, hit: true },
     crusher: { make: false, hit: true },
     barrier: { make: false, hit: true },
-    decoy:   { make: false, hit: true },   // (a decoy target hung in front of the ring: 07e_directors.js)
+    decoy:   { make: false, hit: true },
+    sealed:  { make: false, hit: true },   // (v60: a Bank Ring's film, not banked into: 07y_banks.js)   // (a decoy target hung in front of the ring: 07e_directors.js)
     eye:     { make: true, pts: 1, fill: GOLD, text: INK, mood: "excited" },   // (v47: the Pumpkin King's eyes are targets, and a poke is one of the 80 hits)
     // v56: the attractions (07u_attractions.js): a hit, a hit in the middle, and the things a throw can go into instead
     tgt:     { make: true, pts: 1, fill: TEAL, text: CREAM, mood: "excited", attr: true },
@@ -307,14 +312,14 @@
     powersAfterThrow();
     if (boss && boss.after) boss.after();
     if (!modeCheck() && !stageCheck()) {
-      pickupSchedule(); directorsAfterThrow(); obstaclesSync(); encSync();
+      pickupSchedule(); directorsAfterThrow(); obstaclesSync(); encSync(); banksAfterThrow();
       if (game.throws < 2 && !hintEl.textContent) setHint(t("hint.start"));
     }
     saveRunSnapshot();
     mischiefAfterThrow();   // now and then the old print acts up (09l_mischief.js)
   }
   function resetSkull() {
-    Object.assign(skull, { sub: null, sink: 0, canHit: false, canHits: 0, g: G, g0: G, wet: false, vine: null, clones: null, rew: null, homed: false, p0: { x: 0, y: START_Y, z: 0 }, v0: { x: 0, y: 0, z: 0 }, t: 0, crossed: false, resting: true, missed: false, ghosted: 0,
+    Object.assign(skull, { sub: null, sink: 0, canHit: false, canHits: 0, g: G, g0: G, wet: false, banked: 0, seal: 0, vine: null, clones: null, rew: null, homed: false, p0: { x: 0, y: START_Y, z: 0 }, v0: { x: 0, y: 0, z: 0 }, t: 0, crossed: false, resting: true, missed: false, ghosted: 0,
       bounces: 0, angle: 0, spin: 0, spawn: 0, alpha: 1, flightTime: 0, pullOff: { x: 0, y: 0 }, trail: [], emit: 0 });
     skull.pos = { ...skull.p0 };
     kick(rig, 1, 0, Math.PI / 2); rig.tilt = 0; rig.dots = 0; setMood(rig, "idle", game.time);

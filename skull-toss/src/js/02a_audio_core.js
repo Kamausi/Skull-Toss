@@ -201,14 +201,14 @@
     unlock() { [784, 988, 1319, 1568].forEach((f, i) => tone(f, "sine", 0.35, 0.07, i * 0.07)); },
     over() { tone(392, "triangle", 0.3, 0.12); tone(311, "triangle", 0.3, 0.12, 0.2); tone(233, "triangle", 0.7, 0.12, 0.4, 170); if (sfxOn()) bell(0.55, 0, 0.09, 131, sfxBus); },
     // cartoon foley: slide whistles, springs, wood blocks and a xylophone
-    toon(kind, pan = 0) {
+    toon(kind, pan = 0, p = 1) {   // (v60: p, a pitch: a chain of bounces or hits climbs, 07y_banks.js chainPitch)
       const o = { pan };
       if (kind === "whistleUp") tone(430, "sine", 0.26, 0.07, 0.03, 1500, { ...o, vib: [9, 16], att: 0.03 });
       else if (kind === "whistleDown") tone(1350, "sine", 0.75, 0.055, 0.12, 250, { ...o, vib: [7, 20], att: 0.05 });
-      else if (kind === "boing") { tone(140, "triangle", 0.45, 0.17, 0, 320, { ...o, vib: [13, 38], lp: 1800 }); tone(280, "sine", 0.3, 0.05, 0.01, 520, { ...o, vib: [13, 60] }); }
+      else if (kind === "boing") { tone(140 * p, "triangle", 0.45, 0.17, 0, 320 * p, { ...o, vib: [13, 38], lp: 1800 }); tone(280 * p, "sine", 0.3, 0.05, 0.01, 520 * p, { ...o, vib: [13, 60] }); }
       else if (kind === "bonk") { noise(0.05, 0.32, "bandpass", 950, null, 0, 7, o); tone(640, "sine", 0.09, 0.2, 0, 380, o); tone(96, "sine", 0.2, 0.22, 0, 58, o); }
       else if (kind === "xylo") [1047, 1319, 1568, 2093].forEach((f, i) => tone(f, "triangle", 0.18, 0.07, i * 0.055, null, { lp: 5200 }));
-      else if (kind === "ding") tone(1568, "sine", 0.35, 0.05, 0.03);
+      else if (kind === "ding") tone(1568 * p, "sine", 0.35, 0.05, 0.03, null, o);
       else if (kind === "knock") { noise(0.03, 0.12, "bandpass", 700, null, 0, 6); tone(520, "sine", 0.05, 0.07, 0, 380); }
       else if (kind === "iris") noise(0.16, 0.05, "bandpass", 2400, 700, 0, 1.2);
       else if (kind === "ignite") { noise(0.55, 0.16, "bandpass", 350, 2400, 0, 0.8, { ...o, brown: true }); noise(0.4, 0.05, "highpass", 3200, null, 0.06, 1, o); tone(90, "sine", 0.35, 0.12, 0, 60, o); }   // the ring catches fire: a whoomph
@@ -229,7 +229,8 @@
       else if (kind === "splash") { noise(0.35, 0.16, "bandpass", 900, 300, 0, 1.6, o); tone(220, "sine", 0.12, 0.08, 0, 90, o); noise(0.12, 0.06, "highpass", 3000, null, 0.05, 1, o); }   // (v51: into the water)
       else if (kind === "switch") { noise(0.02, 0.28, "bandpass", 2200, null, 0, 5, o); tone(150, "square", 0.06, 0.08, 0, 90, { ...o, lp: 700 }); tone(60, "sawtooth", 0.35, 0.04, 0.03, 60, { ...o, lp: 240, att: 0.02 }); }   // (v51: a stage light's knife switch, and its hum)
       else if (kind === "stab") { for (const f of [261.6, 329.6, 392, 523.3]) tone(f, "sawtooth", 0.5, 0.05, 0, f * 0.99, { lp: 2400, att: 0.005 }); tone(65.4, "sine", 0.6, 0.3, 0, 50); noise(0.9, 0.07, "highpass", 5200, 3000, 0, 1.1); }   // (v51: the band's hit as the curtains part)
-      else if (kind === "tick") { tone(2600, "square", 0.02, 0.02, 0, null, { ...o, lp: 4000 }); noise(0.015, 0.05, "bandpass", 3000, null, 0, 6, o); }
+      else if (kind === "tick") { tone(2600 * p, "square", 0.02, 0.02, 0, null, { ...o, lp: 4000 }); noise(0.015, 0.05, "bandpass", 3000, null, 0, 6, o); }
+      else if (kind === "whirr") { tone(170, "sawtooth", 0.45, 0.035, 0, 430, { ...o, lp: 900, vib: [26, 12], att: 0.08 }); noise(0.4, 0.03, "bandpass", 700, 1500, 0, 2, { ...o, att: 0.08 }); }   // (v60: a ring about to move: 07z_rings.js)
       else if (kind === "gust") noise(0.9, 0.05, "bandpass", 420, 1300, 0, 0.8, { att: 0.3 });
       else if (kind === "clang") [330, 495, 742].forEach((f, i) => tone(f, "triangle", 0.7 - i * 0.15, 0.08, 0, null, o));
       else if (kind === "ribbit") { tone(190, "square", 0.07, 0.05, 0, 150, { ...o, lp: 900 }); tone(210, "square", 0.08, 0.05, 0.1, 160, { ...o, lp: 900 }); }
@@ -240,6 +241,16 @@
       else if (kind === "curtain") noise(0.38, 0.08, "lowpass", 1300, 280, 0, 0.8, { ...o, brown: true, att: 0.05 });
       else if (kind === "quack") { tone(520, "sawtooth", 0.12, 0.05, 0, 380, { ...o, lp: 1500, vib: [25, 40] }); }
       else if (kind === "shovel") { if (!ambOn()) return; noise(0.09, 0.07, "bandpass", 1300, 500, 0, 2, { ...o, bus: ambBus, low: true }); tone(210, "triangle", 0.05, 0.02, 0, 150, { ...o, bus: ambBus, low: true }); }
+    },
+    // v60: a surface answers in its own voice (07y_banks.js): metal rings, stone knocks, bone clacks, ghost-glass sighs,
+    // mud swallows. p: the pitch, which climbs a step for each bank in a chain
+    surface(mat, v = 1, pan = 0, p = 1) {
+      const o = { pan }; v = clamp(v, 0.3, 1.4);
+      if (mat === "metal") [660, 990, 1485].forEach((f, i) => tone(f * p, "triangle", 0.6 - i * 0.12, 0.07 * v, 0, null, o));
+      else if (mat === "stone") { noise(0.06, 0.28 * v, "bandpass", 520 * p, null, 0, 5, o); tone(170 * p, "sine", 0.16, 0.22 * v, 0, 85 * p, o); }
+      else if (mat === "bone") { noise(0.03, 0.2 * v, "bandpass", 1500 * p, null, 0, 8, o); tone(880 * p, "triangle", 0.08, 0.12 * v, 0, 720 * p, o); tone(1320 * p, "triangle", 0.06, 0.06 * v, 0.03, 1100 * p, o); }
+      else if (mat === "ghost") { tone(300 * p, "sine", 0.4, 0.09 * v, 0, 900 * p, { ...o, vib: [8, 30] }); noise(0.3, 0.05 * v, "highpass", 2600, 5200, 0, 1, o); }
+      else if (mat === "mud") { noise(0.22, 0.3 * v, "lowpass", 420, 140, 0, 1, { ...o, brown: true }); tone(95 * p, "sine", 0.18, 0.2 * v, 0, 60, o); }
     },
     // the shot director's own foley (04e_director.js): short sounds that land on the animation's beats
     cue(kind, o = {}) {

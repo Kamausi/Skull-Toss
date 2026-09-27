@@ -246,6 +246,7 @@
   "mechanic": {
     "kind": "jumpcut"
   },
+  "ground": "ghost",
   "obstacles": {
     "A": [
       {
@@ -275,7 +276,8 @@
           0.35,
           4.6
         ],
-        "from": 20
+        "from": 20,
+        "mat": "ghost"
       }
     ],
     "B": [
@@ -317,7 +319,8 @@
           0.35,
           4.2
         ],
-        "from": 4
+        "from": 4,
+        "mat": "ghost"
       },
       {
         "kind": "bar",

@@ -249,6 +249,7 @@
   "mechanic": {
     "kind": "bonefall"
   },
+  "ground": "bone",
   "obstacles": {
     "A": [
       {
