@@ -240,6 +240,8 @@ def map_problems(m, fname):
     if not 0.85 <= m["music"].get("rate", 0) <= 1.15: bad.append("music.rate must be 0.85–1.15")
     if "travel" in m: bad += travel_problems(m["travel"], SB, C)
     if "aquatic" in m: bad += aquatic_problems(m["aquatic"], m)
+    Ec = m.get("encounter")   # v58: the ring interaction (07w_encounter.js)
+    if not (isinstance(Ec, dict) and Ec.get("interaction") in ("bell", "lantern", "chime", "gong", "crank", "triangle", "orb") and Ec.get("consequence") in ("path", "bonus")): bad.append("encounter needs an interaction (bell, lantern, chime, gong, crank, triangle, orb) and a consequence (path or bonus)")
     return bad
 # ── v58 MAP → ECOSYSTEM → CAST (blueprint.json: ecosystem): who may appear where, and the Map Identity Test
 ECO = BLUEPRINT["ecosystem"]

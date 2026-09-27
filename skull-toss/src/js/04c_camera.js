@@ -5,7 +5,7 @@
   // a modern game camera: its springs overshoot and settle, and it only "exposes" a new position 24 times a
   // second, so it steps like a rostrum camera photographing painted cels.
   //
-  // Five moves, in order of importance:
+  // Five moves, in order of importance (v58: and four encounter states laid over them: see updateCamera):
   //   1. lean with the aim  - the main interactive parallax, scaled by how far you pull
   //   2. follow the throw   - a gentle pan and push-in that tracks the skull
   //   3. anticipation       - dolly back as the band stretches, then SNAP forward on release
@@ -90,6 +90,18 @@
       const s = skull.pos, prog = clamp(s.z / Math.max(1, ring.z), 0, 1);
       tx += clamp(s.x, -3, 3) * CAM.follow.x; ty += clamp(s.y - START_Y, -1, 4) * CAM.follow.y; tz += CAM.follow.z * Math.sin(prog * Math.PI / 2);
       k = 50; d = 9;
+    }
+    // v58: the encounter's states (ENC.phase, 07w_encounter.js), on top of the moves above, never instead of them:
+    //   ring (gameplay)  framed on the ring: a touch of lean toward where it hangs, so it stays the anchor
+    //   travel           the world is carrying Morty on: ease forward into the road
+    //   throw            a make heading on to the ring's interaction: the follow keeps going with it
+    //   consequence      a chain or a knockout: a short look toward what answered, then back
+    if (game.state !== "title") {
+      cam.mode = ENC.phase;
+      if (cam.mode === "ring" && game.state === "ready" && !aim.active) { tx += clamp(ring.x, -2, 2) * 0.035; ty += clamp(ring.y - RING_Y, -1, 1) * 0.02; }
+      else if (cam.mode === "travel") { tz += 0.12; ty -= 0.015; }
+      else if (cam.mode === "throw" && ENC.it && skull.crossed && game.result && game.result.make) tx += clamp(encPos().x, -3, 3) * 0.05;
+      else if (cam.mode === "consequence" && ENC.focus) { const u = Math.min(1, ENC.cons * 2); tx += clamp(ENC.focus.x, -3, 3) * 0.08 * u; tz += 0.22 * u; k = 40; d = 9; }
     }
     if (game.cine && game.cine.pull) { const c = game.cine, u = clamp(c.t / c.dur, 0, 1); tz -= c.pull * Math.sin(Math.min(1, u * 1.6) * Math.PI / 2) * (u > 0.8 ? (1 - u) / 0.2 : 1); ty += c.pull * 0.08; k = 26; d = 8; }   // cut-scenes: pull back to show the change
     if (cam.snapT > 0) { cam.snapT -= dt; k = 180; d = 15; }   // the snap after release: stiff, with overshoot

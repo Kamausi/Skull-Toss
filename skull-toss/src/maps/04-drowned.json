@@ -595,5 +595,10 @@
       "the scrim",
       "rising bubbles"
     ]
+  },
+  "encounter": {
+    "_doc": "v58 the ring interaction (07w_encounter.js): what hangs behind the ring on this map, and what going through the ring into it does (path: the next throw's movers and threats stand aside; bonus: points only).",
+    "interaction": "bell",
+    "consequence": "path"
   }
 }

@@ -83,9 +83,11 @@
     if (skullG(s) < 0 && s.pos.y > 9 && !s.resting) { if (!game.result) resolve("over", null); s.alpha = Math.max(0, s.alpha - dt * 4); }   // (a Gravity Flip that misses goes up and away)   // (v51: for the next throw's ghost trail, 08k_feel.js)
     if (!game.result && !s.crossed && seeds.length) seedCheck(s, prevPos);
     if (!game.result && !s.crossed) hazardCheck(s, prevPos);
+    if (!game.result && !s.crossed) weakCheck(s, prevPos);   // (v58: a threat's weak point, before the threat itself: 07w_encounter.js)
     if (!game.result && !s.crossed) obstacleCheck(s, prevPos);   // the map's obstacles: bumpers bounce, fans and lodestones push, the rest block (07m_obstacles.js)
     envAfterFlight(s, prevPos);   // props it brushes answer (07n_environment.js)
     if (targets.length) targetCheck(s, prevPos);
+    encounterCheck(s, prevPos);   // (v58: the ring's interaction, and the threats' weak points: 07w_encounter.js)
     if (ATTR.on) attrCheck(s, prevPos);   // v56: the attraction's own things (07u_attractions.js)
     if (cans.length) canCheck(s, prevPos);   // Can Alley (07o_bonus.js)
     if (s.pos.z < -CAM_BACK + 0.9 || s.pos.z > attrFar()) s.alpha = 0;
@@ -304,7 +306,7 @@
     powersAfterThrow();
     if (boss && boss.after) boss.after();
     if (!modeCheck() && !stageCheck()) {
-      pickupSchedule(); directorsAfterThrow(); obstaclesSync();
+      pickupSchedule(); directorsAfterThrow(); obstaclesSync(); encSync();
       if (game.throws < 2 && !hintEl.textContent) setHint(t("hint.start"));
     }
     saveRunSnapshot();
@@ -445,7 +447,7 @@
     if (boss) updateBoss(dt);
     updateDeath(dt);   // (v51: the accent pulse and the final gags, 07r_bossdeath.js)
     const slow = powerOn("time") ? 0.5 : 1;   // (v54: the Time Bone: the hazards, the machinery and the targets at half speed)
-    updateSeeds(dt * slow); updatePickup(dt); updatePowers(dt); updateTargets(dt * slow); updateCans(dt); updateBonusOffer(dt); updateHazards(dt * slow); updateObstacles(dt * slow);
+    updateSeeds(dt * slow); updatePickup(dt); updatePowers(dt); updateTargets(dt * slow); updateCans(dt); updateBonusOffer(dt); updateHazards(dt * slow); updateObstacles(dt * slow); updateEncounter(dt * slow);
 
     if (game.state === "flying") updateFlight(dt, phase0);
     else if (game.state === "cine") { updateCine(dt); skull.spawn = Math.min(1, skull.spawn + dt / 0.3); }

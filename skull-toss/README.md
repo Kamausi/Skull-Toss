@@ -1,8 +1,50 @@
-# SKULL TOSS v58
+# SKULL TOSS v59
 
 Lob the skull through a ring in a haunted graveyard. Play **Story** to climb through the stages and beat the bosses, or **Arcade** to pick any map and see how long you can last. Three misses and you're buried.
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
+
+## New in v59: the ring stays the star, and the world answers the throw
+
+Every throw goes RING → THROW → WORLD INTERACTION → CONSEQUENCE, and nothing takes the ring's job.
+
+- **The Ring Interaction.** On three rings in every six, something optional hangs just behind the ring, off to one side,
+  swinging on its own pendulum. Each map has its own:
+
+| Map | Interaction |
+|---|---|
+| Crow Hollow | a lantern |
+| the Gilded Graveyard | a bell |
+| the Whistling Woods | wind chimes |
+| the Drowned Theater | a ship's bell |
+| the Black Marsh | a lantern |
+| the Bone Desert | a dinner triangle |
+| the Clockwork Caves | a crank |
+| the Black Abyss | a glowing orb |
+
+  - **A chain.** Go through the ring's lower side and on into it: +150, then +300 for a second in a row, and so on.
+  - **The way clears.** On most maps a chain also makes the next throw's movers and threats stand aside.
+  - Hit the interaction without making the ring and it only rings.
+- **Hazards behave, and say so with their eyes.** Every map hazard goes idle → notice → telegraph → active → recover, and
+  shows it with a pair of cartoon eyes:
+  - sleepy when idle;
+  - wide and watching when your aim comes near;
+  - narrowed under a frown as it winds up;
+  - screwed shut as it strikes;
+  - spinning and dizzy after.
+- **Weak points.** The Threats have one: the cannon's powder cap and the rivet at the crusher's top corner. Each glints softly;
+  hit it and the threat is knocked out (+200) and stands aside for two throws.
+- **Skull Sense.** While you aim, whatever the throw would pass answers a little: the interaction trembles and glints,
+  and a hazard opens its eyes. There are no meters and no markers.
+- **Categories, not "obstacles."** What the world puts round the ring is sorted into Threat, Blocker, Mover, Deflector,
+  Trigger, Target, Weak Point, Hazard, Prize, Secret and Set Piece. The Codex's tab is now "Threats & Movers", and each
+  entry says which category it is.
+- **The camera knows the encounter.** It keeps its moves (the lean, the follow, the snap, the jolts) and adds four
+  states:
+  - on the ring: framed on it;
+  - travelling: easing forward into the road;
+  - on a throw: following a make on to the interaction;
+  - on a consequence: a short look at what answered.
 
 ## New in v58: the moon sets as you go, one reflection, a world that travels in every mode, and a theatre at the bottom of the sea
 

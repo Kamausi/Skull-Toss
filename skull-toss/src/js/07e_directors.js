@@ -144,7 +144,7 @@
   function hazardsReset() {
     HZ.kind = mapData(game.stage || 1).mechanic.kind; HZ.wind = 0; HZ.windMul = 1; HZ.fog = 0; HZ.fogT = 0; HZ.list = []; HZ.since = 0; HZ.pendT = 0; HZ.lastTick = 0;
     if (HZ.kind === "balloons") for (let i = 0; i < 2; i++) HZ.list.push(newBalloon(rrIn(0.3, 3.8)));
-    renderWind(); obstaclesReset();
+    renderWind(); obstaclesReset(); encReset(); encSync();
   }
   const newBalloon = y => ({ kind: "balloon", x: rrIn(-2.2, 2.2), y, z: rrIn(2.4, 4.8), vy: rrIn(0.28, 0.42), col: ["#A94332", "#C49A42", "#356B68", "#F2E7C9"][(runRand() * 4) | 0], r: 0.24 });
   const windNow = () => (HZ.kind === "wind" && (hazardsAllowed() || attrWind()) ? HZ.wind : plusWind());   // (v51: Adventure+'s crosswind)   // (v50: Gale Force's own gale)   // m/s² across the throw (positive pushes right)

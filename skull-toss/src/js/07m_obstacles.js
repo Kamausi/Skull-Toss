@@ -60,7 +60,7 @@
   function updateObstacles(dt) {
     if (!OB.list.length) return;
     OB.t += dt * obSpeed();
-    for (const I of OB.list) if (I.kind === "cannon") cannonUpdate(I);
+    for (const I of OB.list) if (I.kind === "cannon" && !obStandsAside(I)) cannonUpdate(I);
   }
 
   // ── where each one is at obstacle-time T
@@ -111,6 +111,7 @@
   function obstacleForce(P, T = OB.t) {
     let fx = 0, fy = 0, fz = 0;
     for (const I of OB.list) {
+      if (obStandsAside(I)) continue;
       if (I.kind === "fan") { const [x0, x1, y0, y1, z0, z1] = I.box, on = fanOn(I, T); if (on > 0 && P.x > x0 && P.x < x1 && P.y > y0 && P.y < y1 && P.z > z0 && P.z < z1) { const d = fanDir(I, T); fx += I.push[0] * on * d; fy += I.push[1] * on; } }
       else if (I.kind === "magnet") { const dx = I.at[0] - P.x, dy = I.at[1] - P.y, dz = I.at[2] - P.z, d = Math.hypot(dx, dy, dz); if (d < I.R && d > 1e-3) { const a = I.k * (1 - d / I.R) / d; fx += dx * a; fy += dy * a; fz += dz * a * 0.3; } }
     }
@@ -143,6 +144,7 @@
     if (!OB.list.length) return false;
     const P = s.pos;
     for (const I of OB.list) {
+      if (obStandsAside(I)) continue;   // (v58: knocked out, or the way cleared by a chain: 07w_encounter.js)
       let hit = false, near = false, at = null;
       if (I.kind === "bumper") {
         const c = bumperAt(I), d = Math.hypot(P.x - c.x, P.y - c.y, P.z - c.z);
@@ -189,8 +191,10 @@
     for (const I of OB.list) {
       const zc = obCentre(I)[2]; if ((zc < ring.z) !== front) continue;
       ctx.save(); ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = INK;
+      if (obStandsAside(I)) ctx.globalAlpha *= 0.45;   // (standing aside: faded back)
       OB_DRAW[I.kind](I);
       ctx.restore();
+      drawObEyes(I);   // (v58: what it's about to do, in a pair of eyes: 07w_encounter.js)
     }
   }
   const obShadow = (x, z, w) => { const g = project(x, 0, z); ctx.fillStyle = "rgba(0,0,0,.28)"; ctx.beginPath(); ctx.ellipse(g.x, g.y, w * g.s, 0.06 * g.s, 0, 0, TAU); ctx.fill(); };

@@ -357,7 +357,7 @@
     drawBossLight();   // a boss fight: the scenery dims and a spot finds the ring (07n_environment.js)
     if (!game.ringHidden) drawAnchorSupport();   // the branch, arch, signpost, batten or rail the ring hangs from
     if (boss) boss.draw(false);
-    drawSeeds(false); drawTargets(false); drawAttraction(false); drawCans(); drawObstacles(false); drawHazards(false);   // (v56: the attraction's booth and props, 07u_attractions.js)
+    drawSeeds(false); drawTargets(false); drawAttraction(false); drawCans(); drawObstacles(false); drawHazards(false); drawEncounter();   // (v56: the attraction's booth and props, 07u_attractions.js)
     const onStage = game.state !== "title";
     if (onStage && !game.ringHidden) drawTrackAndShadow();
     drawPlayWorld();

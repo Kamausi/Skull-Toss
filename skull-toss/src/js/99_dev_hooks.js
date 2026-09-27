@@ -202,6 +202,10 @@
     snapTravel() { TRAVEL.D = travelGoal(); travelApply(); },
     travelTo(D) { TRAVEL.D = TRAVEL.goal = D; travelApply(); skyUpdate(); },   // (v58: put the camera anywhere on the track)
     ringRefl: () => RING_REFL.drawn,
+    enc: () => ({ it: ENC.it ? { kind: ENC.it.kind, cons: ENC.it.cons, side: ENC.it.side, pos: encPos(), sense: +ENC.it.sense.toFixed(2) } : null, calm: ENC.calm, chain: ENC.chain, chains: ENC.chains, phase: ENC.phase, cam: cam.mode, sense: +ENC.sense.toFixed(2),
+      obs: OB.list.map(O => ({ kind: O.kind, beh: obBehaviour(O), out: O.out || 0, sense: +(O.sense || 0).toFixed(2), weak: encWeak(O), cat: OB_CAT[O.kind] })), cats: ENC_CATS, tcat: TARGET_CAT }),
+    encForce(on = true) { encDefOverride = on; encSync(); }, obOn() { OB.off = false; obstaclesSync(true); },
+    senseAt(AX, AY) { const was = { ...aim }; Object.assign(aim, { active: true, valid: true, AX, AY }); updateEncounter(1 / 60); const r = { sense: ENC.sense, obs: OB.list.map(O => ({ kind: O.kind, sense: O.sense, beh: obBehaviour(O) })) }; Object.assign(aim, was); return r; }, encHits: h => { game.stageHits = h; encSync(); },
     wild: () => ({ n: WILD.list.reduce((o, c) => ((o[c.kind] = (o[c.kind] || 0) + 1), o), {}), heat: WILD.heat, list: WILD.list.map(c => ({ k: c.kind, x: +c.x.toFixed(2), y: +c.y.toFixed(2), z: +c.z.toFixed(2), st: c.st })) }),
     cast: () => ({ skeleton: castVariant("skeleton"), digger: castVariant("gravedigger"), zombie: castVariant("zombie"), flock: look().ambient.crows ? "crow" : look().ambient.bats > 0 ? "bat" : null, walkers: look().ambient.walkers, id: MAP_DATA[sceneMap].id, eco: MAP_DATA[sceneMap].ecosystem }),
     travelRows: () => { const R = GY.props.filter(k => k.travel && k.kind === "theatre-seats"); return { n: R.length, over: R.filter(k => Math.abs(k.tilt) > 0.3).length, buried: R.filter(k => k.sink > 0.2).length }; },

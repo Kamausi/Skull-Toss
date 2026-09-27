@@ -425,3 +425,61 @@ Creatures and behaviour:
 
 `drawHeatHaze` wavers the band over the horizon with strip copies of the frame. It is drawn before the ring, so the ring
 never wavers. Spirits and fragments are clamped out of the ring's cone.
+
+## Encounters (`07w_encounter.js`, v59)
+
+The hierarchy is **RING → THROW → WORLD INTERACTION → CONSEQUENCE**. The ring is the mandatory target and judges every
+throw as before. Three layers:
+
+| Layer | What |
+|---|---|
+| Ring Target | The ring. |
+| Ring Modifier | The map's movers, threats, blockers and deflectors (07m_obstacles.js); the pendulum and jump-cut ring mechanics. |
+| Ring Interaction | `ENC.it`: an optional object behind the ring (map JSON `encounter: { interaction, consequence }`). |
+
+**The Ring Interaction.**
+
+- **Presence:** on hits where `stageHits % 6 >= 3`, in phases A and B only (no boss, no mini-game, no crossing).
+- **Placement:** it hangs from a pivot at `ring.x ± 0.72 rc`, `ring.y + 0.25`, `ring.z + 1`, on a 0.55 m pendulum. Its
+  angle is integrated on the run's simulation clock, with an idle sway on the obstacles' clock (`OB.t`), so replays agree.
+  The hit radius is 0.18 m, so a straight make at the ring's centre never chains; going through the ring's lower side
+  half does.
+- **Consequence:** after a make, hitting it scores `150 × chain` (the chain resets on any throw that doesn't chain).
+  - `path`: `ENC.calm = 2`, so the next throw's obstacles stand aside (`obStandsAside`: no collision, no force, no
+    cannon fire, drawn faded).
+  - `bonus`: points only.
+- A hit without a make only rings it.
+
+**Behaviour.** `obBehaviour(O)` derives idle / notice / telegraph / active / recover from each obstacle's own cycle:
+
+- the fuse, the crusher's shudder, the spikes' peek and the scrim's flicker are its telegraph;
+- a knockout or the cleared way is its recover;
+- the aim coming near (`O.sense`) is its notice.
+
+`drawObEyes` shows the state.
+
+**Weak points** (`encWeak`, the Threats only):
+
+- the cannon's powder cap;
+- the rivet at the crusher's outer top corner.
+
+`weakCheck` runs before `obstacleCheck`, so a hit on the weak point lands first: +200, and the threat is out for two
+throws.
+
+**Skull Sense.** While aiming, `updateEncounter` samples the unforced arc of the current aim. How near it passes to the
+interaction becomes `ENC.sense` (a tremble and a glint), and how near it passes to each obstacle becomes `O.sense`
+(the notice state).
+
+**Categories.** `ENC_CATS` lists the eleven. `OB_CAT` maps each obstacle kind and `TARGET_CAT` each target type to one.
+
+**The camera** (`04c_camera.js`). `cam.mode = ENC.phase`, one of `ring`, `travel`, `throw` or `consequence`, laid over
+the five existing moves:
+
+| State | Adds |
+|---|---|
+| ring | A little lean toward the ring. |
+| travel | A push forward. |
+| throw | Follows a make on toward the interaction. |
+| consequence | A short push toward `ENC.focus` for about a second. |
+
+All of it stays inside the map's camera bounds and the ring's safe box.

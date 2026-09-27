@@ -2735,6 +2735,34 @@
     T.calm(); T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); assert(T.state().lastResult.make, "and a throw is a throw");
     T.toTitle(); T.setStats(ZERO);
   });
+  test("v58 Encounters: RING → THROW → INTERACTION → CONSEQUENCE. Through the ring and on into its bell is a chain (bonus, and the way clears for the next throw); a straight make isn't; the ring is still the judge", () => {
+    const E0 = T.enc(); assert(E0.cats.length === 11 && E0.cats.includes("Weak Point") && E0.cats.includes("Set Piece"), "eleven categories, not \"obstacle\"");
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(2); T.setHits(22); T.step(0.5); T.syncObstacles(); T.calm(); T.encForce(true); T.freezeRing(0, C.RING_Y); T.step(0.3);
+    const I = T.enc().it; assert(I && I.kind === "bell" && I.cons === "path", `the Gilded Graveyard hangs a bell behind its ring (${JSON.stringify(I)})`);
+    let a = T.aimFor(0, C.RING_Y, C.RING_Z); T.throwAt(a.AX, a.AY); T.step(2.5); assert(T.state().lastResult.make && T.enc().chains === 0, "a straight make: no chain");
+    T.freezeRing(0, C.RING_Y); T.encForce(true); T.step(0.3); const P = T.enc().it.pos, s0 = T.state().score;
+    a = T.aimFor(P.x * 0.4, P.y, P.z); T.throwAt(a.AX, a.AY); let camMode = ""; for (let i = 0; i < 60 && !T.enc().chains; i++) T.step(0.03); T.step(0.1); camMode = T.enc().cam; T.step(2);
+    assert(T.state().lastResult.make && T.enc().chains === 1 && T.state().score - s0 >= 150 + 100, `through the ring's side and into the bell: a chain (${T.state().lastResult.kind}, +${T.state().score - s0})`);
+    assert(camMode === "consequence", `the camera takes a look (${camMode})`);
+    assert(T.enc().calm > 0 && T.enc().obs.every(o => o.beh === "recover"), `the way clears: the next throw's hazards stand aside (${JSON.stringify(T.enc().obs.map(o => o.beh))})`);
+    T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); assert(T.enc().calm === 0, "for one throw");
+    T.encForce(false); T.toTitle(); T.setStats(ZERO);
+  });
+  test("v58 Behavioural hazards: idle → notice → telegraph → active → recover, with eyes; a threat's weak point knocks it out; Skull Sense stirs what the aim would pass", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(7); T.setHits(22); T.step(0.3); T.syncObstacles(); T.encForce(true);
+    const seen = new Set(); for (let t = 0; t < 3.6; t += 0.05) { T.obClock(t); T.step(0); const c = T.enc().obs.find(o => o.kind === "crusher"); seen.add(c.beh); }
+    assert(["idle", "telegraph", "active", "recover"].every(b => seen.has(b)), `a crusher's cycle, read in its eyes (${[...seen]})`);
+    const O = T.enc().obs.find(o => o.kind === "crusher"); assert(O.cat === "Threat" && O.weak, "a Threat, with a weak point");
+    T.calm(); T.obOn(); T.encForce(true); T.freezeRing(0, C.RING_Y); T.obClock(1.56); const w = T.enc().obs.find(o => o.kind === "crusher").weak;
+    const a = T.aimFor(w.x, w.y, w.z); T.throwAt(a.AX, a.AY); T.step(3);
+    assert(T.enc().obs.find(o => o.kind === "crusher").out > 0, `the rivet hit: knocked out (${JSON.stringify(T.enc().obs)})`);
+    T.encForce(true); T.freezeRing(0, C.RING_Y); T.step(0.2); const P = T.enc().it.pos, toward = T.aimFor(P.x * 0.4, P.y, P.z), away = T.aimFor(-P.x * 0.6, C.RING_Y + 0.5, C.RING_Z);
+    const s1 = T.senseAt(toward.AX, toward.AY), s2 = T.senseAt(away.AX, away.AY);
+    assert(s1.sense > 0.5 && s2.sense < s1.sense, `Skull Sense: the crank stirs when the aim would carry on into it, and not otherwise (${s1.sense.toFixed(2)} / ${s2.sense.toFixed(2)})`);
+    const cr = T.enc().obs.find(o => o.kind === "crusher"), c1 = T.senseAt(T.aimFor(-1.0, 2.2, 2.6).AX, T.aimFor(-1.0, 2.2, 2.6).AY).obs.find(o => o.kind === "crusher");
+    assert(cr && c1 && c1.sense > 0.3, `a hazard the aim would pass notices (${c1 && c1.sense.toFixed(2)})`);
+    T.toTitle(); T.encForce(false); T.setStats(ZERO);
+  });
   // ── v57: the land, the band, and six power-ups with physics of their own ──
   test("v57 The land: flat and straight within nine metres (the play never changes); beyond, the road bends and the land rises either side; the water maps stay flat", () => {
     T.setStats(ZERO); fresh(); T.step(0.5);
