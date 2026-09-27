@@ -10,7 +10,7 @@
   // ── starting, stopping
   function attrBegin(kind, o = {}) {
     const A = ATTRS[kind];
-    Object.assign(ATTR, { on: true, kind, t: 0, props: [], bits: [], cur: null, round: 0, step: 0, score: 0, n: 0, say: null, pull: 0, shake: 0, lvl: 0, encore: !!o.encore, flash: 0, zp: A.zp, far: 0 });
+    Object.assign(ATTR, { mark: null, on: true, kind, t: 0, props: [], bits: [], cur: null, round: 0, step: 0, score: 0, n: 0, say: null, pull: 0, shake: 0, lvl: 0, encore: !!o.encore, flash: 0, zp: A.zp, far: 0 });
     game.ringHidden = true; targets.length = 0; clearPickups();
     HZ.kind = "none"; HZ.list = []; HZ.wind = 0; HZ.fog = 0; HZ.fogT = 0; OB.list = []; OB.off = true;
     A.begin(o); attrFocus(); renderWind();
@@ -53,7 +53,7 @@
   }
   // a hit: the attraction's points, its word, and the throw's result (07_game.js: resolve)
   function attrHit(kind, P, word, pts, o = {}) {
-    ATTR.score += pts; ATTR.n++;
+    ATTR.score += pts; ATTR.n++; ATTR.mark = o.at || { ...P };
     const at = project(P.x, P.y, P.z);
     ATTR.say = { word, sub: o.sub || "", fly: pts > 0 ? `+${fmtN(pts)}` : "", fill: o.fill || null, text: o.text || null };
     VisualSystem.triggerImpact(o.fx || (kind === "bull" ? "perfect" : "swish"), { at, hit: at, strength: 1, pan: panOf(P.x) });
@@ -63,12 +63,13 @@
   }
   // a miss: into something (a bonk), or clean past it (the hang, the look, the drop)
   function attrMiss(kind, P, hit) {
+    ATTR.mark = hit ? { x: hit.x, y: hit.y, z: ATTR.zp } : { ...P, z: ATTR.zp };
     const at = project(P.x, P.y, P.z), hp = hit ? project(hit.x, hit.y, hit.z) : null;
     if (hit) VisualSystem.triggerImpact("seed", { at, hit: hp, strength: 1, pan: panOf(hit.x) });
     resolve(kind, at, hp);
   }
   // clean past a target: which way it went
-  function attrPast(c, P) { const dx = c.x - P.x, dy = c.y - P.y; attrMiss(Math.abs(dy) > Math.abs(dx) ? (dy > 0 ? "over" : "low") : "wide", P, null); }
+  function attrPast(c, P) { const dx = c.x - P.x, dy = c.y - P.y, mk = { x: c.x, y: c.y, z: ATTR.zp }; attrMiss(Math.abs(dy) > Math.abs(dx) ? (dy > 0 ? "over" : "low") : "wide", P, null); ATTR.mark = mk; }
 
   // ── the clock and the props
   function attrUpdate(dt) {
@@ -90,10 +91,13 @@
   const attrValue = () => ATTRS[ATTR.kind] && ATTRS[ATTR.kind].value ? ATTRS[ATTR.kind].value() : ATTR.score;
 
   // ───────────────────────── the eight ─────────────────────────
-  const GAL = { z: 7.0, back: 7.35, x0: -2.5, x1: 2.5, rows: [1.35, 2.2, 3.05], top: 3.75 };
-  const LONG = { dists: [10, 15, 20, 25, 30, 40, 50, 60, 75, 90, 110, 130, 150], y: 1.35 };
-  const longDist = n => n < LONG.dists.length ? LONG.dists[n] : LONG.dists[LONG.dists.length - 1] + 25 * (n - LONG.dists.length + 1);
-  const longR = d => 0.45 + 0.0065 * d;
+  const GAL = { z: 7.0, back: 7.35, x0: -2.5, x1: 2.5, rows: [1.35, 2.2, 3.05], top: 3.75 }, GAL_NO = 3;
+  // v64 (the owner's playtest: Long Shot too easy with the line, too hard to see at range): the line is gone (v61); the
+  // board grows faster with distance, past 90 m it backs off 15 m a hit (it was 20, then 25), and a board too small to
+  // read wears a marker, a pulsing gold ring round it at a readable size
+  const LONG = { dists: [10, 15, 20, 25, 30, 40, 50, 60, 75, 90], y: 1.35, step: 15, mark: 22 };
+  const longDist = n => n < LONG.dists.length ? LONG.dists[n] : LONG.dists[LONG.dists.length - 1] + LONG.step * (n - LONG.dists.length + 1);
+  const longR = d => 0.5 + 0.009 * d;
   const CURT = { z: 7.2, back: 7.6, x0: -2.3, x1: 2.3, floor: 1.0, top: 3.75 };
   // (v61, the owner's playtest: the pockets overlapped. Each is drawn with a rim 1.45× its radius; now every drawn rim
   // clears its neighbours by 12 cm or more, and no two pockets' catch zones (radius + the skull's) touch)
@@ -115,7 +119,7 @@
         for (let i = 0; i < 3; i++) P.push({ type: "duck", row: 2, x: GAL.x1 - 0.4 - i * 1.9, y: GAL.rows[2], r: 0.24, pts: 2, v: -1.05, up: 1 });  // the top one, the other way, quicker
         for (const x of [-1.9, 1.9]) P.push({ type: "plate", row: 1, x, y: GAL.rows[1], r: 0.27, pts: 1, spin: x < 0 ? 2.2 : -1.7, up: 1 });   // spinning plates: only while they face you
         P.push({ type: "star", row: 1, x: 0, y: GAL.rows[1] + 0.05, r: 0.25, pts: 1, up: 1 });
-        ATTR.next = 0.8; ATTR.goldAt = aRand(9, 14); ATTR.seq = 0;
+        ATTR.next = 0.8; ATTR.goldAt = aRand(9, 14); ATTR.seq = 0; ATTR.noAt = aRand(4, 7);
       },
       update(dt, live) {
         if (!live) return;
@@ -125,7 +129,7 @@
           else if (p.up < 1 && p.type !== "pop" && p.type !== "gold") p.up = Math.min(1, p.up + dt * 3);
           if (p.type === "duck") { p.x += p.v * dt; if (p.x > GAL.x1 - 0.15) p.x -= span; if (p.x < GAL.x0 + 0.15) p.x += span; }
           if (p.type === "plate") p.a = (p.a || 0) + p.spin * dt;
-          if (p.type === "pop" || p.type === "gold") {   // up on its hinge, a while, and down behind the cover (knocked: gone)
+          if (p.type === "pop" || p.type === "gold" || p.type === "no") {   // up on its hinge, a while, and down behind the cover (knocked: gone)
             if (p.down) { if (p.down > 0.4) p.gone = true; continue; }
             p.age += dt;
             if (p.type === "gold") p.x += p.v * dt;
@@ -142,6 +146,10 @@
           if (runRand() < 0.3) { for (let k = 0; k < 3; k++) P.push({ type: "pop", x: slots[k + 1] + (runRand() < 0.5 ? -1 : 0), y: 1.05, r: 0.29, pts: 3, age: -k * 0.45, stay: 1.4, up: 0 }); ATTR.next = 3.4; Sound.toon("tick"); }
           else { P.push({ type: "pop", x: slots[(runRand() * 5) | 0], y: aRand(0, 1) < 0.5 ? 1.05 : 2.62, r: 0.29, pts: 3, age: 0, stay: aRand(1.6, 2.4), up: 0 }); ATTR.next = aRand(1.3, 2.1); }
         }
+        // v64 (the owner's playtest: fair hazards, told): now and then a red X comes up in the middle row. Hit it and it costs
+        // three points; it says so on its face, and it never comes up where a bullseye is
+        ATTR.noAt -= dt;
+        if (ATTR.noAt <= 0 && !P.some(p => p.type === "no")) { const xs = [-1.5, -0.5, 0.5, 1.5].filter(x => !P.some(p => p.type === "pop" && Math.abs(p.x - x) < 0.7)); if (xs.length) P.push({ type: "no", x: xs[(runRand() * xs.length) | 0], y: GAL.rows[1], r: 0.27, pts: -GAL_NO, age: 0, stay: aRand(1.8, 2.6), up: 0 }); ATTR.noAt = aRand(5, 9); }
         ATTR.goldAt -= dt;
         if (ATTR.goldAt <= 0) { const dir = runRand() < 0.5 ? 1 : -1; P.push({ type: "gold", x: dir > 0 ? GAL.x0 - 0.2 : GAL.x1 + 0.2, y: GAL.top - 0.28, r: 0.22, pts: 5, v: dir * 1.8, age: 0.22, stay: 99, up: 1 }); ATTR.goldAt = aRand(11, 16); Sound.toon("whistleUp"); }
       },
@@ -152,6 +160,11 @@
           if (p.type === "plate" && Math.abs(Math.cos(p.a || 0)) < 0.35) continue;   // edge-on: it slips past
           const d = Math.hypot(c.x - p.x, c.y - p.y);
           if (d <= p.r + SKULL_R * 0.7 && d < bd) { best = p; bd = d; }
+        }
+        if (best && best.type === "no") {   // the red X: three points off (never below nothing), and it goes down
+          best.down = 0.001; ATTR.score = Math.max(0, ATTR.score - GAL_NO);
+          attrBounce(s, c, { vx: (c.x - best.x) * 3, vy: 1.4 }); Sound.toon("whistleDown", panOf(best.x)); attrMiss("oops", at3(best.x, best.y, GAL.z), c); renderProgress();
+          return;
         }
         if (best) {
           best.down = 0.001;
@@ -326,11 +339,14 @@
           if (p.kind === "blade") { p.x += p.v * dt; if (Math.abs(p.x) > 2.6) { p.v = -p.v; p.x = clamp(p.x, -2.6, 2.6); } continue; }
           if (h >= 1) {
             p.ph += dt * p.w;
-            if (h >= 5 && runRand() < dt * 0.9) p.w = -p.w;   // it jinks: a sudden change of direction
-            p.x = p.x0 + Math.sin(p.ph) * p.amp; p.y = SUDDEN.y + (h >= 3 ? Math.sin(p.ph * 0.7 + 1) * 0.35 : 0);
+            if (h >= SUDDEN_AT.flip && !p.fake) {   // v64: it turns about on a beat, told first (it used to jink at random)
+              p.flipT = (p.flipT == null ? SUDDEN_FLIP.every : p.flipT) - dt; p.tell = p.flipT < SUDDEN_FLIP.tell ? 1 - p.flipT / SUDDEN_FLIP.tell : 0;
+              if (p.flipT <= 0) { p.w = -p.w; p.flipT = SUDDEN_FLIP.every; p.tell = 0; }
+            }
+            p.x = p.x0 + Math.sin(p.ph) * p.amp; p.y = SUDDEN.y + (h >= SUDDEN_AT.bob ? Math.sin(p.ph * 0.7 + 1) * 0.35 : 0);
           }
         }
-        ATTR.shake = h >= 6 ? 0.5 + Math.min(0.5, (h - 6) * 0.1) : 0;
+        ATTR.shake = h >= SUDDEN_AT.shake ? 0.5 + Math.min(0.5, (h - SUDDEN_AT.shake) * 0.1) : 0;
       },
       sweep(s, prev) {   // the blades cross in front of it
         for (const p of ATTR.props) {
@@ -395,14 +411,18 @@
     Sound.toon("gust");
   }
   // ── Curtain Call: the next round's act
+  // v64 (the owner's playtest: Curtain Call much too hard): the curtains stay open longer (4 s at first, never under 2.4 s,
+  // was 3.2 s down to 1.3 s), everything on stage is about a quarter bigger and moves slower, and a vanishing act stays
+  // up longer, and nothing on stage ever moves faster than it does by the sixth act; a bar under the arch counts the window down
+  const CURTAIN = { win: 4.0, drop: 0.15, least: 2.4 };
   function curtainNext(wait) {
-    const n = ATTR.round++, k = Math.floor(n / 5), act = n % 5, win = Math.max(1.3, 3.2 - 0.25 * k - (act === 3 ? -0.4 : 0)), P = [];
-    const rx = () => aRand(-1.3, 1.3), ry = () => aRand(1.7, 3.0);
-    if (act === 0) P.push({ x: rx(), y: ry(), r: 0.36 });
-    else if (act === 1) { const x0 = aRand(-0.3, 0.3); P.push({ x0, x: x0, y: ry(), r: 0.34, move: 1.7 + 0.35 * k, amp: 1.2 }); }
-    else if (act === 2) { const gone = runRand() < 0.5 ? 0 : 1; for (let i = 0; i < 2; i++) P.push({ x: i ? aRand(0.5, 1.4) : aRand(-1.4, -0.5), y: ry(), r: 0.32, to: i === gone ? 1.0 : null }); }
-    else if (act === 3) { for (let i = 0; i < 3; i++) P.push({ x: -1.3 + i * 1.3 + aRand(-0.2, 0.2), y: ry(), r: 0.3, from: i * 0.7, to: i * 0.7 + 1.3 }); }
-    else { const x0 = aRand(-0.4, 0.4); P.push({ x0, x: x0, y: 2.35, r: 0.62, move: 0.8 + 0.2 * k, amp: 0.5, fin: true }); }
+    const n = ATTR.round++, k = Math.floor(n / 5), act = n % 5, win = Math.max(CURTAIN.least, CURTAIN.win - CURTAIN.drop * k + (act === 3 ? 0.5 : 0)), P = [];
+    const rx = () => aRand(-1.2, 1.2), ry = () => aRand(1.8, 2.9);
+    if (act === 0) P.push({ x: rx(), y: ry(), r: 0.45 });
+    else if (act === 1) { const x0 = aRand(-0.3, 0.3); P.push({ x0, x: x0, y: ry(), r: 0.42, move: Math.min(1.9, 1.1 + 0.15 * k), amp: 1.0 }); }
+    else if (act === 2) { const gone = runRand() < 0.5 ? 0 : 1; for (let i = 0; i < 2; i++) P.push({ x: i ? aRand(0.5, 1.3) : aRand(-1.3, -0.5), y: ry(), r: 0.4, to: i === gone ? 1.8 : null }); }
+    else if (act === 3) { for (let i = 0; i < 3; i++) P.push({ x: -1.3 + i * 1.3 + aRand(-0.15, 0.15), y: ry(), r: 0.38, from: i * 0.9, to: i * 0.9 + 1.9 }); }
+    else { const x0 = aRand(-0.4, 0.4); P.push({ x0, x: x0, y: 2.35, r: 0.7, move: Math.min(1.4, 0.6 + 0.12 * k), amp: 0.45, fin: true }); }
     ATTR.props = P; ATTR.cur = { phase: "shut", t: 0, wait, win, done: false, thrown: false, fin: act === 4, act };
   }
   function curtainShut() { const C = ATTR.cur; if (C && C.phase === "open") { C.phase = "closing"; C.t = 0; Sound.toon("curtain"); } }
@@ -414,11 +434,15 @@
     if (game.lives <= 0) gameOver(true);
   }
   // ── Sudden Death: the target, and whatever the last hit has added
+  // v64 (the owner's playtest: Sudden Death should be harder, but not arbitrary): everything comes sooner (the target
+  // smaller from the second hit, the blades from the third, the fakes from the fifth), it turns about on a beat instead of
+  // at random, and every turn is told by a flash of the target 0.9 s ahead, longer than a throw's flight
+  const SUDDEN_AT = { small: 1, smaller: 3, smallest: 6, bob: 2, blades: 3, flip: 4, fakes: 5, shake: 5 }, SUDDEN_FLIP = { every: 2.6, tell: 0.9 };
   function suddenSet() {
-    const h = game.hits, r = h >= 8 ? 0.24 : h >= 2 ? 0.34 : 0.45, P = [];
-    P.push({ x0: 0, x: 0, y: SUDDEN.y, r, ph: aRand(0, TAU), w: (h >= 3 ? 1.6 : 0.9) * (1 + Math.max(0, h - 8) * 0.08), amp: h >= 1 ? 1.1 : 0 });
-    if (h >= 7) for (const sd of [-1, 1]) P.push({ x0: sd * 1.1, x: sd * 1.1, y: SUDDEN.y, r, ph: aRand(0, TAU), w: 1.2 * sd, amp: 0.7, fake: true });
-    if (h >= 4) for (const [y, v] of [[1.8, 1.4], [2.9, -1.7]]) P.push({ kind: "blade", x: aRand(-2, 2), y, z: 6.2, v: v * (1 + Math.max(0, h - 4) * 0.1) });
+    const h = game.hits, A = SUDDEN_AT, r = h >= A.smallest ? 0.22 : h >= A.smaller ? 0.28 : h >= A.small ? 0.34 : 0.42, P = [];
+    P.push({ x0: 0, x: 0, y: SUDDEN.y, r, ph: aRand(0, TAU), w: (h >= A.bob ? 1.8 : 1.2) * (1 + Math.max(0, h - 6) * 0.08), amp: h >= 1 ? 1.15 : 0 });
+    if (h >= A.fakes) for (const sd of [-1, 1]) P.push({ x0: sd * 1.1, x: sd * 1.1, y: SUDDEN.y, r, ph: aRand(0, TAU), w: 1.2 * sd, amp: 0.7, fake: true });
+    if (h >= A.blades) for (const [y, v] of [[1.8, 1.4], [2.9, -1.7]]) P.push({ kind: "blade", x: aRand(-2, 2), y, z: 6.2, v: v * (1 + Math.max(0, h - A.blades) * 0.1) });
     ATTR.props = P;
   }
   // ── Swing Time: the target's place on the pendulum now
@@ -534,8 +558,17 @@
       else if (p.type === "plate") drawTargetDisc(q, r, { sx: Math.max(0.06, Math.abs(Math.cos(p.a || 0))), cols: ["#F2E7C9", "#3E6F8E", "#F2E7C9", "#3E6F8E", "#C0392B"] });
       else if (p.type === "star") drawStar(q, r, false);
       else if (p.type === "gold") drawStar(q, r * 1.1, true);
+      else if (p.type === "no") {   // the red X: a board to leave alone
+        ctx.fillStyle = "#A94332"; ctx.strokeStyle = INK; ctx.lineWidth = Math.max(1.5, r * 0.1); ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, TAU); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = CREAM; ctx.lineWidth = Math.max(2, r * 0.22); ctx.lineCap = "round"; for (const sd of [-1, 1]) { ctx.beginPath(); ctx.moveTo(q.x - r * 0.45, q.y - sd * r * 0.45); ctx.lineTo(q.x + r * 0.45, q.y + sd * r * 0.45); ctx.stroke(); }
+      }
       else drawTargetDisc(q, r);
       ctx.restore();
+      if (k > 0.6 && !p.down) {   // v64: what it's worth, on a tag over it (the owner's playtest: every target says its points)
+        const bs = Math.max(9, r * 0.42), bx = q.x + r * 0.8, by = q.y - r * 0.8, neg = p.pts < 0;
+        ctx.save(); ctx.fillStyle = neg ? "#A94332" : p.type === "gold" ? GOLD : CREAM; ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(bx, by, bs, 0, TAU); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = neg ? CREAM : INK; ctx.font = `${Math.round(bs * 1.15)}px ${NUMFONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(neg ? `${p.pts}` : `${p.pts}`, bx, by + 1); ctx.restore();
+      }
     }
     const c0 = RECT(GAL.x0, 0.7, GAL.x1, 0.92, GAL.z + 0.01); ctx.fillStyle = "#2E4F6A"; ctx.fillRect(c0.x, c0.y, c0.w, c0.h);
   }
@@ -582,6 +615,11 @@
     ctx.fillStyle = "rgba(0,0,0,.3)"; ctx.beginPath(); ctx.ellipse(g.x, g.y, R * 1.1, R * 0.18, 0, 0, TAU); ctx.fill();
     ctx.restore();
     drawTargetDisc(P, R);
+    if (R < LONG.mark) {   // (v64: the marker, so a far board can always be found)
+      const mr = LONG.mark * (1.15 + 0.12 * Math.sin(ATTR.t * 5));
+      ctx.save(); ctx.strokeStyle = GOLD; ctx.lineWidth = 3; ctx.globalAlpha = 0.9; ctx.beginPath(); ctx.arc(P.x, P.y, mr, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = INK; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(P.x, P.y, mr + 2.5, 0, TAU); ctx.stroke(); ctx.restore();
+    }
     const pl = project(0, LONG.y - r - 0.12, z), fs = Math.max(8, Math.round(P.s * 0.2));
     ctx.save(); ctx.fillStyle = CREAM; ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.beginPath(); rr(ctx, pl.x - fs * 1.4, pl.y - fs * 0.7, fs * 2.8, fs * 1.2, fs * 0.2); ctx.fill(); ctx.stroke();
     ctx.fillStyle = INK; ctx.font = `${fs}px ${NUMFONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(`${z} m`, pl.x, pl.y - fs * 0.08); ctx.restore();
@@ -617,6 +655,12 @@
     }
     const ar = RECT(CURT.x0 - 0.35, CURT.top - 0.05, CURT.x1 + 0.35, CURT.top + 0.45, CURT.z - 0.02);
     ctx.fillStyle = "#7A1E2A"; ctx.beginPath(); ctx.rect(ar.x, ar.y, ar.w, ar.h); ctx.fill(); ctx.stroke();
+    const C = ATTR.cur;
+    if (C && C.phase === "open") {   // v64: the window's clock, a gold bar under the arch that runs down to the close
+      const u = clamp(1 - C.t / C.win, 0, 1), bh = Math.max(4, ar.s * 0.06), by = ar.y + ar.h + bh * 0.3;
+      ctx.fillStyle = "rgba(23,19,15,.7)"; ctx.fillRect(ar.x, by, ar.w, bh);
+      ctx.fillStyle = u > 0.3 ? GOLD : RED; ctx.fillRect(ar.x + ar.w * (1 - u) / 2, by, ar.w * u, bh);
+    }
     ctx.fillStyle = GOLD; ctx.font = `${Math.max(10, Math.round(ar.s * 0.3))}px ${DISPLAY}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(signTxt("curtain"), ar.x + ar.w / 2, ar.y + ar.h * 0.55);
     for (const x of [CURT.x0 - 0.2, CURT.x1 + 0.2]) { const c = RECT(x - 0.14, 0, x + 0.14, CURT.top + 0.4, CURT.z - 0.03); ctx.fillStyle = "#C49A42"; ctx.fillRect(c.x, c.y, c.w, c.h); ctx.strokeRect(c.x, c.y, c.w, c.h); }
     ctx.restore();
@@ -712,6 +756,7 @@
       if (p.kind || p.gone) continue;
       const q = project(p.x, p.y, SUDDEN.z);
       ctx.save(); if (p.fake) ctx.globalAlpha = 0.8 + 0.2 * Math.sin(game.time * 17 + p.x);   // (a fake flickers, if you look)
+      if (p.tell > 0) { ctx.strokeStyle = `rgba(255,236,170,${0.4 + 0.6 * Math.abs(Math.sin(p.tell * 12))})`; ctx.lineWidth = Math.max(3, q.s * 0.05); ctx.beginPath(); ctx.arc(q.x, q.y, p.r * q.s * 1.35, 0, TAU); ctx.stroke(); }   // (v64: it's about to turn)
       drawTargetDisc(q, p.r * q.s, { cols: ["#8C1F2A", "#E8D8B4", "#8C1F2A", "#E8D8B4", "#8C1F2A"] }); ctx.restore();
     }
   }
@@ -741,4 +786,11 @@
   }
 
   // the attraction, back (behind the plane) and front (nearer than it)
-  function drawAttraction(front) { if (ATTR.on && game.state !== "title") ATTRS[ATTR.kind].draw(front); }
+  function drawAttraction(front) { if (ATTR.on && game.state !== "title") { ATTRS[ATTR.kind].draw(front); if (front) drawAttrMark(); } }
+  // v64: with no aim line (Long Shot, Can Alley, Perfect Pitch), the last throw leaves a chalk cross where it met the
+  // attraction's plane, the way a real throw leaves its mark, so the next one can be corrected by eye
+  function drawAttrMark() {
+    const M = ATTR.mark; if (!M || !NO_GUIDE[ATTR.kind] || M.z !== ATTR.zp) return;
+    const q = project(M.x, M.y, M.z), s = Math.max(6, SKULL_R * q.s * 0.8);
+    ctx.save(); ctx.lineCap = "round"; for (const [w, col] of [[4.5, "rgba(23,19,15,.55)"], [2.5, "rgba(242,231,201,.9)"]]) { ctx.strokeStyle = col; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(q.x - s, q.y - s); ctx.lineTo(q.x + s, q.y + s); ctx.moveTo(q.x + s, q.y - s); ctx.lineTo(q.x - s, q.y + s); ctx.stroke(); } ctx.restore();
+  }

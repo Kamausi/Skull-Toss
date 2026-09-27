@@ -1,8 +1,26 @@
-# SKULL TOSS v63
+# SKULL TOSS v64
 
 Lob the skull through a ring in a haunted graveyard. Play **Story** to climb through the stages and beat the bosses, or **Arcade** to pick any map and see how long you can last. Three misses and you're buried.
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
+
+## New in v64: the mini-games, from the playtest
+
+- **Timed or not, said up front.** Every mini-game's booth card and opening card say whether it's against the clock,
+  and the first hint repeats it. Only Curtain Call is timed (each window the curtains stay open); the rest take as long
+  as you like.
+- **Curtain Call is much kinder.** The curtains stay open 4 s at first and never less than 2.4 s (it was 3.2 s down to
+  1.3 s), what's on stage is about a quarter bigger and moves slower (and never faster than it does by the sixth act),
+  and a gold bar under the arch counts the window down.
+- **Long Shot you can see.** The board grows faster with distance, it backs off 15 m a hit past 90 m (was 20, then
+  25), and a board too small to read wears a pulsing gold marker.
+- **Sudden Death is harder, and fair.** The target shrinks from the second hit, the blades come at the third and the
+  fakes at the fifth. It no longer jinks at random: it turns about on a beat, and each turn is told by a flash 0.9 s
+  ahead.
+- **Target Gallery says what things are worth.** Every target wears a tag with its points. Now and then a red X comes
+  up in the middle row: hit it and it costs three points (never below nothing).
+- **A chalk mark instead of a line.** In Long Shot, Can Alley and Perfect Pitch, which have no aim line, the last
+  throw leaves a chalk cross where it met the board, so you can correct by eye.
 
 ## New in v63: the playtest's look-and-feel fixes
 

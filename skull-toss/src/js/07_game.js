@@ -195,6 +195,7 @@
     tgt:     { make: true, pts: 1, fill: TEAL, text: CREAM, mood: "excited", attr: true },
     bull:    { make: true, pts: 2, fill: MUSTARD, text: INK, mood: "perfect", attr: true },
     board:   { make: false, hit: true },
+    oops:    { make: false, hit: true },   // (v64: the Target Gallery's red X, three points off)
     curtain: { make: false, hit: true },
     pocket:  { make: false, hit: true },
     fake:    { make: false, hit: true },
@@ -355,7 +356,7 @@
     OB.off = false; hazardsReset(); refillTargets();
     misc.lastMap = 0; misc.lastThrow = -99; misc.kind = null;   // (mischief's once-a-map is per run)
     modeBegin();   // each mode's own opening (07i_modes.js)
-    if (opts.quiet || (mode !== "story" && mode !== "arcade" && mode !== "practice")) setHint(game.mode === "rush" ? "" : t("hint.start")); else introReel(mode, map);   // the leader and the reel's title card (09i_reel.js)
+    if (opts.quiet || (mode !== "story" && mode !== "arcade" && mode !== "practice")) setHint(game.mode === "rush" ? "" : MODES[mode].mini ? (MODES[mode].timed ? t("hint.timed") : t("hint.untimed")) : t("hint.start")); else introReel(mode, map);   // the leader and the reel's title card (09i_reel.js)
     Replay.begin(opts);   // record what the player does, for a replay (07j_replay.js)
     updateHud();
     Telemetry.emit("run_start", { mode, map, stage: game.stage, career: profile.games, plus: game.plus ? 1 : 0 });   // career: runs finished before this one

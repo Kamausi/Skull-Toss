@@ -663,3 +663,26 @@ The owner, 2026-09-27: "Make wind affect the line", and the difficulty curve of 
 - **Replays** are version 5.
 - **Tests:** "v63 The reel's grade", "v63 Mischief", "v63 The Drowned Theater", "v63 The bank plaques".
 
+## The mini-games, from the playtest (v64)
+
+- **Timed or untimed** (`07i_modes.js: MODES.curtain.timed`, `miniTimedK`). The booth tile carries a `.tm` chip
+  (gold when timed), the opening card's kicker reads "verb · Timed/Untimed" and stays 4.2 s (was 2.4), and the first
+  hint is `hint.timed` or `hint.untimed`.
+- **Curtain Call** (`07u_attractions.js: CURTAIN`). The window is `max(2.4, 4.0 − 0.15 k)` s (k: the round ÷ 5), 0.5 s
+  longer for the three-in-a-row act; radii 0.38–0.45 m (the finale 0.7); a moving act at `min(1.9, 1.1 + 0.15 k)` rad/s (was
+  `1.7 + 0.35 k`, without a ceiling), the finale at `min(1.4, 0.6 + 0.12 k)`; the vanishing act holds 1.8 s (was 1.0). A bar under the arch shows the window left, red in its
+  last 30%.
+- **Long Shot** (`LONG`). `dists` stop at 90 m and then step 15 m; `longR(d) = 0.5 + 0.009 d` (was 0.45 + 0.0065 d); a
+  board drawn smaller than `LONG.mark` (22 px) gets a pulsing gold ring at that size.
+- **Sudden Death** (`SUDDEN_AT`, `SUDDEN_FLIP`). Radius 0.42 / 0.34 (from hit 1) / 0.28 (3) / 0.22 (6); it bobs from
+  hit 2, blades from 3, turns from 4, fakes and the shake from 5. A turn comes every 2.6 s, and for its last 0.9 s the
+  target wears a flashing ring (`p.tell`). The random jinks are gone.
+- **Target Gallery** (`GAL_NO`). Every prop that's up wears a tag with its points; a red X (`type: "no"`, 3 points
+  off) comes up in the middle row every 5–9 s, never over a bullseye's slot; hitting it resolves as `oops`. One throw
+  scores at most one prop.
+- **The chalk mark** (`drawAttrMark`). `ATTR.mark` is where the last throw met the attraction's plane (a hit marks
+  the target); it's drawn in the three `NO_GUIDE` attractions while the plane hasn't moved.
+- **Replays** are version 6.
+- **Tests:** "v64 Every mini-game says", "v64 Curtain Call", "v64 Long Shot", "v64 Sudden Death", "v64 Target
+  Gallery", "v64 The chalk mark".
+

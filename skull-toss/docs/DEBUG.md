@@ -59,7 +59,7 @@ The spec requires all three to come back empty.
 | Command | What it does |
 |---|---|
 | `python3 src/build.py [--dev] [--with-music] [--pwa]` | builds, and refuses a missing string, a bad map, a duplicate name or an oversize page |
-| `node tools/run-spec.mjs` | the spec: every check, in a real browser |
+| `node tools/run-spec.mjs` | the spec: every check, in a real browser (326 checks, about 7 minutes; the runner allows 25, CI's job 40) |
 | `node --test firebase/functions/test/*.test.js` | the server's handlers |
 | `node tools/lint.mjs [--warnings]` | static checks on the assembled game (undefined names, duplicate keys, unreachable code) |
 | `node tools/matrix.mjs` | eleven screen sizes, every sheet: layout, clipping, touch targets, names (writes docs/QA-MATRIX.md) |

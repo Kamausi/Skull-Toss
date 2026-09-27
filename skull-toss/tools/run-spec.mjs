@@ -16,7 +16,8 @@ const port = srv.address().port;
 const b = await chromium.launch(), pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
 const errors = []; pg.on("pageerror", e => errors.push(e.message));
 await pg.goto(`http://localhost:${port}/${page}?test`, { waitUntil: "domcontentloaded", timeout: 120000 });
-await pg.waitForFunction(() => window.__skullTossResults, null, { timeout: 600000 });
+// (v64: the spec runs one check after another and passed ten minutes with the v62-v64 checks; it has 25, inside CI's 40)
+await pg.waitForFunction(() => window.__skullTossResults, null, { timeout: 1500000 });
 const res = await pg.evaluate(() => window.__skullTossResults), fail = res.filter(r => !r.pass);
 console.log(`${res.length - fail.length}/${res.length} passed`);
 for (const f of fail) console.log("FAIL:", f.name, "\n   ", f.error);

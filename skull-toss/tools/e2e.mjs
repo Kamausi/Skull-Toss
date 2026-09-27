@@ -4,7 +4,7 @@
 // and to skip ahead (to a boss, to a knockout), never to throw.
 //   title → every menu sheet opens and closes → Play → Adventure → drag-and-release throws → pause and resume →
 //   the mini-boss and the end boss knocked out (the reward paid once) → the next map → a turn of the phone →
-//   misses to the end → no continue → the results → Again → quit (two taps) → the results → Menu → the title; the
+//   misses to the end → no continue → the results → Again (the same map) → quit (two taps) → the results → Menu → the title; the
 //   same again with reduced motion.
 // At every step: no page errors, no overlay left over the play field, no untranslated string key on screen.
 //   python3 src/build.py --dev && node tools/e2e.mjs
@@ -102,10 +102,11 @@ async function session(reduced) {
   const results0 = await waitFor(() => { const o = document.getElementById("over"); return o && !o.hidden; }, null, 12000);
   const keysOver = await rawKeys();
   check(`${tag}misses to the end: the results come up`, results0 && !keysOver.length, JSON.stringify({ state: (await S()).state, keys: keysOver }));
-  // 9 · Again, then back to the title
+  // 9 · Again, then back to the title. v62: the run fell on map 2, so Again reads "Retry map 2" and picks up there, fresh
+  const fell = (await S()).stage, label = await page.evaluate(() => document.querySelector("#again span").textContent);
   await page.waitForTimeout(800); await page.click("#again");
-  const again = await waitFor(() => { const s = window.SkullToss.debug.state(); return s.state === "ready" && s.stage === 1 && s.hits === 0; }, null, 15000);
-  check(`${tag}Again starts a fresh run`, again);
+  const again = await waitFor(st => { const s = window.SkullToss.debug.state(); return s.state === "ready" && s.stage === st && s.stageHits === 0; }, fell, 15000);
+  check(`${tag}Again starts a fresh run on the map it fell on (Retry map ${fell})`, again && fell === 2 && label.includes("2"), JSON.stringify({ fell, label }));
   // quitting is two taps ("Tap again to end the run"), and ends on the results; Menu from there goes home
   await page.click("#pauseBtn"); await waitFor(() => window.SkullToss.debug.state().paused, null, 3000);
   await page.click("#quitBtn"); const armedOnly = (await S()).paused; await page.click("#quitBtn");

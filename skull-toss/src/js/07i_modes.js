@@ -14,7 +14,7 @@
     rush:     { lives: true, open: () => profile.bossKills > 0 },
     // the mini-games (v46: open from the start, on their own card; v56: each an attraction, 07u_attractions.js).
     // throws: that many skulls and misses are free; lives: three skulls, a miss costs one; one: a single skull
-    curtain:  { lives: true, mini: true, map: 7 },               // Curtain Call: a round each time the curtains part
+    curtain:  { lives: true, mini: true, map: 7, timed: true },  // Curtain Call: a round each time the curtains part (the only timed one: v64)
     longshot: { lives: true, mini: true, map: 3 },               // Longshot: the board backs off after every hit
     gallery:  { free: true, mini: true, throws: 10, map: 5 },    // Target Gallery: ten skulls at the shooting gallery
     cans:     { free: true, mini: true, throws: 10, map: 0 },    // Can Alley: ten skulls at the pyramid
@@ -25,6 +25,9 @@
     director: { lives: true, open: () => true },  // the Director's Challenge (07k_director.js): the week's map, whatever you've reached
     feature:  { lives: true, open: () => !!seasonNow() }   // the season's Feature (07l_season.js): only while a season's on
   };
+  // v64 (the owner's playtest: every mini-game opens with clear instructions and says whether it's timed): only Curtain
+  // Call is against the clock (each window the curtains stay open); the rest take as long as you like
+  const miniTimedK = m => (MODES[m] && MODES[m].timed ? t("mode.timedK") : t("mode.untimedK"));
   const arcadeLike = () => game.mode === "arcade" || game.mode === "director" || game.mode === "feature";   // (no bosses; the ring goes 3D at 30 hits and keeps winding up)
   const MODE_IDS = Object.keys(MODES), MINI_IDS = MODE_IDS.filter(m => MODES[m].mini);
   const modeOf = () => MODES[game.mode] || MODES.story;
@@ -63,7 +66,7 @@
       rushBoss();
     }
     if (MODES[m].one) { game.lives = 1; game.slots = 1; game.peakLives = 1; }
-    if (MODES[m].mini) { attrBegin(m); stageCard(t(`mode.${m}.verb`), t(`mode.${m}.name`), t(`mode.${m}.rule`), 2.4, "gold"); }
+    if (MODES[m].mini) { attrBegin(m); stageCard(`${t(`mode.${m}.verb`)} · ${miniTimedK(m)}`, t(`mode.${m}.name`), t(`mode.${m}.rule`), 4.2, "gold"); }   // (v64: the rule, and whether it's against the clock, up long enough to read)
     if (m === "director") directorBegin();
     if (m === "feature") featureBegin();
   }

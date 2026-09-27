@@ -33,7 +33,7 @@
     near(L.ring.x, L.W / 2, 0.5, "ring x"); near(L.ringShadowX, L.ring.x, 0.5, "shadow x"); near(L.trackCenterX, L.W / 2, 0.5, "rail centre");
   });
   test("Ring slides left and right, symmetric about the centre", () => {
-    T.start(); T.unfreezeRing(); T.setScore(5);
+    T.start(); T.unfreezeRing(); T.setScore(20);   // (v62: the first map's curve ramps gently, so this is late in its first act)
     let min = Infinity, max = -Infinity;
     for (let i = 0; i < 900; i++) { T.step(1 / 60); const x = T.state().ring.x; min = Math.min(min, x); max = Math.max(max, x); }
     assert(min < -0.8 && max > 0.8, `sweep too small (${min.toFixed(2)} … ${max.toFixed(2)})`);
@@ -95,10 +95,10 @@
 
   // ── Moving target ─────────────────────────────────────────
   test("Moving ring rewards leading: aim at where it is → miss, where it will be → make", () => {
-    T.start(); T.setScore(8); T.unfreezeRing(); T.setRingPhase(0);
+    T.start(); T.setScore(29); T.unfreezeRing(); T.setRingPhase(0);   // (v62: just before the mini-boss, where the first map's ring is at its quickest)
     const now = T.state().ring; let s = throwAndSettle(now.x, now.y);
     assert(!s.lastResult.make, `aiming at the ring's current spot should miss at speed (got ${s.lastResult.kind})`);
-    T.start(); T.setScore(8); T.unfreezeRing(); T.setRingPhase(0);
+    T.start(); T.setScore(29); T.unfreezeRing(); T.setRingPhase(0);
     const ahead = T.ringAhead(C.FLIGHT_T); s = throwAndSettle(ahead.x, ahead.y);
     assert(s.lastResult.make, `leading the ring should score (got ${s.lastResult.kind})`);
   });
@@ -862,7 +862,11 @@
     assert(!T.state().sheet && s.state === "ready" && a.mode === "arcade" && a.map === 2 && s.stage === 3, `arcade on map 3 (${JSON.stringify(a)}, stage ${s.stage})`);
     assert(T.scene().map === 2 && T.scene().props > 10, `a map other than the first dresses the scene as itself (${JSON.stringify(T.scene())})`);
     T.toTitle(); $("play").click(); document.querySelector('#modePick [data-mode="story"]').click();
+    assert(!$("mapPick").hidden && $("mapList").querySelector('[data-map="0"]'), "a player who has been further picks a checkpoint (v62), the first being the start");
+    $("mapList").querySelector('[data-map="0"]').click();
     assert(T.arcade().mode === "story" && T.state().stage === 1 && T.state().state === "ready", "Story starts at stage 1");
+    T.toTitle(); T.setStats({ ...ZERO }); $("play").click(); document.querySelector('#modePick [data-mode="story"]').click();
+    assert(T.arcade().mode === "story" && T.state().stage === 1 && T.state().state === "ready", "with no checkpoint yet, it starts straight away");
   });
   test("Arcade: no bosses, the ring goes 3D at 30 hits and keeps speeding up; bests are kept map by map", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); T.startArcade(1); T.freezeRing(0, C.RING_Y);
@@ -1620,7 +1624,7 @@
     const d = T.attr().props.find(p => p.type === "duck" && p.row === 0); T.attrProps(T.attr().props.map(p => p.type === "duck" ? { ...p, v: 0 } : p));
     T.attrThrow(d.x, d.y); T.step(2.5); assert(T.attr().value === 3, `a duck pays 2 (${T.attr().value})`);
     T.attrThrow(-2.3, 3.6); T.step(2.5); assert(T.state().lastResult.kind === "board" && T.state().lives === 3, "into the backboard: a miss, but free");
-    for (let i = 3; i < 10 && T.state().state === "ready"; i++) { T.attrThrow(2.3, 0.9); T.step(2.5); }
+    for (let i = 3; i < 10 && T.state().state === "ready"; i++) { T.attrThrow(2.8, 0.3); T.step(2.5); }   // (low and wide: well clear of the pop-ups' row at 1.1 m)
     assert(T.state().state === "over" && T.profile().modes.gallery.best === 3, `ten skulls and it's over; the record is the points (${T.state().state}, ${JSON.stringify(T.profile().modes.gallery)})`);
     T.setStats(ZERO); T.toTitle();
   });
@@ -2785,13 +2789,63 @@
     at(5, 22); R = T.ringAhead(C.FLIGHT_T); const F = { x: R.x * -0.8, y: R.y + 1.05 }; a = T.aimFor(F.x, F.y); T.throwAt(a.AX, a.AY); T.step(C.FLIGHT_T + 0.1);
     assert(T.state().lastResult.kind === "decoy", `HONK: the wisp (${T.state().lastResult.kind})`); T.step(3);
     at(5, 22); R = T.ringAhead(C.FLIGHT_T); a = T.aimFor(R.x, R.y); T.throwAt(a.AX, a.AY); T.step(C.FLIGHT_T + 0.1); assert(T.state().lastResult.make, `the real one's still real (${T.state().lastResult.kind})`); T.step(3);
-    // angry: on the beat it lunges at three times its pace, and a whirr goes first
+    // angry: on the beat it lunges at 2.2 times its pace (three before v62), and a whirr goes first
     at(7, 22); T.persClock(2.2); let p0 = T.pers().phase; T.step(0.1); const fast = T.pers().phase - p0; T.persClock(1.0); p0 = T.pers().phase; T.step(0.1); const slow = T.pers().phase - p0;
-    assert(fast > slow * 2.5, `it lunges (${fast.toFixed(3)} vs ${slow.toFixed(3)} rad)`);
+    assert(fast > slow * 1.9, `it lunges (${fast.toFixed(3)} vs ${slow.toFixed(3)} rad)`);
     // the tells anyone can hear: a line ring ticks before it turns round, while you aim
-    at(1, 15); const t0 = T.pers().tells; T.holdAim(0.2, 0.6); T.step(4); assert(T.pers().tells > t0, "a line ring ticks before it turns round"); T.letGo(); T.step(3);
+    at(1, 25); const t0 = T.pers().tells; T.holdAim(0.2, 0.6); T.step(4);   // (v62: late in the first act, where the gentler curve's ring turns within four seconds) assert(T.pers().tells > t0, "a line ring ticks before it turns round"); T.letGo(); T.step(3);
     assert(T.chainPitch(1) === 1 && T.chainPitch(2) > 1 && T.chainPitch(3) > T.chainPitch(2), "and a chain of bounces or hits climbs in pitch");
     T.toTitle(); T.setStats(ZERO);
+  });
+  // ── v64: the mini-games, from the owner's playtest ──
+  test("v64 Every mini-game says whether it's against the clock: only Curtain Call is; the opening card and the first hint say so", () => {
+    T.setStats(OPENED);
+    for (const m of ["curtain", "longshot", "gallery", "cans", "pitch", "sudden", "gale", "swing"]) {
+      T.toTitle(); T.startMode(m); T.step(0.2);
+      const timed = m === "curtain", card = T.stageCardText(), hint = T.hintText();
+      assert(timed ? /Timed/.test(card) && !/Untimed/.test(card) : /Untimed/.test(card), `${m}: the card says ${timed ? "timed" : "untimed"} (${card})`);
+      assert(timed ? /^Timed/.test(hint) : /^Untimed/.test(hint), `${m}: and so does the hint (${hint})`);
+    }
+    T.setStats(ZERO); T.toTitle();
+  });
+  test("v64 Curtain Call, much kinder: the curtains stay open 4 s at first and never under 2.4 s; what's on stage is bigger and slower; a bar counts the window down", () => {
+    T.setStats(OPENED); T.startMode("curtain"); T.step(0.2);
+    let C = T.attrCur(); near(C.win, 4.0, 1e-9, "the first window"); assert(T.attr().props.every(p => p.r >= 0.38), "bigger targets");
+    let least = 9; for (let i = 0; i < 60; i++) { T.curtainNextNow(0); C = T.attrCur(); least = Math.min(least, C.win); for (const p of T.attr().props) { assert(p.r >= 0.38, `round ${i}: a target 0.38 m or more (${p.r})`); if (p.move) assert(p.move <= 2.2, `round ${i}: it moves at ${p.move}`); } }
+    near(least, 2.4, 1e-9, "and never under 2.4 s");
+    T.setStats(ZERO); T.toTitle();
+  });
+  test("v64 Long Shot: the board grows with distance and backs off 15 m a hit past 90 m; a board too small to read wears a marker", () => {
+    const L = T.longInfo();
+    assert(JSON.stringify(L.dists.slice(0, 10)) === JSON.stringify([10, 15, 20, 25, 30, 40, 50, 60, 75, 90]) && L.dists[10] === 105 && L.dists[13] === 150, `the distances (${L.dists})`);
+    assert(L.r[1] > 0.9 && L.r[2] > 1.25 && L.r[3] > L.r[2], `the board's radius (${L.r.map(r => r.toFixed(2))})`);
+    T.setStats(OPENED); T.startMode("longshot"); T.step(0.2); assert(T.attr().zp === 10, "it starts at 10 m");
+    T.setStats(ZERO); T.toTitle();
+  });
+  test("v64 Sudden Death, harder but never arbitrary: smaller from the second hit, blades from the third, fakes from the fifth; it turns about on a beat, told 0.9 s ahead", () => {
+    T.setStats(OPENED); T.startMode("sudden"); T.step(0.2);
+    const at = h => { T.suddenSetNow(h); return T.attr().props; };
+    assert(at(0)[0].r === 0.42 && at(1)[0].r === 0.34 && at(3)[0].r === 0.28 && at(6)[0].r === 0.22, "the target shrinks sooner");
+    assert(!at(2).some(p => p.kind === "blade") && at(3).filter(p => p.kind === "blade").length === 2, "blades from the third hit");
+    assert(!at(4).some(p => p.fake) && at(5).filter(p => p.fake).length === 2, "fakes from the fifth");
+    at(4); let told = -1, flipped = -1, w0 = T.attr().props[0].w;
+    for (let i = 0; i < 400 && flipped < 0; i++) { T.step(0.01); const p = T.attr().props[0]; if (told < 0 && p.tell > 0) told = i; if (p.w !== w0) flipped = i; }
+    assert(told >= 0 && flipped > told && Math.abs((flipped - told) * 0.01 - 0.9) < 0.05, `told ${told}, turned ${flipped} (hundredths)`);
+    T.setStats(ZERO); T.toTitle();
+  });
+  test("v64 Target Gallery: every target wears its points; now and then a red X comes up, and hitting it costs three (never below nothing), once", () => {
+    T.setStats(OPENED); T.startMode("gallery"); T.step(0.2);
+    let X = null; for (let i = 0; i < 200 && !X; i++) { T.step(0.1); X = T.attr().props.find(p => p.type === "no" && p.up >= 1); }
+    assert(X && X.pts === -3, `a red X came up (${JSON.stringify(X)})`);
+    const s0 = T.attr().score; T.attrThrow(X.x, X.y); T.step(2.5);
+    assert(T.state().lastResult.kind === "oops" && T.attr().score === Math.max(0, s0 - 3), `three off (${s0} → ${T.attr().score}, ${T.state().lastResult.kind})`);
+    T.setStats(ZERO); T.toTitle();
+  });
+  test("v64 The chalk mark: in Long Shot, Can Alley and Perfect Pitch a throw leaves a cross where it met the board", () => {
+    T.setStats(OPENED); T.startMode("pitch"); T.step(0.2); assert(!T.attrMark(), "none before a throw");
+    T.attrThrow(2.6, 1.0); T.step(2.5); const M = T.attrMark();
+    assert(M && Math.abs(M.x - 2.6) < 0.25 && Math.abs(M.y - 1.0) < 0.25, `where it went (${JSON.stringify(M)})`);
+    T.setStats(ZERO); T.toTitle();
   });
   // ── v63: the playtest's look-and-feel fixes ──
   test("v63 The reel's grade stays on through a camera blur (a perfect throw's whip no longer flashes back to the plain print)", () => {
@@ -3032,8 +3086,9 @@
     assert(!at(4).includes("dive") && at(5).includes("dive") && at(6).includes("rewind") && !at(6).includes("dive") && at(7).includes("homing") && at(8).includes("flip") && at(5).includes("clones"), "the rest a map at a time, the dive where there's a surface to dive from (v58: the marsh; the Drowned Theater is under the sea)");
     const setup = st => { at(st); T.setHits(5); T.step(0.5); T.calm(); T.freezeRing(0, C.RING_Y); };
     setup(8); T.givePower("flip"); T.throwThrough(0, C.RING_Y, C.RING_Z); T.step(0.3); assert(T.skullInfo().g < 0, "Gravity Flip: it falls up"); T.step(2.5); assert(T.state().lastResult.make, `and the aim still meets the ring (${T.state().lastResult.kind})`);
-    setup(7); T.throwThrough(0.62, C.RING_Y + 0.3, C.RING_Z); T.step(2.5); assert(!T.state().lastResult.make, "without it, a throw that far off misses");
-    setup(7); T.givePower("homing"); T.throwThrough(0.62, C.RING_Y + 0.3, C.RING_Z); T.step(2.5); assert(!T.state().lastResult.make, `v60 Homing Bone: a nudge, not a lock-on; that far off it still misses (${T.state().lastResult.kind})`);
+    setup(7); const wide = T.state().ring.rc + 0.3;   // (v62: measured from the ring, whose size now follows the Adventure's curve)
+    T.throwThrough(wide, C.RING_Y + 0.3, C.RING_Z); T.step(2.5); assert(!T.state().lastResult.make, "without it, a throw that far off misses");
+    setup(7); T.givePower("homing"); T.throwThrough(wide, C.RING_Y + 0.3, C.RING_Z); T.step(2.5); assert(!T.state().lastResult.make, `v60 Homing Bone: a nudge, not a lock-on; that far off it still misses (${T.state().lastResult.kind})`);
     setup(7); const clank = T.state().ring.rc + 0.1; T.throwThrough(clank, C.RING_Y, C.RING_Z); T.step(2.5); assert(T.state().lastResult.kind === "clank", `a throw just outside the window clanks off the rim (${T.state().lastResult.kind})`);
     setup(7); T.givePower("homing"); T.throwThrough(clank, C.RING_Y, C.RING_Z); T.step(0.6); const homed = T.skullInfo().homed; T.step(2); assert(homed && T.state().lastResult.make, `with the Homing Bone the nudge takes it in (${T.state().lastResult.kind})`);
     setup(5); T.givePower("clones"); T.throwThrough(-0.62, C.RING_Y, C.RING_Z); T.step(0.2); assert(T.skullInfo().clones === 2, "Clone Skull: three in the air"); T.step(2.5); assert(T.state().lastResult.make, `the clone through the ring counts (${T.state().lastResult.kind})`);
@@ -3074,12 +3129,12 @@
     T.setStats(OPENED); T.startMode("sudden"); let A = T.attr();
     assert(A.dark && T.state().lives === 1 && A.props.filter(p => !p.kind).length === 1, `in the dark, one skull, one target (${A.dark}, ${T.state().lives})`);
     const hitIt = () => { T.attrProps(T.attr().props.map(p => ({ ...p, w: 0, amp: 0, x0: p.x }))); const p = T.attr().props.find(q => !q.kind && !q.fake); T.attrThrow(p.x, p.y); T.step(2.5); };
-    for (let i = 0; i < 4; i++) { const r0 = T.attr().props.find(p => !p.kind).r; hitIt(); if (i === 1) assert(T.attr().props.find(p => !p.kind).r < r0, "two hits: it's smaller"); }
-    A = T.attr(); assert(T.state().hits === 4 && A.props.some(p => p.kind === "blade"), `four hits: blades (${T.state().hits})`);
-    for (let i = 4; i < 7; i++) hitIt();
-    A = T.attr(); assert(A.props.some(p => p.fake) && A.shake > 0, `seven hits: fakes, and the picture shakes (${A.shake})`);
+    for (let i = 0; i < 3; i++) { const r0 = T.attr().props.find(p => !p.kind).r; hitIt(); if (i === 0) assert(T.attr().props.find(p => !p.kind).r < r0, "one hit: it's smaller (v64: was two)"); }
+    A = T.attr(); assert(T.state().hits === 3 && A.props.some(p => p.kind === "blade"), `three hits: blades (${T.state().hits}; v64: was four)`);
+    for (let i = 3; i < 5; i++) hitIt();
+    A = T.attr(); assert(A.props.some(p => p.fake) && A.shake > 0, `five hits: fakes, and the picture shakes (${A.shake}; v64: was seven)`);
     T.attrProps(T.attr().props.filter(p => !p.kind)); const f = T.attr().props.find(p => p.fake); T.attrThrow(f.x, f.y); T.step(3);
-    assert(T.state().state === "over" && T.profile().modes.sudden.best === 7, `a fake is a miss, and that's it (${T.state().state}, ${JSON.stringify(T.profile().modes.sudden)})`);
+    assert(T.state().state === "over" && T.profile().modes.sudden.best === 5, `a fake is a miss, and that's it (${T.state().state}, ${JSON.stringify(T.profile().modes.sudden)})`);
     T.toTitle(); assert(!T.attr().dark, "the lights back on");
     T.setStats(ZERO); T.toTitle();
   });
@@ -3178,8 +3233,8 @@
     T.openSheet("play"); assert($("plusCard").classList.contains("locked"), "its card says so"); T.closeSheet();
     T.start(); T.calm(); T.setHits(5); T.step(0.2); const normal = T.plus();
     T.setStats({ ...ZERO, storyClears: 1 }); T.startPlus(); T.calm(); T.setHits(5); T.step(0.2); const P = T.plus();
-    assert(P.on && P.open && P.k === 1.25 && P.rc < normal.rc && P.omega > normal.omega, `harder on map 1 (${JSON.stringify(P)} vs ${JSON.stringify(normal)})`);
-    T.setStage(3); T.startPlus(); T.setStage(3); assert(T.plus().k > 1.4, "harder on later maps");
+    assert(P.on && P.open && Math.abs(P.k - 1.2) < 1e-9 && P.rc < normal.rc && P.omega > normal.omega, `harder on map 1 (${JSON.stringify(P)} vs ${JSON.stringify(normal)})`);
+    T.setStage(3); T.startPlus(); T.setStage(3); assert(T.plus().k > 1.3, `harder on later maps (${T.plus().k}; v62: 1.2 on map 1 to 1.7 on map 8)`);
     T.setStats({ ...ZERO, storyClears: 1 }); T.startPlus(); T.setStage(2); T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); assert(T.plus().wind !== 0, `a crosswind from map 2 (${T.plus().wind})`);
     T.toTitle(); T.setStats(ZERO);
   });
