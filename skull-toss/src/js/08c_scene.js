@@ -117,7 +117,7 @@
     const reaches = tg >= tc;
     if (guide === "off") return { front, back, cross: null, land: null };
     const tEnd = guide === "short" ? Math.min(tg, tc * 0.36) : Math.min(tg, tc + 0.7);
-    if (obstacleForcesLive()) return forcedPreview(v, guide, tc, tEnd);   // fans and lodestones bend it (07m_obstacles.js)
+    if (obstacleForcesLive() || waterFlight()) return forcedPreview(v, guide, tc, tEnd);   // fans and lodestones bend it (07m_obstacles.js); v60: so does the water (07x_water.js)
     const rest = project(0, START_Y, 0), off = pullOffset(), kx = rest.x + off.x, ky = rest.y + off.y, kr = SKULL_R * rest.s * 1.35;
     let lx = null, ly = null, i = 0;
     for (let t = 0.004; t < tEnd; t += 0.004) {
@@ -136,7 +136,7 @@
   function forcedPreview(v, guide, tc0, tEnd0) {
     const zr = ring.z, path = forcedPath(v, tc0 * 1.6 + 0.8), front = [], back = [];
     const k = path.findIndex(q => q.z >= zr), cross = k > 0 ? (() => { const a = path[k - 1], b = path[k], u = (zr - a.z) / (b.z - a.z); return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, z: zr, t: a.t + (b.t - a.t) * u }; })() : null;
-    const land = cross ? null : path[path.length - 1], tc = cross ? cross.t : tc0, tEnd = guide === "short" ? Math.min(tEnd0, tc * 0.36) : cross ? tc + 0.7 : tEnd0;
+    const land = cross ? null : path[path.length - 1], tc = cross ? cross.t : tc0, tEnd = guide === "short" ? Math.min(tEnd0, tc * 0.36) : cross ? tc + 0.7 : path.length ? path[path.length - 1].t : tEnd0;   // (a throw that falls short: the guide follows it all the way down)
     const rest = project(0, START_Y, 0), off = pullOffset(), kx = rest.x + off.x, ky = rest.y + off.y, kr = SKULL_R * rest.s * 1.35;
     let lx = null, ly = null, i = 0;
     for (const q0 of path) {

@@ -49,8 +49,9 @@
     ENC.sense = 0; for (const O of OB.list) O.sense = 0;
     if (game.state === "ready" && aim.active && aim.valid && !attrOn()) {
       const v = aimVelocity(aim.AX, aim.AY), wx = 0.5 * windNow(), G = gNow(), P = I ? encPos() : null, T = ring.z / Math.max(0.5, v.z) + 0.5;
+      const wet = waterFlight() ? forcedPath(v, T, { forces: false }) : null;   // (v60: under the sea it's the water's curve it feels along)
       for (let t = 0.05; t < T; t += 0.05) {
-        const q = { x: v.x * t + wx * t * t, y: START_Y + v.y * t - 0.5 * G * t * t, z: v.z * t }; if (q.y < 0) break;
+        const q = wet ? wet[Math.min(wet.length - 1, Math.round(t / SIM_STEP) - 1)] : { x: v.x * t + wx * t * t, y: START_Y + v.y * t - 0.5 * G * t * t, z: v.z * t }; if (!q || q.y < 0) break;
         if (P) ENC.sense = Math.max(ENC.sense, clamp(1 - Math.hypot(q.x - P.x, q.y - P.y, q.z - P.z) / 0.9, 0, 1));
         for (const O of OB.list) { const c = obCentre(O); O.sense = Math.max(O.sense, clamp(1 - Math.hypot(q.x - c[0], q.y - c[1], q.z - c[2]) / 1.4, 0, 1)); }
       }
@@ -100,6 +101,7 @@
     else if (O.kind === "spikes") { tele = spikesTell(O) ? 1 : 0; act = spikesRaise(O) > 0.3; }
     else if (O.kind === "barrier") { const a = barrierAlpha(O); act = a > 0.9; tele = a > 0.02 && a < 0.9 ? 1 : 0; }
     else if (O.kind === "fan") act = fanOn(O) > 0.2;
+    else if (O.kind === "jet") { tele = jetTell(O); act = jetOn(O) > 0.2; }
     else act = true;   // (a bar, a bumper, a lodestone: always at it)
     if (tele > 0) return "telegraph";
     if (act && O.kind !== "bar" && O.kind !== "bumper" && O.kind !== "magnet") return "active";
@@ -107,6 +109,7 @@
   }
   // the eyes: a 1930s cartoon's way of saying what a thing is about to do
   function drawObEyes(O) {
+    if (O.kind === "current" || O.kind === "pocket") return;   // (v60: the water itself has no face)
     const st = obBehaviour(O), c = obCentre(O), up = O.kind === "spikes" ? O.h * 0.5 : O.kind === "crusher" ? crusherBottom(O).y + 0.9 - c[1] : 0.25, p = project(c[0], c[1] + up, c[2]), e = Math.max(2, p.s * 0.06), t = OB.t;
     if (p.s < 12) return;
     const shake = st === "telegraph" ? Math.sin(t * 50) * e * 0.25 : 0, look = st === "notice" || st === "telegraph" ? -0.35 : 0;

@@ -157,6 +157,9 @@
       else if (I.kind === "magnet") circle(I.at[0], I.at[1], I.at[2], MAG_CORE, C.solid);
       else if (I.kind === "crusher") { const [x0, x1, z0, z1] = I.box, B = crusherBottom(I); box(x0, x1, B.y, B.y + CRUSHER_TALL, z0, z1, C.danger); }
       else if (I.kind === "barrier") { const [x0, x1, y0, y1, z] = I.box; box(x0, x1, y0, y1, z, z + 0.02, C.solid); }
+      else if (I.kind === "current") box(...I.box, C.trigger);   // (v60: the water's own things, 07x_water.js)
+      else if (I.kind === "jet") box(I.at[0] - I.w, I.at[0] + I.w, 0, I.h, I.at[1] - I.w, I.at[1] + I.w, jetOn(I) > 0 ? C.danger : C.trigger);
+      else if (I.kind === "pocket") { const c = pocketAt(I); circle(c.x, c.y, c.z, I.r, C.trigger, true); }
     }
     for (const h of HZ.list) if (h.x != null && h.y != null && h.z != null) circle(h.x, h.y, h.z, h.r || 0.25, C.danger);
     for (const sd of seeds) if (sd.live) circle(sd.x, sd.y, sd.z, SEED_R, C.danger);

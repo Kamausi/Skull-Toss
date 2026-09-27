@@ -18,7 +18,7 @@
     voice.quiet = game.time; voice.idleSaid = false;
     const v = aimVelocity(AX, AY);
     Object.assign(skull, { launchRing: { x: ring.x, y: ring.y, z: ring.z }, ax0: windNow(), close: false, shots: [] });   // (what the signature shots read: 07h_shots.js)
-    Object.assign(skull, { sub: null, sink: 0, canHit: false, canHits: 0, g: gNow(), vine: null, vined: false, swung: false, homed: false, clones: null, cloneJudged: false, cloned: false, rew: null,
+    Object.assign(skull, { sub: null, sink: 0, canHit: false, canHits: 0, g: gNow(), g0: gNow(), wet: false, vine: null, vined: false, swung: false, homed: false, clones: null, cloneJudged: false, cloned: false, rew: null,
       p0: { x: 0, y: START_Y, z: 0 }, v0: v, t: 0, crossed: false, resting: false, bounces: 0, ax: windNow(), tHit: false,
       spin: (1.3 + Math.abs(v.x) * 0.5) * (v.x < 0 ? -1 : 1), hang: 0, take: 0, alpha: 1, flightTime: 0, trail: [], spawn: 1, emit: 0, missed: false });
     skull.pos = { ...skull.p0 }; cloneLaunch(skull, v); rewindMark(skull);   // (v57: the Clone Skull's clones, the Rewind Bone's mark: 07v_newpowers.js)
@@ -68,6 +68,7 @@
     }
     obstaclePush(s, dt);   // fans and lodestones push the flight (07m_obstacles.js)
     powerPush(s, dt);      // (v57: the Homing Bone steering it in, 07v_newpowers.js)
+    waterPush(s, dt);      // (v60: under the sea the water drags and floats it, 07x_water.js)
     let remaining = s.hang > 0 || s.sub || s.vine ? 0 : dt, elapsed = 0, guard = 0;   // (v53: under the water it's the water's own step, not the arc)
     while (remaining > 1e-9 && guard++ < 10) {
       let tE = Infinity, kind = null;
@@ -313,7 +314,7 @@
     mischiefAfterThrow();   // now and then the old print acts up (09l_mischief.js)
   }
   function resetSkull() {
-    Object.assign(skull, { sub: null, sink: 0, canHit: false, canHits: 0, g: G, vine: null, clones: null, rew: null, homed: false, p0: { x: 0, y: START_Y, z: 0 }, v0: { x: 0, y: 0, z: 0 }, t: 0, crossed: false, resting: true, missed: false, ghosted: 0,
+    Object.assign(skull, { sub: null, sink: 0, canHit: false, canHits: 0, g: G, g0: G, wet: false, vine: null, clones: null, rew: null, homed: false, p0: { x: 0, y: START_Y, z: 0 }, v0: { x: 0, y: 0, z: 0 }, t: 0, crossed: false, resting: true, missed: false, ghosted: 0,
       bounces: 0, angle: 0, spin: 0, spawn: 0, alpha: 1, flightTime: 0, pullOff: { x: 0, y: 0 }, trail: [], emit: 0 });
     skull.pos = { ...skull.p0 };
     kick(rig, 1, 0, Math.PI / 2); rig.tilt = 0; rig.dots = 0; setMood(rig, "idle", game.time);

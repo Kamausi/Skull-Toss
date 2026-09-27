@@ -214,12 +214,15 @@ def map_problems(m, fname):
             if k not in REG["obstacle"]: bad.append(f"obstacle \"{k}\" isn't one the code has"); continue
             if not isinstance(o.get("from"), int) or o["from"] < 0: bad.append(f"obstacle {k}: \"from\" is the hit count it comes in at")
             pts = []
-            if "at" in o: pts.append(o["at"])
-            if "box" in o and k in ("fan",): x0, x1, y0, y1, z0, z1 = o["box"]; pts += [[x0, y0, z0], [x1, y1, z1]]
+            if "at" in o and k != "jet": pts.append(o["at"])
+            if "box" in o and k in ("fan", "current"): x0, x1, y0, y1, z0, z1 = o["box"]; pts += [[x0, y0, z0], [x1, y1, z1]]
             if "box" in o and k == "barrier": x0, x1, y0, y1, z = o["box"]; pts += [[x0, y0, z], [x1, y1, z]]
             if "box" in o and k == "crusher": x0, x1, z0, z1 = o["box"]; pts += [[x0, o.get("low", 1), z0], [x1, o.get("top", 4), z1]]
             if k == "spikes": pts += [[o["span"][0], 0, o["z"]], [o["span"][1], o["h"], o["z"]]]
             if k == "cannon": pts.append([0, o["y"], o["z"]])
+            if k == "jet": pts += [[o["at"][0], 0, o["at"][1]], [o["at"][0], o["h"], o["at"][1]]]   # (v60: a vent in the sea bed and its column)
+            if k == "pocket" and not (isinstance(o.get("r"), (int, float)) and 0.3 <= o["r"] <= 1.2): bad.append("obstacle pocket: r (its radius) must be 0.3–1.2 m")
+            if k in ("current", "jet", "pocket") and not isinstance(m.get("medium"), dict): bad.append(f"obstacle {k} belongs under water: the map needs a water medium")
             for (x, y, z) in pts:
                 if not (inside(x, HZ["x"][0] - 0.05, HZ["x"][1] + 0.05) and inside(y, HZ["y"][0] - 0.05, HZ["y"][1] + 0.4) and inside(z, HZ["z"][0] - 1.2, HZ["z"][1] + 0.1)):
                     bad.append(f"obstacle {k} ({x}, {y}, {z}) leaves the map's hazard zone")
@@ -235,6 +238,12 @@ def map_problems(m, fname):
         if isinstance(o.get("from"), int) and o["from"] >= SB["mini"]: bad.append(f"obstacle {o.get('kind')} comes in at hit {o['from']}, after the first half's {SB['mini']}")
     for o in O.get("B", []):
         if isinstance(o.get("from"), int) and o["from"] >= SB["boss"] - SB["loose"]: bad.append(f"obstacle {o.get('kind')} comes in {o['from']} hits into the approach, which is only {SB['boss'] - SB['loose']} long")
+    # ── v60: the medium (07x_water.js): a map under the sea throws through water
+    if "medium" in m:
+        M = m["medium"]
+        if not isinstance(M, dict) or M.get("kind") != "water": bad.append("medium.kind must be \"water\"")
+        elif not (isinstance(M.get("g"), (int, float)) and 0.25 <= M["g"] <= 1): bad.append("medium.g (the skull's weight under water) must be 0.25–1")
+        elif not (isinstance(M.get("drag"), list) and len(M["drag"]) == 2 and all(isinstance(d, (int, float)) and 0 <= d <= 1.5 for d in M["drag"])): bad.append("medium.drag must be [across, up/down], each 0–1.5")
     if m["fragment"] not in REG["fragment"]: bad.append(f"fragment \"{m['fragment']}\" isn't registered")
     if m.get("target") not in REG["target"]: bad.append(f"target \"{m.get('target')}\" isn't one the code draws ({', '.join(REG['target'])})")
     if not 0.85 <= m["music"].get("rate", 0) <= 1.15: bad.append("music.rate must be 0.85–1.15")

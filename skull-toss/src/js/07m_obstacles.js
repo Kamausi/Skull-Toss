@@ -49,18 +49,21 @@
     Sound.toon("brass");
   }
   function obCentre(I) {
+    if (I.kind === "jet") return [I.at[0], I.h * 0.5, I.at[1]];   // (v60: a jet's at is its vent on the sea bed, [x, z])
+    if (I.kind === "pocket") { const c = pocketAt(I); return [c.x, c.y, c.z]; }
     if (I.at) return I.at;
     if (I.kind === "spikes") return [(I.span[0] + I.span[1]) / 2, I.h * 0.6, I.z];
     if (I.kind === "cannon") return [I.side * 2.2, I.y, I.z];
     if (I.kind === "fan") { const [x0, x1, y0, y1, z0, z1] = I.box; return [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2]; }
     if (I.kind === "crusher") { const [x0, x1, z0, z1] = I.box; return [(x0 + x1) / 2, I.low + 1.2, (z0 + z1) / 2]; }
     if (I.kind === "barrier") { const [x0, x1, y0, y1, z] = I.box; return [(x0 + x1) / 2, (y0 + y1) / 2, z]; }
+    if (I.kind === "current") { const [x0, x1, y0, y1, z0, z1] = I.box; return [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2]; }   // (v60: the water's own things, 07x_water.js)
     return [0, 2, 4];
   }
   function updateObstacles(dt) {
     if (!OB.list.length) return;
     OB.t += dt * obSpeed();
-    for (const I of OB.list) if (I.kind === "cannon" && !obStandsAside(I)) cannonUpdate(I);
+    for (const I of OB.list) { if (I.kind === "cannon" && !obStandsAside(I)) cannonUpdate(I); else if (I.kind === "jet") jetsUpdate(I); }
   }
 
   // ── where each one is at obstacle-time T
@@ -113,16 +116,20 @@
     for (const I of OB.list) {
       if (obStandsAside(I)) continue;
       if (I.kind === "fan") { const [x0, x1, y0, y1, z0, z1] = I.box, on = fanOn(I, T); if (on > 0 && P.x > x0 && P.x < x1 && P.y > y0 && P.y < y1 && P.z > z0 && P.z < z1) { const d = fanDir(I, T); fx += I.push[0] * on * d; fy += I.push[1] * on; } }
+      else if (I.kind === "current" || I.kind === "jet") { const w = waterForce(I, P, T); if (w) { fx += w[0]; fy += w[1]; } }   // (v60: 07x_water.js)
       else if (I.kind === "magnet") { const dx = I.at[0] - P.x, dy = I.at[1] - P.y, dz = I.at[2] - P.z, d = Math.hypot(dx, dy, dz); if (d < I.R && d > 1e-3) { const a = I.k * (1 - d / I.R) / d; fx += dx * a; fy += dy * a; fz += dz * a * 0.3; } }
     }
     return { x: fx, y: fy, z: fz };
   }
-  const obstacleForcesLive = () => OB.list.some(I => I.kind === "fan" || I.kind === "magnet");
-  // the flight a throw would take through the fans and lodestones, stepped the way the game steps it (for the aim guide)
-  function forcedPath(v, tEnd) {
-    const out = [], dt = SIM_STEP, wx = windNow(), G = gNow(); let p = { x: 0, y: START_Y, z: 0 }, u = { ...v }, T = OB.t;   // (v57: under the throw's own gravity)
+  const obstacleForcesLive = () => OB.list.some(I => I.kind === "fan" || I.kind === "magnet" || I.kind === "current" || I.kind === "jet");
+  // the flight a throw would take through the fans and lodestones (and, v60, through the water), stepped the way the
+  // game steps it (for the aim guide). o.forces: false leaves out the obstacles' pushes; o.pockets: false the air pockets
+  function forcedPath(v, tEnd, o = {}) {
+    const out = [], dt = SIM_STEP, wx = windNow(), G0 = gNow(), forces = o.forces !== false, pockets = o.pockets !== false, wet = waterFlight();
+    let p = { x: 0, y: START_Y, z: 0 }, u = { ...v }, T = OB.t;   // (v57: under the throw's own gravity)
     for (let t = 0; t < tEnd; t += dt) {
-      const f = obstacleForce(p, T); u = { x: u.x + f.x * dt, y: u.y + f.y * dt, z: Math.max(0.5, u.z + f.z * dt) };
+      if (forces && OB.list.length) { const f = obstacleForce(p, T); u = { x: u.x + f.x * dt, y: u.y + f.y * dt, z: Math.max(0.5, u.z + f.z * dt) }; }
+      const G = wet ? mediumStep(u, p, G0, dt, T, pockets) : G0;
       p = { x: p.x + u.x * dt + 0.5 * wx * dt * dt, y: p.y + u.y * dt - 0.5 * G * dt * dt, z: p.z + u.z * dt }; u = { x: u.x + wx * dt, y: u.y - G * dt, z: u.z };
       T += dt * obSpeed(); out.push({ ...p, t: t + dt });
       if (p.y < SKULL_R) break;

@@ -2420,10 +2420,10 @@
     assert(T.targets().filter(x => !x.pop).length === 0, "and no new bullseye turns up until a make");
     T.toTitle();
   });
-  test("A decoy in the throw's way is a miss; the Codex knows all nine targets and eight obstacles", () => {
+  test("A decoy in the throw's way is a miss; the Codex knows all nine targets and eleven obstacles (v60: the undertow, the bilge vent and the air pocket)", () => {
     fresh(); T.setStage(3); T.calm(); T.freezeRing(0, C.RING_Y); const { a, q } = pathAt(3.6); T.plantDecoy(q.x, q.y, q.z); const lives = T.state().lives;
     T.throwAt(a.AX, a.AY); T.step(2.5); assert(T.state().lastResult.kind === "decoy" && T.state().lives === lives - 1, `HONK (${T.state().lastResult.kind})`);
-    T.setStats(ZERO); T.openSheet("codex"); document.querySelector('#codexTabs [data-cat="obstacle"]').click(); assert(document.querySelectorAll("#codexList .entry").length === 8, "eight obstacles");
+    T.setStats(ZERO); T.openSheet("codex"); document.querySelector('#codexTabs [data-cat="obstacle"]').click(); assert(document.querySelectorAll("#codexList .entry").length === 11, "eleven obstacles");
     document.querySelector('#codexTabs [data-cat="target"]').click(); assert(document.querySelectorAll("#codexList .entry").length === 9, "nine targets");
     T.closeSheet(); T.toTitle();
   });
@@ -2667,6 +2667,39 @@
     T.setStats({ ...ZERO, bossLog: { crow: 60 } }); T.openSheet("mastery"); document.querySelector('#masteryTabs [data-cat="boss"]').click();
     const pg = document.querySelector('#masteryList [data-m="boss:crow"]'); assert(pg.classList.contains("m-page") && pg.querySelectorAll(".m-line .m-tier").length === 8 && pg.querySelectorAll(".m-tier.got").length === 4, "a page, eight stops on its line, four reached at 60");
     T.closeSheet(); T.setStats(ZERO); T.toTitle();
+  });
+  // ── v60: the research translation: the Drowned Theater under water, surfaces and bank rings, depth lanes, ring personalities ──
+  test("v60 Under the sea: the whole throw is in the water (half its weight, dragged across and up/down, its pace along the lane kept), and the aim guide shows the water's curve exactly", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(1); T.calm(); T.freezeRing(0, C.RING_Y);
+    assert(!T.water().on, "Crow Hollow throws through air");
+    fresh(); T.setStage(4); T.step(0.5); T.calm(); T.freezeRing(0, C.RING_Y);
+    assert(T.water().on, "the Drowned Theater throws through water");
+    const A = [0.9, 3.1], dry = { x: A[0], y: 3.1 }, P = T.predictCrossing(A[0], A[1]);
+    T.throwAt(A[0], A[1]); T.step(0.05); const W = T.water(); assert(W.wet && Math.abs(W.g - W.g0 * 0.5) < 1e-9, `half its weight (${JSON.stringify(W)})`);
+    T.step(C.FLIGHT_T); const X = T.state().lastCross;
+    near(X.x, P.x, 1e-4, "the guide's crossing x is the throw's"); near(X.y, P.y, 1e-4, "the guide's crossing y is the throw's");
+    assert(X.x < dry.x * 0.9, `the drag shortens it across (${X.x.toFixed(3)} vs ${dry.x})`);
+    assert(Math.abs(X.t - C.FLIGHT_T) < 0.02, `still reaches the ring plane on time (${X.t.toFixed(3)})`);
+    fresh(); T.setStage(4); T.step(0.5); T.calm(); T.freezeRing(0.6, 2.6); const a = T.aimFor(0.6, 2.6); const r = throwAndSettle(a.AX, a.AY);
+    assert(r.lastResult.make, `aimed for the water, it goes in (${r.lastResult.kind})`);
+    T.toTitle(); T.setStats(ZERO);
+  });
+  test("v60 The water's own things: an undertow carries the throw on its tide, a bilge vent gushes on a beat after a fizz, an air pocket flies true", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(4); T.step(0.5); T.calm(); T.freezeRing(0, C.RING_Y);
+    const A = T.aimFor(0, C.RING_Y), P0 = T.predictCrossing(A.AX, A.AY);
+    T.plantObstacle({ kind: "current", box: [-2.3, 2.3, 1.4, 3.6, 2.6, 4.6], push: [4, 0], swell: [7, 0.35], from: 0 });
+    T.obClock(1.75); const hi = T.obForce(0, 2.4, 3.6).x; T.obClock(5.25); const lo = T.obForce(0, 2.4, 3.6).x;
+    assert(hi > 3.9 && lo > 1.3 && lo < 1.5, `the tide swells and eases, never gone (${hi.toFixed(2)} / ${lo.toFixed(2)})`);
+    T.obClock(1.75); const P1 = T.predictCrossing(A.AX, A.AY); assert(P1.x > P0.x + 0.3, `the guide bends with the undertow (${P0.x.toFixed(2)} → ${P1.x.toFixed(2)})`);
+    T.throwAt(A.AX, A.AY); T.step(C.FLIGHT_T + 0.05); near(T.state().lastCross.x, P1.x, 1e-3, "and the throw goes where the guide said, to the millimetre"); T.step(3);
+    T.clearObstacles(); T.plantObstacle({ kind: "jet", at: [0, 3.6], h: 3.8, w: 0.45, push: [0, 9], pulse: [1.4, 2.2], from: 0 });
+    T.obClock(3.3); assert(T.enc().obs[0].beh === "telegraph", `it fizzes before it fires (${T.enc().obs[0].beh})`);
+    T.obClock(0.6); assert(T.obForce(0, 1.5, 3.6).y > 8, "then it gushes up"); T.obClock(2.5); assert(T.obForce(0, 1.5, 3.6).y === 0, "and stops");
+    T.clearObstacles(); T.plantObstacle({ kind: "pocket", at: [0, 2.4, 3.2], r: 0.8, from: 0 });
+    const Pp = T.predictCrossing(A.AX, A.AY); assert(Math.abs(Pp.y - P0.y) > 0.03, `through the pocket it flies differently (${P0.y.toFixed(3)} → ${Pp.y.toFixed(3)})`);
+    T.throwAt(A.AX, A.AY); let inAir = false; for (let i = 0; i < 60; i++) { T.step(1 / 60); const w = T.water(); if (w.pocket && w.g === w.g0 && !w.wet) inAir = true; }
+    assert(inAir, "inside the pocket: full weight, no drag"); T.step(3);
+    T.clearObstacles(); T.toTitle(); T.setStats(ZERO);
   });
   // ── v58: the sky keeps time with the road; one ring reflection; every mode travels ──
   test("v58 The sky: the further the road has come, the lower the moon (setting on its own side, clear of the ring) and the later the night; the picture-house screen stays put", () => {

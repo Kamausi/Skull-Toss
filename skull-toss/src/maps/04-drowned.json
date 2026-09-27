@@ -7,11 +7,11 @@
   "identity": {
     "visual": "A theatre gone to the bottom of the sea: sand drifted over the red velvet stalls, coral round the proscenium, weed on the curtains, the screen still lit on the stage.",
     "spatial": "A wide sandy aisle between rows of sunken seats, the stage at the back; the stage machinery works the water in front of the ring.",
-    "mechanic": "Timing and stage movement: revolving scenery flats sweep the lane, a ghost scrim fades in and out, bubbles rise.",
-    "throw": "Wait for your cue: the gap in the flats, the scrim going thin.",
+    "mechanic": "Water and stage timing: the whole throw is under the sea (it floats and the water drags it), an undertow runs across the stalls, bilge vents gush on a beat, air pockets fly true, and the scenery flats still turn.",
+    "throw": "Throw for the water, not the air: aim higher and wider than on land, read the undertow's weed, wait out the vent's fizz, and use an air pocket to fly straight.",
     "boss": "The Ringmaster runs the show: the flats turn to his whistle and his hoop is the ring.",
     "targets": "Gallery ducks bobbing on the water, and pop-ups that duck under.",
-    "hazards": "Bubbles rising through the stalls.",
+    "hazards": "The undertow, the bilge vents and the stage machinery; air pockets are the one place the throw flies true.",
     "camera": "Proscenium framing: the curtains hold the edges still.",
     "ambient": "Ghosts in the boxes, the screen flickering, bubbles.",
     "music": "The waltz on a theatre organ, a little faster.",
@@ -20,7 +20,7 @@
     "reward": "The Ringmaster's Showman's Quiff and the fourth shard."
   },
   "sheet": {
-    "concept": "Timing, like a stage: the scenery moves on a beat and the throw has to come in on it.",
+    "concept": "Water, like a stage: the throw floats and drags, the tide and the vents move it on a beat, and the throw has to come in on the cue.",
     "plane": "The sandy aisle (z 0–7.8) between the sunken stalls; the flats turn in the hazard zone, the scrim hangs across it.",
     "launcher": [
       0,
@@ -257,9 +257,43 @@
         "len": 1.25,
         "spin": 1.1,
         "from": 10
+      },
+      {
+        "kind": "current",
+        "box": [
+          -2.3,
+          2.3,
+          1.4,
+          3.6,
+          2.6,
+          4.6
+        ],
+        "push": [
+          4.0,
+          0.0
+        ],
+        "swell": [
+          7.0,
+          0.35
+        ],
+        "from": 20
       }
     ],
     "B": [
+      {
+        "kind": "pocket",
+        "at": [
+          0.0,
+          2.5,
+          3.8
+        ],
+        "r": 0.75,
+        "drift": [
+          0.8,
+          6.5
+        ],
+        "from": 0
+      },
       {
         "kind": "bar",
         "at": [
@@ -285,6 +319,24 @@
           1.6
         ],
         "from": 4
+      },
+      {
+        "kind": "jet",
+        "at": [
+          -1.1,
+          4.6
+        ],
+        "h": 3.8,
+        "w": 0.45,
+        "push": [
+          0.0,
+          9.0
+        ],
+        "pulse": [
+          1.4,
+          2.2
+        ],
+        "from": 7
       }
     ],
     "boss": [
@@ -298,6 +350,26 @@
         "len": 1.3,
         "spin": 0.9,
         "whistle": true,
+        "from": 0
+      },
+      {
+        "kind": "current",
+        "box": [
+          -2.3,
+          2.3,
+          1.4,
+          3.8,
+          2.8,
+          4.8
+        ],
+        "push": [
+          -3.6,
+          0.0
+        ],
+        "swell": [
+          6.0,
+          0.4
+        ],
         "from": 0
       }
     ]
@@ -600,5 +672,14 @@
     "_doc": "v58 the ring interaction (07w_encounter.js): what hangs behind the ring on this map, and what going through the ring into it does (path: the next throw's movers and threats stand aside; bonus: points only).",
     "interaction": "bell",
     "consequence": "path"
+  },
+  "medium": {
+    "_doc": "v60 the throw's medium (07x_water.js): the whole flight is under water. g: the skull's weight in it (a fraction of gravity: buoyancy). drag: exp(-k·dt) on the speed across and up/down (along the lane it keeps its pace). The aim guide steps the same model.",
+    "kind": "water",
+    "g": 0.5,
+    "drag": [
+      0.6,
+      0.8
+    ]
   }
 }
