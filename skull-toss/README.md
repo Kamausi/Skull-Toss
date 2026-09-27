@@ -4,6 +4,22 @@ Lob the skull through a ring in a haunted graveyard. Play **Story** to climb thr
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
 
+## New in v67: the open tasks closed
+
+- **The phantom coach** (the rail-shooter study's foreground pressure event). In every map's approach a ghostly coach
+  rushes across the lane between Morty and the ring on its schedule, through the band every throw flies through. Its
+  lamp glows at the side it'll come from and a dashed track lights across the ground first (1.2 s); throw while it's
+  crossing the middle and it runs the skull down; wait for it, or lob over it. Where it passes in front of the ring it
+  is only a ghost, so the ring always shows; its collision is its own box.
+- **Portals, checked on every map.** From the moment a portal opens to the far end of the rift nothing of the old place
+  pushes the throw (no wind, crosswind or obstacle); the next map is set up once, however fast you tap; play resumes
+  only when it has; the last boss opens no portal (THE END).
+- **Every map's encounters, both halves:** over a spread of moments a throw at the ring either goes in or fails for a
+  reason the game names, and there's always a way through.
+- **The hazards' eyes** are drawn at a readable size on a phone, with or without reduced motion (the tremble is left
+  out under reduced motion; the eyes still say what's coming).
+- **Decision 23 has its test:** Adventure+'s darker, red-cast print never holds the picture or tears across it.
+
 ## New in v66: moving gates and secret paths
 
 The owner's call: real moving gates, tied to the interactive environment's actors, deciding whether secret paths open

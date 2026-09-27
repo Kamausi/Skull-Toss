@@ -115,6 +115,9 @@ async function session(reduced) {
   const home = await waitFor(() => window.SkullToss.debug.state().state === "title" && !document.getElementById("title").hidden, null, 8000);
   await page.waitForTimeout(600);
   check(`${tag}quit from the pause menu: one tap arms it, the second ends the run; Menu goes home, nothing left over`, armedOnly && ended && home && !(await leftovers()).length, JSON.stringify({ armedOnly, ended, home, left: await leftovers() }));
+  // v67: the hazards say what they're about to do in their eyes, at a readable size on a phone, with or without motion
+  const eyes = await page.evaluate(() => { const T = window.SkullToss.debug; T.toTitle(); T.start(); T.setStage(7); T.calm(); T.setHits(22); T.obOn(); T.eyesClear(); for (let i = 0; i < 80; i++) T.step(0.1); const E = T.eyesSeen(); T.toTitle(); return E; });
+  check(`${tag}hazards' eyes: every state drawn, at least 3 px, telegraph included${reduced ? " (no tremble)" : ""}`, eyes.drawn > 20 && eyes.st.telegraph >= 3 && eyes.st.active >= 3 && eyes.reduced === !!reduced, JSON.stringify(eyes));
   check(`${tag}no page errors all session`, !errors.length, errors.join(" | "));
   await ctx.close();
 }

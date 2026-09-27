@@ -663,6 +663,19 @@ The owner, 2026-09-27: "Make wind affect the line", and the difficulty curve of 
 - **Replays** are version 5.
 - **Tests:** "v63 The reel's grade", "v63 Mischief", "v63 The Drowned Theater", "v63 The bank plaques".
 
+## The phantom coach, and the portal's checks (v67)
+
+- **The coach** (`07wb_coach.js`, obstacle kind `coach`, `obstacles.B` on all eight maps from the approach's second
+  hit): `z` 2.3, body `y [1.5, 2.6]`, `every [8, 1.2]` s (period, tell), `speed` 3.4 m/s across ±3.4 m, alternating
+  direction, `look` per map. `coachAt(I, T)` → `{x | null, dir, tell}`; `coachHit` is a box (±0.8 m across, ±0.35 m
+  deep), independent of the drawing. In its behaviour it tells, then is active while crossing. Drawn as a ghost
+  (alpha 0.3) wherever its screen box overlaps the ring's, recorded in `COACH_DRAWN` for the spec. Build validation in
+  `src/build.py`; RESULT `coach`; the Codex has 125 entries.
+- **Portal suspension** (`07e_directors.js`): `hazardsAllowed()` and `windNow()` are off while `PORTAL.phase` is set;
+  `portalEnter` runs only from `open`; `portalArrive` only once (`PORTAL.arrivals`).
+- **Tests:** "v67 Portals on every map…", "v67 The phantom coach…", "v67 Every map's encounters, both halves…",
+  "v67 (decision 23) Adventure+'s damaged print…"; e2e "hazards' eyes" in both sessions.
+
 ## Moving gates and secret paths (v66)
 
 - **Decision:** the owner, 2026-09-27 (Decision Ledger: "Moving gates are real gates, tied to the interactive environment

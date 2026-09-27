@@ -188,7 +188,8 @@
     magnet:  { make: false, hit: true },
     crusher: { make: false, hit: true },
     barrier: { make: false, hit: true },
-    gate: { make: false, hit: true },   // (v66: shut in its face, 07wa_gates.js)
+    gate: { make: false, hit: true },
+    coach: { make: false, hit: true },   // (v67: run down by the phantom coach, 07wb_coach.js)   // (v66: shut in its face, 07wa_gates.js)
     decoy:   { make: false, hit: true },
     sealed:  { make: false, hit: true, safe: true },   // (v60: a Bank Ring's film, not banked into: 07y_banks.js; v62: it costs no skull)   // (a decoy target hung in front of the ring: 07e_directors.js)
     eye:     { make: true, pts: 1, fill: GOLD, text: INK, mood: "excited" },   // (v47: the Pumpkin King's eyes are targets, and a poke is one of the 80 hits)

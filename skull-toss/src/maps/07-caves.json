@@ -347,6 +347,23 @@
         "len": 0.95,
         "spin": 1.5,
         "from": 4
+      },
+      {
+        "kind": "coach",
+        "_doc": "v67: the foreground pressure event (07wb_coach.js): a phantom coach crosses the lane on its schedule, told first (lamp, bell, a track on the ground); wait for it or lob over it; a ghost where it passes in front of the ring",
+        "z": 2.3,
+        "y": [
+          1.5,
+          2.6
+        ],
+        "every": [
+          8,
+          1.2
+        ],
+        "speed": 3.4,
+        "look": "iron",
+        "phase": 7.800000000000001,
+        "from": 2
       }
     ],
     "boss": [

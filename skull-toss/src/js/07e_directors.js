@@ -120,7 +120,9 @@
   // gives a tell first (a screech, a shadow, a tick) and none of them run during a boss fight except the wind.
   const HZ = { kind: "none", wind: 0, fog: 0, fogT: 0, list: [], since: 0, pendT: 0, lastTick: 0 };
   // the map's hazards (wind included) sit out the mini-games, the encore, and Practice with them switched off
-  const hazardsAllowed = () => !MODES[game.mode].mini && game.phase !== "encore" && game.phase !== "crossing" && !(game.mode === "practice" && !practice.hazards);
+  // v67 (the canonical portal checklist): nothing of the old place pushes the throw once the portal is open, through
+  // the rift and out: no wind, no crosswind, no obstacle; the new place's forces start only after its set-up
+  const hazardsAllowed = () => !PORTAL.phase && !MODES[game.mode].mini && game.phase !== "encore" && game.phase !== "crossing" && !(game.mode === "practice" && !practice.hazards);
   const hazardsLive = () => !boss && game.state !== "title" && game.state !== "cine" && hazardsAllowed();
   function hazardsReset() {
     PARK.at = null; HZ.kind = mapData(game.stage || 1).mechanic.kind; HZ.wind = 0; HZ.windMul = 1; HZ.fog = 0; HZ.fogT = 0; HZ.list = []; HZ.since = 0; HZ.pendT = 0; HZ.lastTick = 0;
@@ -131,7 +133,7 @@
   // sheet always said they were, air rising from the wreck (mechanic.skin: "bubble"), one at a time, drawn as a bubble
   const hzBubbles = () => mapData(game.stage || 1).mechanic.skin === "bubble";
   const newBalloon = y => ({ kind: "balloon", x: rrIn(-2.2, 2.2), y, z: rrIn(2.4, 4.8), vy: rrIn(0.28, 0.42), col: ["#A94332", "#C49A42", "#356B68", "#F2E7C9"][(runRand() * 4) | 0], r: 0.24 });
-  const windNow = () => (HZ.kind === "wind" && (hazardsAllowed() || attrWind()) ? HZ.wind : plusWind());   // (v51: Adventure+'s crosswind)   // (v50: Gale Force's own gale)   // m/s² across the throw (positive pushes right)
+  const windNow = () => (PORTAL.phase ? 0 : HZ.kind === "wind" && (hazardsAllowed() || attrWind()) ? HZ.wind : plusWind());   // (v51: Adventure+'s crosswind)   // (v50: Gale Force's own gale)   // m/s² across the throw (positive pushes right)
   // the pendulum: a pivot high over the lane, swinging across it; its bob is what hits
   const PEND = { x: 0, y: 5.4, z: 3.1, L: 3.1, A: 0.86, r: 0.32 };
   function pendPeriod() { return 2.7 / tierNow().speed; }

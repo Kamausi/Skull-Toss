@@ -58,7 +58,8 @@
     if (I.kind === "fan") { const [x0, x1, y0, y1, z0, z1] = I.box; return [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2]; }
     if (I.kind === "crusher") { const [x0, x1, z0, z1] = I.box; return [(x0 + x1) / 2, I.low + 1.2, (z0 + z1) / 2]; }
     if (I.kind === "barrier") { const [x0, x1, y0, y1, z] = I.box; return [(x0 + x1) / 2, (y0 + y1) / 2, z]; }
-    if (I.kind === "gate") return [(I.span[0] + I.span[1]) / 2, I.h / 2, I.z];   // (v66: 07wa_gates.js)
+    if (I.kind === "gate") return [(I.span[0] + I.span[1]) / 2, I.h / 2, I.z];
+    if (I.kind === "coach") return coachCentre(I);   // (v67: 07wb_coach.js)   // (v66: 07wa_gates.js)
     if (I.kind === "current") { const [x0, x1, y0, y1, z0, z1] = I.box; return [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2]; }   // (v60: the water's own things, 07x_water.js)
     return [0, 2, 4];
   }
@@ -166,6 +167,7 @@
       if (I.kind === "bar") { const E = barEnds(I), d = segDist(P, E.a, E.b); hit = d < BAR_R + SKULL_R; near = d < BAR_R + SKULL_R + NEAR_PASS; at = P; }
       else if (I.kind === "spikes") { const r = spikesRaise(I); hit = r > 0.3 && P.x > I.span[0] - SKULL_R && P.x < I.span[1] + SKULL_R && P.y < I.h * r + SKULL_R && Math.abs(P.z - I.z) < 0.14 + SKULL_R; at = P; }
       else if (I.kind === "cannon") { for (const b of I.balls) { const q = ballAt(I, b), d = Math.hypot(P.x - q.x, P.y - q.y, P.z - q.z); if (d < BALL_R + SKULL_R) { hit = true; at = q; break; } if (d < BALL_R + SKULL_R + NEAR_PASS) near = true; } }
+      else if (I.kind === "coach") { hit = coachHit(I, P); at = P; }   // (v67: the phantom coach, 07wb_coach.js)
       else if (I.kind === "magnet") { const d = Math.hypot(P.x - I.at[0], P.y - I.at[1], P.z - I.at[2]); hit = d < MAG_CORE + SKULL_R; near = d < MAG_CORE + SKULL_R + NEAR_PASS; at = P; }
       else if (I.kind === "crusher") { const [x0, x1, z0, z1] = I.box, B = crusherBottom(I); hit = P.x > x0 - SKULL_R && P.x < x1 + SKULL_R && P.z > z0 - SKULL_R && P.z < z1 + SKULL_R && P.y > B.y - SKULL_R && P.y < B.y + CRUSHER_TALL + SKULL_R; at = P; }
       else if (I.kind === "barrier") { const [x0, x1, y0, y1, z] = I.box; if (prev.z < z && P.z >= z && barrierAlpha(I) > 0.5) { const u = (z - prev.z) / (P.z - prev.z), x = prev.x + (P.x - prev.x) * u, y = prev.y + (P.y - prev.y) * u; hit = x > x0 && x < x1 && y > y0 && y < y1; at = { x, y, z }; } }

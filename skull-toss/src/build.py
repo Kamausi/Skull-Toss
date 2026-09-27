@@ -221,6 +221,10 @@ def map_problems(m, fname):
             if "box" in o and k == "crusher": x0, x1, z0, z1 = o["box"]; pts += [[x0, o.get("low", 1), z0], [x1, o.get("top", 4), z1]]
             if k == "spikes": pts += [[o["span"][0], 0, o["z"]], [o["span"][1], o["h"], o["z"]]]
             if k == "cannon": pts.append([0, o["y"], o["z"]])
+            if k == "coach":   # (v67: the phantom coach, 07wb_coach.js: crossing the lane at z, its body y [low, high], every [period, tell] s, speed m/s)
+                if not (isinstance(o.get("z"), (int, float)) and 1.6 <= o["z"] <= 3.2 and isinstance(o.get("y"), list) and len(o["y"]) == 2 and o["y"][0] < o["y"][1]): bad.append("obstacle coach: z 1.6–3.2 m and y [low, high]")
+                elif not (isinstance(o.get("every"), list) and len(o["every"]) == 2 and o["every"][0] >= 5 and 0.8 <= o["every"][1] <= 2 and 2 <= o.get("speed", 0) <= 5): bad.append("obstacle coach: every [period ≥ 5 s, tell 0.8–2 s], speed 2–5 m/s")
+                elif o.get("look") not in ("wood", "gilt", "iron", "bone", "film"): bad.append("obstacle coach: look is wood, gilt, iron, bone or film")
             if k == "gate":   # (v66: a moving gate across the lane, 07wa_gates.js: span [x0, x1], its height h, at z, cycle [open, shut] s)
                 if not (isinstance(o.get("span"), list) and len(o["span"]) == 2 and o["span"][0] < o["span"][1] and isinstance(o.get("h"), (int, float)) and 2.4 <= o["h"] <= 4.0 and isinstance(o.get("z"), (int, float))): bad.append("obstacle gate: span [x0, x1], h 2.4–4 m and z")
                 elif not (isinstance(o.get("cycle"), list) and len(o["cycle"]) == 2 and o["cycle"][0] >= 1.5 and 0.5 <= o["cycle"][1] <= 2.5): bad.append("obstacle gate: cycle [open ≥ 1.5 s, shut 0.5–2.5 s]")

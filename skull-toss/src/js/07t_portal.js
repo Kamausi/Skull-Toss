@@ -34,6 +34,7 @@
     caption(t("portal.again"), W / 2, H * 0.3); Sound.toon("boing");
   }
   function portalEnter() {
+    if (PORTAL.phase !== "open") return;   // (v67: once; a second resolve in the same frame can't start a second rift)
     PORTAL.phase = "rift"; PORTAL.t = 0; PORTAL.seen = []; game.endTimer = 1e9; Sound.flightStop(); Sound.toon("iris"); buzz([12, 40, 12]);   // (the throw doesn't end: it goes on through the rift)
     hideStageCard(); setHint("");   // (nothing of the arena's comes with him: not its card, not its hint)
     Telemetry.emit("portal_enter", { dest: PORTAL.dest, tries: PORTAL.miss + 1 });
@@ -48,7 +49,8 @@
   // partway down the rift the destination is set up, so it's there far ahead of him, small, growing as he nears it
   // (its cards and hint wait under the rift: body.rifting hides them until the camera's out)
   function portalArrive() {
-    PORTAL.arrived = true;
+    if (PORTAL.arrived) return;   // (v67: the destination is set up once, however the frames fall)
+    PORTAL.arrived = true; PORTAL.arrivals = (PORTAL.arrivals || 0) + 1;
     game.ringHidden = false; ring.frozen = null; resetSkull();
     const f = PORTAL.then; PORTAL.then = null;
     if (f) f();

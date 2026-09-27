@@ -1692,7 +1692,7 @@
     T.setStats(ZERO); T.toTitle();
   });
   test("The Codex notes things as they turn up: a boss when you meet it, a power-up when you grab it, each map's hazard and target", () => {
-    T.setStats(ZERO); let K = T.codex(); assert(K.total === 124 && K.count === 2, `124 entries (v50: 32 areas; v54 and v57: six more power-ups each; v60: four more obstacles; v66: the gate), only Crow Hollow and its first act known at first (${K.count}/${K.total})`);
+    T.setStats(ZERO); let K = T.codex(); assert(K.total === 125 && K.count === 2, `125 entries (v50: 32 areas; v54 and v57: six more power-ups each; v60: four more obstacles; v66: the gate; v67: the coach), only Crow Hollow and its first act known at first (${K.count}/${K.total})`);
     fresh(); toHit(C.STAGE_MINI); assert(T.codex().seen.includes("boss:crow"), "meeting the Crow King notes him");
     T.givePower("rush"); assert(T.codex().seen.includes("power:rush"), "grabbing a power-up notes it");
     fresh(); T.setStage(2); T.setHits(10); T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y);
@@ -1713,7 +1713,7 @@
     assert(ends.length === 8 && ends.every(r => r.classList.contains("unseen")) && ends.find(r => r.dataset.entry === "boss:reaper").textContent.startsWith("???"), "8 end bosses, none met");
     tabs.find(b => b.dataset.cat === "area").click(); const areas = [...document.querySelectorAll("#codexList .entry")];
     assert(areas.length === 32 && areas.filter(r => !r.classList.contains("unseen")).length === 5, `32 areas, map 1's four and map 2's first seen (${areas.filter(r => !r.classList.contains("unseen")).length})`);
-    assert(/of 124 found/.test($("codexCount").textContent), $("codexCount").textContent);
+    assert(/of 125 found/.test($("codexCount").textContent), $("codexCount").textContent);
     T.closeSheet(); T.setStats(ZERO); T.toTitle();
   });
   test("The Production Archive unseals the studio's paperwork as the story goes on", () => {
@@ -2431,7 +2431,7 @@
   test("A decoy in the throw's way is a miss; the Codex knows all nine targets and twelve obstacles (v60: the undertow, the bilge vent, the air pocket and the bank board)", () => {
     fresh(); T.setStage(3); T.calm(); T.freezeRing(0, C.RING_Y); const { a, q } = pathAt(3.6); T.plantDecoy(q.x, q.y, q.z); const lives = T.state().lives;
     T.throwAt(a.AX, a.AY); T.step(2.5); assert(T.state().lastResult.kind === "decoy" && T.state().lives === lives - 1, `HONK (${T.state().lastResult.kind})`);
-    T.setStats(ZERO); T.openSheet("codex"); document.querySelector('#codexTabs [data-cat="obstacle"]').click(); assert(document.querySelectorAll("#codexList .entry").length === 13, "thirteen obstacles (v66: the gate)");
+    T.setStats(ZERO); T.openSheet("codex"); document.querySelector('#codexTabs [data-cat="obstacle"]').click(); assert(document.querySelectorAll("#codexList .entry").length === 14, "fourteen obstacles (v66: the gate; v67: the coach)");
     document.querySelector('#codexTabs [data-cat="target"]').click(); assert(document.querySelectorAll("#codexList .entry").length === 9, "nine targets");
     T.closeSheet(); T.toTitle();
   });
@@ -2798,6 +2798,70 @@
     // the tells anyone can hear: a line ring ticks before it turns round, while you aim
     at(1, 25); const t0 = T.pers().tells; T.holdAim(0.2, 0.6); T.step(4);   // (v62: late in the first act, where the gentler curve's ring turns within four seconds) assert(T.pers().tells > t0, "a line ring ticks before it turns round"); T.letGo(); T.step(3);
     assert(T.chainPitch(1) === 1 && T.chainPitch(2) > 1 && T.chainPitch(3) > T.chainPitch(2), "and a chain of bounces or hits climbs in pitch");
+    T.toTitle(); T.setStats(ZERO);
+  });
+  // ── v67: the portal's canonical checks, on every map ──
+  test("v67 Portals on every map: the old place's forces are off from the portal to the far end of the rift; the new map is set up before play resumes, once, however fast the taps; the last boss opens no portal", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); T.portalsOn(true); T.encore(false);
+    for (let n = 1; n <= 8; n++) {
+      fresh(); T.setStage(n); T.calm(); toHit(C.STAGE_MINI); T.step(2.6); T.hurtBoss(99); T.endThrow(); for (let i = 0; i < 200 && (T.boss() || T.state().state !== "ready"); i++) T.step(0.1);
+      T.calm(); T.setHits(C.STAGE_BOSS - 1); T.freezeRing(0, C.RING_Y); T.throwAt(0, C.RING_Y);
+      for (let i = 0; i < 200 && !(T.boss() && T.state().state === "ready"); i++) T.step(0.1);
+      T.unfreezeRing(); T.hurtBoss(99); T.endThrow(); T.step(0.3);
+      for (let i = 0; i < 300 && T.portal().phase !== "open" && T.state().screen !== "over"; i++) { T.step(0.05); const sk = $("bonusSkip"); if (sk && sk.offsetParent) sk.click(); }
+      if (n === 8) { for (let i = 0; i < 200 && T.state().screen !== "over"; i++) T.step(0.1); assert(!T.portal().phase && T.state().screen === "over" && T.runStats().story, `map 8: THE END, no portal, no more play (${T.portal().phase}, ${T.state().screen})`); continue; }
+      assert(T.portal().phase === "open", `map ${n}: a portal (${JSON.stringify(T.portal())})`);
+      T.hzKind("wind"); T.setWind(3); assert(T.windNowIs() === 0 && !T.obstacles().length, `map ${n}: no wind or obstacle pushes the portal throw`);
+      const a0 = T.portal().arrivals; T.throwAt(0, T.portal().y);
+      for (let i = 0; i < 60 && T.portal().phase === "open"; i++) T.step(0.05);
+      assert(T.portal().phase === "rift", `map ${n}: into the rift`);
+      let refused = 0, early = false;
+      for (let i = 0; i < 40 && T.portal().phase; i++) { if (!T.throwAt(0, C.RING_Y)) refused++; T.step(0.1); if (T.windNowIs() !== 0) early = true; if (T.state().state === "ready" && T.portal().phase === "rift") early = true; }
+      assert(refused > 5 && !early, `map ${n}: taps in the rift do nothing, nothing pushes, play doesn't resume inside it (${refused})`);
+      T.step(1); const S = T.state();
+      assert(S.stage === n + 1 && S.state === "ready" && S.stageHits === 0 && T.portal().arrivals === a0 + 1, `map ${n}: out on map ${n + 1}, set up once (${S.stage}, ${S.state}, ${T.portal().arrivals - a0})`);
+    }
+    T.portalsOn(false); T.encore(false); T.toTitle(); T.setStats(ZERO);   // (the spec's default: no Can Alley offer)
+  });
+  test("v67 The phantom coach (the foreground pressure event): its lamp and track tell it first; crossing the middle it runs a throw down; wait and the way is clear; where it passes the ring it's a ghost; its box, not its drawing, is what hits", () => {
+    T.setStats({ ...ZERO, bestStage: 9 });
+    for (let n = 1; n <= 8; n++) { beatCrow(n); T.setHits(C.STAGE_LOOSE + 5); T.obOn(); assert(T.coachNow().length === 1, `map ${n} has its coach in the approach`); }
+    beatCrow(6); T.setHits(C.STAGE_LOOSE + 5); T.obOn(); T.freezeRing(0, C.RING_Y);
+    const K = T.coachNow()[0], [per, tell] = K.every, at = u => { T.gateClock(u - K.phase); T.step(0); return T.coachNow()[0]; };
+    let c = at(tell * 0.5); assert(c.at.x === null && c.at.tell > 0.4 && c.beh === "telegraph", `the tell first (${JSON.stringify(c.at)}, ${c.beh})`);
+    c = at(tell + 6.8 / K.speed / 2); assert(Math.abs(c.at.x) < 0.3 && c.beh === "active", `then it crosses (${c.at.x.toFixed(2)}, ${c.beh})`);
+    const lives = T.state().lives, mid = tell + 6.8 / K.speed / 2, fly = 2.3 / (C.RING_Z / C.FLIGHT_T);   // (the skull reaches z 2.3 about 0.3 s after the throw)
+    T.gateClock(mid - fly - K.phase); let a = T.aimFor(0, C.RING_Y, C.RING_Z); T.throwAt(a.AX, a.AY); T.step(2.5);
+    assert(T.state().lastResult.kind === "coach" && T.state().lives === lives - 1, `thrown as it crosses the middle: run down (${T.state().lastResult.kind})`);
+    T.step(1); T.freezeRing(0, C.RING_Y); T.gateClock(tell + 6.8 / K.speed + 0.5 - K.phase); a = T.aimFor(0, C.RING_Y, C.RING_Z); T.throwAt(a.AX, a.AY); T.step(2.5);
+    assert(T.state().lastResult.make, `waited for it: the way is clear (${T.state().lastResult.kind})`);
+    T.freezeRing(0, C.RING_Y); at(mid); const g = T.coachNow()[0].drawn; assert(g.over && g.ghost <= 0.35, `over the ring it's a ghost (${JSON.stringify(g)})`);
+    assert(T.enc && T.coachNow()[0].y[0] >= 1.4, "its box is its own (y from 1.5 m): a lob low under it isn't its drawing's business");
+    T.toTitle(); T.setStats(ZERO);
+  });
+  test("v67 Every map's encounters, both halves: over a spread of moments a throw at the ring, wherever it's got to, either makes it or fails for a reason the game names; there's always a way through; targets never stand in an obstacle", () => {
+    T.setStats({ ...ZERO, bestStage: 9 });
+    for (let n = 1; n <= 8; n++) for (const half of ["A", "B"]) {
+      if (half === "A") { fresh(); T.setStage(n); T.calm(); T.setHits(24); T.obOn(); } else { beatCrow(n); T.setHits(C.STAGE_LOOSE + 6); T.obOn(); }
+      const kinds = T.obstacles().map(o => o.kind); let makes = 0; const why = [];
+      for (let k = 0; k < 9; k++) {
+        const rx = [0, 0.8, -0.8][k % 3]; T.freezeRing(rx, C.RING_Y); T.gateClock(k * 1.37); const a = T.aimFor(rx, C.RING_Y, C.RING_Z); if (!T.throwAt(a.AX, a.AY)) { T.step(1); continue; } T.step(2.6);   // (the ring where it goes in play: in the middle and out to either side; a bar's hub may sit on the dead-centre line)
+        const r = T.state().lastResult; if (r.make) makes++; else why.push(r.kind);
+        if (T.state().state === "over" || T.state().lives < 2) { T.setLives && T.setLives(3); }
+      }
+      assert(makes >= 1, `map ${n} ${half}: a way through at some moment (${kinds}; ${why})`);
+      assert(why.every(k => T.resultNamed(k)), `map ${n} ${half}: every failure has a name the player is told (${why})`);
+    }
+    T.toTitle(); T.setStats(ZERO);
+  });
+  test("v67 (decision 23) Adventure+'s damaged print: the red cast stays; nothing holds the picture or tears across it, even while aiming", () => {
+    T.setStats({ ...ZERO, storyClears: 1 }); T.startPlus(); T.calm(); T.step(0.5);
+    let t0 = T.clockNow(), held = 0; T.holdAim(0, 0.6);
+    for (let i = 0; i < 240; i++) { T.step(1 / 60); const t1 = T.clockNow(); if (t1 - t0 < 1 / 120) held++; t0 = t1; }
+    T.letGo(); T.step(3);
+    assert(held === 0, `the picture never held (${held} frames)`);
+    const plus = T.pixelMid(); T.toTitle(); T.start(); T.calm(); T.step(0.5); const plain = T.pixelMid();
+    assert(plus[0] + plus[1] + plus[2] < plain[0] + plain[1] + plain[2] && plus[2] <= plain[2], `the darker, red-cast print (${plus} vs ${plain})`);
     T.toTitle(); T.setStats(ZERO);
   });
   // ── v66: moving gates, the actors that work them, and the secret paths they open ──

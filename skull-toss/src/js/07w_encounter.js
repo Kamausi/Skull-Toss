@@ -103,18 +103,21 @@
     else if (O.kind === "spikes") { tele = spikesTell(O) ? 1 : 0; act = spikesRaise(O) > 0.3; }
     else if (O.kind === "barrier") { const a = barrierAlpha(O); act = a > 0.9; tele = a > 0.02 && a < 0.9 ? 1 : 0; }
     else if (O.kind === "fan") act = fanOn(O) > 0.2;
+    else if (O.kind === "coach") { const c = coachAt(O); tele = c.tell; act = c.x != null; }   // (v67)
     else if (O.kind === "jet") { tele = jetTell(O); act = jetOn(O) > 0.2; }
     else act = true;   // (a bar, a bumper, a lodestone: always at it)
     if (tele > 0) return "telegraph";
     if (act && O.kind !== "bar" && O.kind !== "bumper" && O.kind !== "magnet") return "active";
     return O.sense > 0.25 ? "notice" : act ? "active" : "idle";
   }
+  const EYES = { drawn: 0, st: {} };
   // the eyes: a 1930s cartoon's way of saying what a thing is about to do
   function drawObEyes(O) {
-    if (O.kind === "current" || O.kind === "pocket") return;   // (v60: the water itself has no face)
+    if (O.kind === "current" || O.kind === "pocket" || (O.kind === "coach" && coachAt(O).x == null)) return;   // (v60: the water itself has no face)
     const st = obBehaviour(O), c = obCentre(O), up = O.kind === "spikes" ? O.h * 0.5 : O.kind === "crusher" ? crusherBottom(O).y + 0.9 - c[1] : 0.25, p = project(c[0], c[1] + up, c[2]), e = Math.max(2, p.s * 0.06), t = OB.t;
     if (p.s < 12) return;
-    const shake = st === "telegraph" ? Math.sin(t * 50) * e * 0.25 : 0, look = st === "notice" || st === "telegraph" ? -0.35 : 0;
+    EYES.drawn++; EYES.st[st] = Math.max(EYES.st[st] || 0, e);   // (v67: the spec and the e2e read how big they're drawn, on a phone and with reduced motion)
+    const shake = st === "telegraph" ? (reduceMotion ? 0 : Math.sin(t * 50) * e * 0.25) : 0, look = st === "notice" || st === "telegraph" ? -0.35 : 0;
     ctx.save(); ctx.translate(p.x + shake, p.y); ctx.lineWidth = Math.max(1, e * 0.25); ctx.strokeStyle = INK;
     for (const sd of [-1, 1]) {
       const x = sd * e * 1.3;
