@@ -28,8 +28,8 @@
   }
   const JUMP_TELL = 0.28;   // the last part of each hold: the film flickers before the cut
   const RING_PATHS = {
-    line:     { flat: true, post: true, at: p => ({ x: ring.amp * Math.sin(p), y: RING_Y + ring.bob * Math.sin(p * 1.7), z: ringZ0() }) },
-    static:   { flat: true, post: true, at: () => ({ x: 0, y: RING_Y, z: ringZ0() }) },
+    line:     { flat: true, post: true, at: p => ({ x: ring.amp * Math.sin(p) + ringPersX(), y: RING_Y + ring.bob * Math.sin(p * 1.7), z: ringZ0() }) },
+    static:   { flat: true, post: true, at: () => ({ x: ringPersX(), y: RING_Y, z: ringZ0() }) },   // (v60: a timid ring's flinch, 07z_rings.js)
     vertical: { flat: true, at: p => ({ x: 0, y: RING_Y + 0.55 * Math.sin(p), z: ringZ0() }) },
     diagonal: { flat: true, at: p => ({ x: ring.amp * Math.sin(p), y: RING_Y + 0.42 * Math.sin(p), z: ringZ0() }) },
     figure8:  { flat: true, at: p => ({ x: ring.amp * Math.sin(p), y: RING_Y + 0.38 * Math.sin(p * 2), z: ringZ0() }) },
@@ -128,7 +128,7 @@
     game.score += pts; profile.scoreTotal += pts; profile.targetHits++; game.run.targets = (game.run.targets || 0) + 1; addBones(T.type === "golden" ? 25 : T.type === "secret" ? 15 : 3);
     const word = T.type === "golden" ? "JACKPOT!" : T.type === "secret" ? t("target.secret.found") : "BULLSEYE!";
     impact(word, p.x, p.y - U * 0.05, { fill: T.type === "secret" ? PURPLE : GOLD, text: T.type === "secret" ? CREAM : INK, scale: T.type === "golden" || T.type === "secret" ? 0.75 : 0.55, bits: T.type === "golden" });
-    flyPoints(`+${fmtN(pts)}`, p.x, p.y, T.type === "golden"); Sound.toon(T.type === "golden" ? "fanfare" : "ding", panOf(P.x));
+    flyPoints(`+${fmtN(pts)}`, p.x, p.y, T.type === "golden"); skull.tChain = (skull.tChain || 0) + 1; Sound.toon(T.type === "golden" ? "fanfare" : "ding", panOf(P.x), chainPitch(skull.tChain));   // (v60: each target a throw clips rings higher, 07y_banks.js)
     if (T.type === "secret") { profile.secretTargets = (profile.secretTargets || 0) + 1; }
     if (T.type === "split") for (const sd of [-1, 1]) targets.push({ kind: T.kind, type: "half", x: P.x, y: P.y, z: P.z + 0.2, vx: sd * 1.4, t: 0, left: 2, pop: 0, ph: T.ph + sd, sz: 0.65 });
     Telemetry.emit("target", { kind: T.kind, type: T.type, stage: game.stage }); challenge("targets", 1);

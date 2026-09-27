@@ -68,7 +68,7 @@
   function drawRing() {
     if (portalOpen()) { const q = project(ring.x, ring.y, ring.z); drawPortalRing(q, PORTAL.r * q.s); return; }   // (v54: the way on, 07t_portal.js)
     if (game.ringHidden) return;   // (v54: a beaten boss's stage is empty)
-    const p = project(ring.x, ring.y, ring.z), T = VENT.ring || { t: game.time, sq: 0, dir: 0 };
+    const p = project(ring.x, ring.y, ring.z), T = VENT.ring || { t: game.time, sq: 0, dir: 0 }; p.x += persShake();   // (v60: a timid ring's nerves, 07z_rings.js)
     const wob = ring.wobble > 0 ? Math.sin(T.t * 38) * 0.035 * ring.wobble : 0, morph = ring.morph || 0;
     const r = ring.rc * p.s * (1 + wob + morph * 0.25 * Math.sin(morph * 18)), lw = RING_TUBE * 2 * p.s;
     gpuSceneComposite();   // v50: the scene's GPU fire (the ring's, the torches') goes in here, behind the ring (08j_gpu.js)
@@ -83,8 +83,9 @@
     ringHeat += (ringHeatGoal() - ringHeat) * Math.min(1, dtH * (ringHeatGoal() > ringHeat ? 4 : 2.5));
     if (ringHeat > 0.02) { const E = ringOuter(r, lw, cos.ring); if (!gpuRingFire(p.x, p.y, E, lw, ringHeat)) drawRingFire(p.x, p.y, r, lw, ringHeat, T.t); Gpu.fire = { x: p.x, y: p.y, r: E, heat: ringHeat }; }   // (v49: the GPU draws the fire when it's on, and its embers: 08j_gpu.js)
     drawSeal(p, r, lw);   // (v60: a Bank Ring's film, behind the rim: 07y_banks.js)
+    const nar = ringNarrow(); if (nar < 0.999) { ctx.save(); ctx.translate(p.x, p.y); ctx.scale(nar, 1); ctx.translate(-p.x, -p.y); }   // (v60: a shy ring turned edge-on)
     const rim = drawRingLight(p.x, p.y, r, lw);   // a soft glow in its own colour outside it (v54: no dark backing), and its rim light
-    drawRingShape(ctx, p.x, p.y, r, lw, cos.ring, T.t, ring.flash); rim();
+    drawRingShape(ctx, p.x, p.y, r, lw, cos.ring, T.t, ring.flash); rim(); drawLaneHaze(p, r, lw); if (nar < 0.999) ctx.restore();   // (v60: a far lane's ring in the haze, 07z_lanes.js)
     if (crossOn() && crossGolden()) {   // the crossing's golden rings (07q_crossing.js): a gilt band and a light
       ctx.strokeStyle = GOLD; ctx.lineWidth = Math.max(2, lw * 0.45); ctx.globalAlpha = 0.75 + 0.25 * Math.sin(game.time * 6); ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
       gpuLight(p.x, p.y, r * 2.2, "255,209,89", 0.5);
@@ -358,7 +359,7 @@
     drawBossLight();   // a boss fight: the scenery dims and a spot finds the ring (07n_environment.js)
     if (!game.ringHidden) drawAnchorSupport();   // the branch, arch, signpost, batten or rail the ring hangs from
     if (boss) boss.draw(false);
-    drawSeeds(false); drawTargets(false); drawAttraction(false); drawCans(); drawObstacles(false); drawHazards(false); drawEncounter();   // (v56: the attraction's booth and props, 07u_attractions.js)
+    drawSeeds(false); drawTargets(false); drawAttraction(false); drawCans(); drawLanes(); drawObstacles(false); drawHazards(false); drawEncounter();   // (v56: the attraction's booth and props, 07u_attractions.js)
     const onStage = game.state !== "title";
     if (onStage && !game.ringHidden) drawTrackAndShadow();
     drawPlayWorld();
@@ -370,7 +371,7 @@
     drawGhostShot();   // (v51: the last miss, faint, 08k_feel.js)
     if (pv) drawDots(pv.back, true);
     if (flying && behind) { drawClones(); drawFlyingSkull(); }
-    if (onStage) { drawDecoys(); drawRing(); drawPickup(); drawHomingLock(); }   // (v51: Adventure+'s decoy rings, behind the real one; v57: the Homing Bone's lock)
+    if (onStage) { drawDecoys(); drawDecoyRing(); drawRing(); drawPickup(); drawHomingLock(); }   // (v51: Adventure+'s decoy rings, behind the real one; v57: the Homing Bone's lock)
     if (boss) boss.draw(true);
     if (onStage) drawNearWorld();   // (v53: whatever walks between the ring and the camera passes in front of it and its pole)
     drawAquaFront();   // (v58: now and then a big fish passes close, low and to one side)

@@ -6,14 +6,14 @@ Every map has a mechanical identity, not just an art theme: the **mechanic** row
 
 | # | Map | Mechanic | Anchor | Obstacles | End boss gives |
 |---|---|---|---|---|---|
-| 1 | Crow Hollow | None | branch | none | hair:vines and the hollow shard |
-| 2 | The Gilded Graveyard | Environmental interaction | arch | bumper | beard:handlebar and the gilded shard |
-| 3 | The Whistling Woods | Trajectory and deception | sign | fan | beard:roots and the whistle shard |
-| 4 | The Drowned Theater | Timing and stage movement | rope | bar, barrier | hair:quiff and the drowned shard |
+| 1 | Crow Hollow | None | post | none | hair:vines and the hollow shard |
+| 2 | The Gilded Graveyard | Environmental interaction | post | bank, bumper | beard:handlebar and the gilded shard |
+| 3 | The Whistling Woods | Trajectory and deception | post | fan | beard:roots and the whistle shard |
+| 4 | The Drowned Theater | Water and stage timing | post | bar, barrier, current, jet, pocket | hair:quiff and the drowned shard |
 | 5 | The Black Marsh | Environmental hazards | post | crusher, spikes | hair:moss and the marsh shard |
-| 6 | The Bone Desert | Distance and precision | hand | cannon | wings:vulture and the desert shard |
+| 6 | The Bone Desert | Distance and precision | post | cannon | wings:vulture and the desert shard |
 | 7 | The Clockwork Caves | Mechanical timing and complex trajectories | gear | bar, crusher, magnet | wings:clockwork and the clockwork shard |
-| 8 | The Black Abyss | Final Ring completion | chain | bar, barrier, bumper, magnet | wings:shadow and the abyss shard |
+| 8 | The Black Abyss | Final Ring completion | post | bar, barrier, bumper, magnet | wings:shadow and the abyss shard |
 
 ## 1. Crow Hollow (Reel One)
 
@@ -24,15 +24,15 @@ Every map has a mechanical identity, not just an art theme: the **mechanic** row
 | | |
 |---|---|
 | Visual | A harvest hollow at dusk: a crooked barn, a windmill, pumpkin rows, crows on every rail. |
-| Spatial | Open and shallow: one clean lane between the pumpkin rows, the ring hung from the old oak's branch right over it. |
-| Mechanic | None: the throw itself. The ring swings side to side on its rope, then flies its triangle. |
+| Spatial | Open and shallow: one clean lane between the pumpkin rows, the ring on its pole right over it. |
+| Mechanic | None: the throw itself. The ring slides side to side on its pole, then flies its triangle. |
 | The throw | Plain arcs under a still sky. Lead the swing. |
 | Targets | Jack-o'-lanterns hung in the oak, still at first. |
 | Hazards | None; the bosses bring their own. |
 | Ring | speed ×1.0, path: triangle, modifiers: none |
 | Tiers | I before the mini-boss, II after |
 | Boss | The Pumpkin King's mouth is the ring and his eyes are targets: shut his eyes to stop the seeds, then throw down his throat. |
-| Anchor | `branch` |
+| Anchor | `post` |
 | Obstacles | first half: none; second half: none; end boss: none |
 | Targets | first half: standard; second half: standard, swinging |
 | Mini-boss | `crow` |
@@ -43,7 +43,7 @@ Every map has a mechanical identity, not just an art theme: the **mechanic** row
 | Look | moon: art, skyline: farm, lane: dirt, props: patch, frame: branches, weather: leaves |
 | Palette | sky #261826 → #4E2A34 → #944A34 → #D08A48; ground #4E3A24 → #382818 → #261A10 → #150E08 |
 | Music | The original waltz at 92 bpm. (playback ×1.0) |
-| Sound | Caws, creaking rope, rustling corn. |
+| Sound | Caws, creaking wood, rustling corn. |
 | Transition | An iris on the moon. |
 | Reward | Pumpkin-Vine Curls and the first shard of the Black Ring. |
 
@@ -51,21 +51,21 @@ Every map has a mechanical identity, not just an art theme: the **mechanic** row
 
 *Where the rich were buried with their money. The gold never stopped shining, and it never stopped moving.*
 
-**Concept.** Introduce the environment talking back: things by the lane move when Morty hits them, and gold bounces.
+**Concept.** Introduce the environment talking back: things by the lane move when Morty hits them, and gold bounces; then bank shots on purpose: a board to bank off, and rings that only open to a bank.
 
 | | |
 |---|---|
 | Visual | Gold-domed mausoleums, gilded angels and urns, moonlight on marble. |
 | Spatial | The lane runs under a gilded arch; urns and bells stand close by it, near enough to touch. |
-| Mechanic | Environmental interaction: gilded urns bounce the skull, and bank shots count. |
-| The throw | Play the urns: a bounce off gold can still find the ring. |
+| Mechanic | Environmental interaction: gilded urns bounce the skull and bank shots count; a headstone and a gilded plaque stand beside the lane to bank off, and every few rings the ring is sealed until a throw banks in. |
+| The throw | Play the urns and the boards: a bounce off gold or stone can still find the ring, and a sealed ring wants one. |
 | Targets | Braziers swinging on chains between the tombs. |
 | Hazards | Bats out of the crypts. |
 | Ring | speed ×1.06, path: triangle, modifiers: bob |
 | Tiers | II before the mini-boss, III after |
 | Boss | The Count drags the urns into his waltz: they circle with him, so the banks change every lap. |
-| Anchor | `arch` |
-| Obstacles | first half: bumper @6, bumper @14; second half: bumper @0, bumper @0, bumper @10; end boss: bumper, bumper |
+| Anchor | `post` |
+| Obstacles | first half: bumper @10, bank @20; second half: bank @0, bumper @0, bumper @4; end boss: bumper, bumper |
 | Targets | first half: standard, swinging; second half: swinging, shielded |
 | Mini-boss | `batbaron` |
 | End boss | `count`, gives `beard:handlebar` and the `gilded` shard |
@@ -89,15 +89,15 @@ Every map has a mechanical identity, not just an art theme: the **mechanic** row
 |---|---|
 | Visual | Tall black trunks, hollow logs, crooked signposts, will-o'-wisps in the ferns. |
 | Spatial | A narrow cutting through the trees; hollow logs lie across the lane's edges and blow up it. |
-| Mechanic | Trajectory and deception: the wind turns every throw, hollow logs gust the skull, and painted decoys hang in the way. |
-| The throw | Read the wind sign and the leaves, aim off, and never trust a target that's in front of the ring. |
+| Mechanic | Trajectory and deception: the wind turns every throw, hollow logs gust the skull, and painted decoys hide among the bullseyes. |
+| The throw | Read the wind sign and the leaves, aim off, and never trust a bullseye with a question mark on it. |
 | Targets | Will-o'-wisps, and cardboard decoys that only look like them. |
 | Hazards | Wind and hollow-log gusts. |
 | Ring | speed ×1.12, path: triangle, modifiers: bob |
 | Tiers | II before the mini-boss, III after |
 | Boss | Marrowroot whistles up a gale and hangs his decoys in the lane: the ring you see sway may not be the one to throw at. |
-| Anchor | `sign` |
-| Obstacles | first half: fan @8; second half: fan @0, fan @8; end boss: fan |
+| Anchor | `post` |
+| Obstacles | first half: fan @10; second half: fan @0, fan @4; end boss: fan |
 | Targets | first half: standard, decoy; second half: swinging, decoy, runaway |
 | Mini-boss | `owl` |
 | End boss | `marrowroot`, gives `beard:roots` and the `whistle` shard |
@@ -115,29 +115,29 @@ Every map has a mechanical identity, not just an art theme: the **mechanic** row
 
 *The picture palace flooded in the storm of '33 and kept playing. The stagehands never left.*
 
-**Concept.** Timing, like a stage: the scenery moves on a beat and the throw has to come in on it.
+**Concept.** Water, like a stage: the throw floats and drags, the tide and the vents move it on a beat, and the throw has to come in on the cue.
 
 | | |
 |---|---|
-| Visual | A flooded theatre: red velvet under black water, gilt boxes, the screen still lit above the stage. |
-| Spatial | A boardwalk of planks down the drowned aisle; the stage machinery works the space in front of the ring. |
-| Mechanic | Timing and stage movement: revolving scenery flats sweep the lane, a ghost scrim fades in and out, bubbles rise. |
-| The throw | Wait for your cue: the gap in the flats, the scrim going thin. |
+| Visual | A theatre gone to the bottom of the sea: sand drifted over the red velvet stalls, coral round the proscenium, weed on the curtains, the screen still lit on the stage. |
+| Spatial | A wide sandy aisle between rows of sunken seats, the stage at the back; the stage machinery works the water in front of the ring. |
+| Mechanic | Water and stage timing: the whole throw is under the sea (it floats and the water drags it), an undertow runs across the stalls, bilge vents gush on a beat, air pockets fly true, and the scenery flats still turn. |
+| The throw | Throw for the water, not the air: aim higher and wider than on land, read the undertow's weed, wait out the vent's fizz, and use an air pocket to fly straight. |
 | Targets | Gallery ducks bobbing on the water, and pop-ups that duck under. |
-| Hazards | Bubbles rising through the stalls. |
+| Hazards | The undertow, the bilge vents and the stage machinery; air pockets are the one place the throw flies true. |
 | Ring | speed ×1.18, path: circle, modifiers: bob |
 | Tiers | III before the mini-boss, IV after |
 | Boss | The Ringmaster runs the show: the flats turn to his whistle and his hoop is the ring. |
-| Anchor | `rope` |
-| Obstacles | first half: bar @6; second half: bar @0, barrier @8; end boss: bar |
+| Anchor | `post` |
+| Obstacles | first half: bar @10, current @20; second half: pocket @0, bar @0, barrier @4, jet @7; end boss: bar, current |
 | Targets | first half: standard, popup; second half: popup, swinging, split |
 | Mini-boss | `jester` |
 | End boss | `ringmaster`, gives `hair:quiff` and the `drowned` shard |
 | Lighting | key [0.0, 1.0], ring readability 0.4 |
 | Camera | Proscenium framing: the curtains hold the edges still. |
 | Ambient | Ghosts in the boxes, the screen flickering, bubbles. |
-| Look | moon: screen, skyline: theatre, lane: boardwalk, props: theatre, frame: curtains, weather: bubbles |
-| Palette | sky #0A0E16 → #141C28 → #1E2A38 → #2A3A48; ground #1E2A34 → #16202A → #101820 → #0A0E14 |
+| Look | moon: screen, skyline: theatre, lane: seabed, props: theatre, frame: curtains, weather: bubbles |
+| Palette | sky #2A7488 → #1E5E70 → #164A5A → #123E4C; ground #6E8274 → #5E7266 → #4E6258 → #3E5048 |
 | Music | The waltz on a theatre organ, a little faster. (playback ×1.05) |
 | Sound | Organ swells, creaking flats, bloops. |
 | Transition | The curtains close, then open on the next reel. |
@@ -161,7 +161,7 @@ Every map has a mechanical identity, not just an art theme: the **mechanic** row
 | Tiers | III before the mini-boss, IV after |
 | Boss | Madame Marsh raises the whole bog: thorns and the log come up with her, and the fog follows her mud. |
 | Anchor | `post` |
-| Obstacles | first half: spikes @6; second half: spikes @0, crusher @8; end boss: spikes |
+| Obstacles | first half: spikes @10; second half: spikes @0, crusher @4; end boss: spikes |
 | Targets | first half: standard, shielded; second half: shielded, popup |
 | Mini-boss | `gator` |
 | End boss | `madame`, gives `hair:moss` and the `marsh` shard |
@@ -183,7 +183,7 @@ Every map has a mechanical identity, not just an art theme: the **mechanic** row
 
 | | |
 |---|---|
-| Visual | Rust-red dunes, mesas, a giant ribcage on the skyline, a skeleton hand holding up the ring. |
+| Visual | Rust-red dunes, mesas, a giant ribcage on the skyline, a bone-white pole holding up the ring. |
 | Spatial | Long and open: the ring stands far back, small against the dunes; bone cannons dug in either side of the lane. |
 | Mechanic | Distance and precision: a smaller, further ring, cannonballs across the lane, vultures dropping bones. |
 | The throw | Long, flat and exact: more power, less margin. |
@@ -192,8 +192,8 @@ Every map has a mechanical identity, not just an art theme: the **mechanic** row
 | Ring | speed ×1.2, path: triangle, modifiers: shrink |
 | Tiers | IV before the mini-boss, V after |
 | Boss | The Undertaker digs the ring in deep and far, fires the cannons himself, and makes you throw the length of the desert. |
-| Anchor | `hand` |
-| Obstacles | first half: cannon @6; second half: cannon @0, cannon @8; end boss: cannon, cannon |
+| Anchor | `post` |
+| Obstacles | first half: cannon @10; second half: cannon @0, cannon @4; end boss: cannon, cannon |
 | Targets | first half: standard, runaway; second half: runaway, split, golden |
 | Mini-boss | `scarecrow` |
 | End boss | `undertaker`, gives `wings:vulture` and the `desert` shard |
@@ -225,7 +225,7 @@ Every map has a mechanical identity, not just an art theme: the **mechanic** row
 | Tiers | IV before the mini-boss, V after |
 | Boss | The Clock King winds every machine to his own tick: they all move on his beat, faster as he angers. |
 | Anchor | `gear` |
-| Obstacles | first half: magnet @6, crusher @14; second half: magnet @0, crusher @0, bar @10; end boss: crusher, crusher |
+| Obstacles | first half: magnet @10, crusher @20; second half: magnet @0, crusher @0, bar @4; end boss: crusher, crusher |
 | Targets | first half: standard, split; second half: split, shielded, swinging |
 | Mini-boss | `cuckoo` |
 | End boss | `clockking`, gives `wings:clockwork` and the `clockwork` shard |
@@ -256,8 +256,8 @@ Every map has a mechanical identity, not just an art theme: the **mechanic** row
 | Ring | speed ×1.42, path: jumpcut, modifiers: bob, shrink |
 | Tiers | V before the mini-boss, VI after |
 | Boss | The Reel Reaper cuts the film itself: every obstacle jumps with the cut, and the Black Ring's last shard is in his scythe. |
-| Anchor | `chain` |
-| Obstacles | first half: barrier @6, bumper @14; second half: barrier @0, magnet @0, bumper @8, bar @14; end boss: barrier, magnet |
+| Anchor | `post` |
+| Obstacles | first half: barrier @10, bumper @20; second half: barrier @0, magnet @0, bumper @4, bar @7; end boss: barrier, magnet |
 | Targets | first half: standard, golden, decoy; second half: golden, secret, split, runaway |
 | Mini-boss | `projectionist` |
 | End boss | `reaper`, gives `wings:shadow` and the `abyss` shard |

@@ -13,7 +13,8 @@
   const mapSheet = () => stageDef().map.sheet;
   const anchorKind = () => stageDef().map.anchor;
   const anchorDef = () => BLUEPRINT.anchors[anchorKind()] || BLUEPRINT.anchors.post;
-  const ringZ0 = () => RING_Z + (stageDef().map.ring.depth || 0);   // the ring's first-half depth (the Bone Desert stands it further off)
+  const ringBaseZ = () => RING_Z + (stageDef().map.ring.depth || 0);   // the ring's first-half depth (the Bone Desert stands it further off)
+  const ringZ0 = () => { const z = laneZNow(); return z != null ? z : ringBaseZ(); };   // (v60: or its depth lane, 07z_lanes.js)
   const LIGHT = () => { const L = mapSheet().lighting; return { x: L.key[0], y: L.key[1], ring: L.ring, rim: L.rim, boss: L.boss, ambient: L.ambient }; };
   // how far a shadow slides along the ground for something h metres up (away from the light)
   const shadowShift = h => -LIGHT().x * h * BLUEPRINT.shadow.skull.offset;
@@ -26,7 +27,7 @@
   // the overhead supports: a gnarled branch, a gilded arch, a signpost's arm, the fly batten, the gear rail, the dark
   function drawAnchorSupport() {
     const k = anchorKind(), A = anchorDef(); if (A.support !== "overhead" || game.state === "title" || game.phase === "crossing") return;   // (on the road between maps there's nothing to hang from)
-    const z = ringZ0(), y = A.y, sh = anchorShake(), P = (x, yy) => project(x, yy, z);
+    const z = ringBaseZ(), y = A.y, sh = anchorShake(), P = (x, yy) => project(x, yy, z);
     const L = P(-3.4, y), R = P(3.4, y), s = P(0, y).s;
     ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round";
     if (k === "branch") {   // in from the left, thick at the trunk, twigs and a few leaves; it bends when the ring is knocked
@@ -72,7 +73,7 @@
     const topY = A.y, sway = anchorShake();
     if (!holds) {   // snapped: a short end left swinging from the support over the lane
       if (game.state === "title" || ring.mode === "boss" || game.phase === "crossing") return false;
-      const t = game.time, top = project(0, topY, ringZ0()), end = project(Math.sin(t * 1.6) * 0.25, topY - 0.55, ringZ0());
+      const t = game.time, top = project(0, topY, ringBaseZ()), end = project(Math.sin(t * 1.6) * 0.25, topY - 0.55, ringBaseZ());
       hangerLine(k, top, end, top.s); return false;
     }
     const top = project(ring.x + sway * 0.08, topY, z), at = { x: p.x, y: p.y - r - lw * 0.45 };
@@ -159,7 +160,7 @@
       if (P.y < tall) reactProp(k, P.x - prev.x >= 0 ? 1 : -1, 1);
     }
     const A = anchorDef();
-    if (A.support === "overhead" && Math.abs(P.z - ringZ0()) < 0.3 && P.y > A.y - 0.3 && P.y < A.y + 0.5 && Math.abs(P.x) < 3.2 && game.time - ENV.anchor.t > 0.6) { anchorReact(1); Sound.toon("bonk", panOf(P.x)); }
+    if (A.support === "overhead" && Math.abs(P.z - ringBaseZ()) < 0.3 && P.y > A.y - 0.3 && P.y < A.y + 0.5 && Math.abs(P.x) < 3.2 && game.time - ENV.anchor.t > 0.6) { anchorReact(1); Sound.toon("bonk", panOf(P.x)); }
   }
   function envImpact(x, z, strength = 1) {   // a landing or a bonk shakes what's near it
     for (const k of GY.props) { const d = Math.hypot(k.x - x, k.z - z); if (k.kind !== "digger" && d < 1.6 * strength) reactProp(k, k.x - x >= 0 ? 1 : -1, strength * (1 - d / (1.8 * strength))); }

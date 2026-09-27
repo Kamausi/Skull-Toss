@@ -260,6 +260,8 @@
       }
       return A;
     },
+    pers: () => ({ kind: persKind(), off: PERS.off, narrow: ringNarrow(), rate: persRate(), decoy: decoyAt(), t: PERS.t, nerve: PERS.nerve, tells: PERS.tells, phase: ring.phase }), chainPitch: n => chainPitch(n), persClock(t) { if (t != null) PERS.t = t; return PERS.t; },
+    lanes: () => ({ i: LANE.i, z: laneZNow(), live: laneIndex() >= 0, want: laneIndex(), depth: laneDepth(), ringZ: ring.z, def: laneDef() }), lanesSync() { lanesAfterThrow(true); },
     bank: () => ({ banked: skull.banked || 0, seal: skull.seal || 0, need: bankSeal(), live: banksLive(), ground: groundMat(), bounces: skull.bounces, vy: skull.v0.y }),
     surfaces: () => JSON.parse(JSON.stringify(SURFACES)), surfaceBounce: (v, n, mat) => surfaceBounce(v, n, mat),
     aimFromDrag(dx, dy) { const m = mapDrag(dx, dy); return { ...m, ...aimPoint(m.nx, m.ny) }; },

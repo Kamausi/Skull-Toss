@@ -1,8 +1,62 @@
-# SKULL TOSS v59
+# SKULL TOSS v60
 
 Lob the skull through a ring in a haunted graveyard. Play **Story** to climb through the stages and beat the bosses, or **Arcade** to pick any map and see how long you can last. Three misses and you're buried.
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
+
+## New in v60: under the sea, what things are made of, near and far, and rings with a character
+
+The owner's research on projectile and physics games, translated into the throw. The Notion page "Research
+Translation" lists what was already in the game and what was a gap. These are the gaps, built. Each one is
+deterministic, so replays agree, and each is told before it matters. The details are in
+[docs/WORLD-SYSTEMS.md](docs/WORLD-SYSTEMS.md).
+
+- **The Drowned Theater's throw is under water.**
+  - The whole flight is wet: the skull weighs half as much, and the water drags it across and up and down but never
+    along the lane, so it still reaches the ring on time.
+  - The aim still means where it crosses in still water.
+  - Three new things live in the water:
+    - an **undertow** that carries the throw on a slow tide;
+    - a **bilge vent** that fizzes, then gushes a column upward on a beat;
+    - a drifting **air pocket** where the throw flies as on dry land.
+  - The aim guide shows the water's curve exactly.
+- **Everything is made of something.** Bone, stone, metal, ghost-glass and mud each bounce their own way (restitution
+  and friction), sound their own way and shed their own bits.
+  - The gilded urns are metal and bounce exactly as before.
+  - The Black Abyss's urns are ghost-glass, which gives back more than it got.
+  - Five maps name their ground.
+- **Bank boards and Bank Rings.** The Gilded Graveyard stands a headstone beside the lane in Act III, and a sliding gilt
+  plaque in the approach. The skull bounces off them exactly, and the Full aim guide shows the bounce.
+  - Every third ring the window fills with a gilt film: it only opens to a throw that has banked (off a board or an urn).
+  - A board-to-board double bank can't reach the ring from the sling, so none is asked for.
+- **Depth lanes.** In the Bone Desert (from hit 10) and the Black Abyss (from hit 20), the first half's ring stands near,
+  mid or far down the lane. It reads through:
+  - its size;
+  - its post walking down the lane;
+  - a haze on the far one;
+  - lit lanterns on stakes at its lane;
+  - the camera's lean;
+  - a whistle as it moves.
+
+  The lane is fixed as the skull settles, so it never moves under a throw.
+- **Rings with a character** (Act III on four maps):
+  - **timid** (the Whistling Woods): it flinches from a throw coming straight for it, and trembles when aimed at;
+  - **shy** (the Drowned Theater): it turns edge-on on the beat, with a whirr first;
+  - **a will-o'-the-wisp decoy** (the Black Marsh): a ring with no post and no reflection; through it is a miss;
+  - **angry** (the Clockwork Caves): it lunges on the whirr.
+
+  Every ring on its line now ticks softly just before it turns round while you aim.
+- **Chains climb in pitch.** Each bank, urn bounce and target hit in one throw rings two semitones higher than the last.
+- **The Homing Bone is a nudge.** It can turn a clank into a rim-in; it can't save a wide throw. This was the owner's
+  call, keeping to the research's "no auto-hit power-up".
+
+**Fixes along the way:**
+
+- A bank no longer counts forever. `skull.banked` was never reset, so after one urn bounce every later make paid
+  Adventure+'s trick bonus.
+- The aim guide no longer samples moving obstacles a step early.
+- `obCentre` handled a vent's two-number position.
+- Replays are now version 3, because the physics changed.
 
 ## New in v59: the ring stays the star, and the world answers the throw
 
@@ -143,7 +197,7 @@ Every throw goes RING → THROW → WORLD INTERACTION → CONSEQUENCE, and nothi
 | **Diving Skull** | the Black Marsh (v58: the only map with a surface to dive from) | A throw that drops short into the water dives instead of missing, swims on underwater, then leaps for the ring. Two dives. |
 | **Clone Skull** | the Black Marsh | Every throw splits in three. Whichever skull goes through the ring counts. |
 | **Rewind Bone** | the Bone Desert | Miss, and the film runs backwards. The throw never happened: no skull lost, and the streak is kept. |
-| **Homing Bone** | the Clockwork Caves | A throw that's close locks on and curves into the ring. |
+| **Homing Bone** | the Clockwork Caves | A throw that only just misses gets a nudge toward the ring (v60: enough to save a clank, never a wide one). |
 | **Gravity Flip** | the Black Abyss | The skull falls up: it dips, then climbs. The aim still marks where it crosses the ring. |
 
 ## New in v56: the mini-games are the carnival's attractions

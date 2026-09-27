@@ -256,6 +256,9 @@ def map_problems(m, fname):
         if not (isinstance(LN, dict) and isinstance(LN.get("z"), list) and len(LN["z"]) == 3 and all(isinstance(z, (int, float)) and RZ[0] <= z <= RZ[1] for z in LN["z"]) and LN["z"][0] < LN["z"][1] < LN["z"][2]): bad.append(f"ring.lanes.z must be three depths, near to far, inside the ring's zone {RZ}")
         elif LN["z"][2] - LN["z"][0] < 1.5: bad.append("ring.lanes: near to far must be at least 1.5 m, or the lanes don't read")
         if not (isinstance(LN.get("from"), int) and 0 <= LN["from"] < BLUEPRINT["structure"]["mini"]): bad.append("ring.lanes.from is the first half's hit the lanes start at")
+    PS = m["ring"].get("personality")   # (v60: a ring with a character, 07z_rings.js)
+    if PS is not None and not (isinstance(PS, dict) and PS.get("kind") in ("timid", "shy", "decoy", "aggressive") and isinstance(PS.get("from"), int) and isinstance(PS.get("to"), int) and 0 <= PS["from"] < PS["to"] <= BLUEPRINT["structure"]["mini"]):
+        bad.append("ring.personality is {kind: timid, shy, decoy or aggressive; from, to: first-half hits}")
     if "ground" in m and m["ground"] not in SURF: bad.append(f"ground must be a surface ({', '.join(SURF)})")   # (v60: 07y_banks.js)
     # ── v60: the medium (07x_water.js): a map under the sea throws through water
     if "medium" in m:

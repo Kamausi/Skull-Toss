@@ -240,7 +240,16 @@
       "shrink"
     ],
     "path": "triangle",
-    "depth": 1.4
+    "depth": 1.4,
+    "lanes": {
+      "_doc": "v60: the first half's ring stands near, mid or far down the lane, one lane a ring (07z_lanes.js)",
+      "z": [
+        5.6,
+        6.6,
+        7.6
+      ],
+      "from": 10
+    }
   },
   "tiers": [
     "IV",

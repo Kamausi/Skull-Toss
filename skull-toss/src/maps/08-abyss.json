@@ -237,7 +237,16 @@
       "bob",
       "shrink"
     ],
-    "path": "jumpcut"
+    "path": "jumpcut",
+    "lanes": {
+      "_doc": "v60: the first half's ring stands near, mid or far down the lane, one lane a ring (07z_lanes.js)",
+      "z": [
+        5.0,
+        6.0,
+        7.1
+      ],
+      "from": 20
+    }
   },
   "tiers": [
     "V",

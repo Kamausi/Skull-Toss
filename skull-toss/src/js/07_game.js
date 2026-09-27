@@ -18,7 +18,7 @@
     voice.quiet = game.time; voice.idleSaid = false;
     const v = aimVelocity(AX, AY);
     Object.assign(skull, { launchRing: { x: ring.x, y: ring.y, z: ring.z }, ax0: windNow(), close: false, shots: [] });   // (what the signature shots read: 07h_shots.js)
-    Object.assign(skull, { sub: null, sink: 0, canHit: false, canHits: 0, g: gNow(), g0: gNow(), wet: false, vine: null, vined: false, swung: false, homed: false, clones: null, cloneJudged: false, cloned: false, rew: null,
+    Object.assign(skull, { sub: null, sink: 0, canHit: false, canHits: 0, g: gNow(), g0: gNow(), wet: false, vine: null, vined: false, swung: false, homed: false, homeDv: 0, tChain: 0, clones: null, cloneJudged: false, cloned: false, rew: null,
       p0: { x: 0, y: START_Y, z: 0 }, v0: v, t: 0, crossed: false, resting: false, bounces: 0, ax: windNow(), tHit: false, banked: 0, seal: bankSeal(),
       spin: (1.3 + Math.abs(v.x) * 0.5) * (v.x < 0 ? -1 : 1), hang: 0, take: 0, alpha: 1, flightTime: 0, trail: [], spawn: 1, emit: 0, missed: false });
     skull.pos = { ...skull.p0 }; cloneLaunch(skull, v); rewindMark(skull);   // (v57: the Clone Skull's clones, the Rewind Bone's mark: 07v_newpowers.js)
@@ -72,12 +72,12 @@
     let remaining = s.hang > 0 || s.sub || s.vine ? 0 : dt, elapsed = 0, guard = 0;   // (v53: under the water it's the water's own step, not the arc)
     while (remaining > 1e-9 && guard++ < 10) {
       let tE = Infinity, kind = null;
-      if (!s.crossed && s.v0.z > 0 && !attrOn()) { const e0 = elapsed, t0 = s.t, tc = crossTime(s, remaining, tau => phase0 + ring.omega * (e0 + tau - t0)); if (tc < Infinity) { tE = tc; kind = "ring"; } }
+      if (!s.crossed && s.v0.z > 0 && !attrOn()) { const e0 = elapsed, t0 = s.t, tc = crossTime(s, remaining, tau => phase0 + ring.omega * persRate() * (e0 + tau - t0)); if (tc < Infinity) { tE = tc; kind = "ring"; } }
       if (!s.resting) { const tg = groundTime(s); if (tg > s.t + 1e-7 && tg <= s.t + remaining && tg < tE) { tE = tg; kind = "ground"; } }
       if (!s.crossed) { const tb = bankTime(s, remaining), I = BANK.next; if (tb < tE) { tE = tb; kind = I; } }   // (v60: off a bank board, 07y_banks.js)
       if (!kind) { s.t += remaining; break; }
       const adv = tE - s.t; remaining -= adv; elapsed += adv; rebase(s, tE);
-      if (kind === "ring") hitRing(s, ringAt(phase0 + ring.omega * elapsed)); else if (kind === "ground") hitGround(s); else bankBounce(s, kind);
+      if (kind === "ring") hitRing(s, ringAt(phase0 + ring.omega * persRate() * elapsed)); else if (kind === "ground") hitGround(s); else bankBounce(s, kind);
       if (s.hang > 0) break;
     }
     const prevPos = s.pos; if (s.sub) waterStep(s, dt); else if (s.vine) vineStep(s, dt); else s.pos = posAt(s, s.t); ghostRecord(s);
@@ -108,7 +108,7 @@
   function hitRing(s, rp) {
     cloneSwap(s, rp);   // (v57: a Clone Skull's clone that's through takes the skull's place, 07v_newpowers.js)
     s.crossed = true;
-    const dx = s.p0.x - rp.x, dy = s.p0.y - rp.y, d = Math.hypot(dx, dy), zr = rp.z;
+    const dx = s.p0.x - rp.x, dy = s.p0.y - rp.y, d = Math.hypot(dx / ringNarrow(), dy), zr = rp.z;   // (v60: a shy ring turned edge-on is narrower across, 07z_rings.js)
     const rc = ring.rc, inner = rc - RING_TUBE - SKULL_R, outer = rc + RING_TUBE + SKULL_R;
     const perfR = inner * 0.38 * (powerOn("deadeye") ? 2 : 1);   // Deadeye: a perfect window twice as wide
     game.lastCross = { x: s.p0.x, y: s.p0.y, ringX: rp.x, ringY: rp.y, ringZ: zr, d, rc, perfR, t: s.flightTime };
@@ -118,7 +118,8 @@
     const ux = d > 1e-6 ? dx / d : 0, uy = d > 1e-6 ? dy / d : 1;
     if (d > inner && boss && boss.eyeAt) { const e = boss.eyeAt(s.p0); if (e >= 0) {   // the Pumpkin King's eyes: a hit, not a miss
       const ep = boss.eyePos(e), eP = project(ep.x, ep.y, ep.z); boss.eyeHit(e, eP); s.v0 = { x: (s.p0.x - ep.x) * 4, y: 1.5, z: -Math.abs(s.v0.z) * 0.3 }; resolve("eye", eP, eP); return; } }
-    if (d < rc && sealHolds(s)) { sealBounce(s, rp, at); return; }   // (v60: a Bank Ring's film: bank first, 07y_banks.js)
+    if (d < rc && sealHolds(s)) { sealBounce(s, rp, at); return; }
+    if (d >= outer && decoyCatch(s, at)) return;   // (v60: through the will-o'-the-wisp instead, 07z_rings.js)   // (v60: a Bank Ring's film: bank first, 07y_banks.js)
     if (d <= inner) { const kind = d <= perfR ? "perfect" : "swish"; VisualSystem.triggerImpact(kind, { at, strength, pan }); resolve(kind, at, null, d); }
     else if (d >= outer) {
       if (hasPost() && dy < -(rc + RING_TUBE) && Math.abs(dx) < POST_HALF + SKULL_R) {
@@ -312,14 +313,14 @@
     powersAfterThrow();
     if (boss && boss.after) boss.after();
     if (!modeCheck() && !stageCheck()) {
-      pickupSchedule(); directorsAfterThrow(); obstaclesSync(); encSync(); banksAfterThrow();
+      pickupSchedule(); directorsAfterThrow(); obstaclesSync(); encSync(); banksAfterThrow(); lanesAfterThrow(); persAfterThrow();
       if (game.throws < 2 && !hintEl.textContent) setHint(t("hint.start"));
     }
     saveRunSnapshot();
     mischiefAfterThrow();   // now and then the old print acts up (09l_mischief.js)
   }
   function resetSkull() {
-    Object.assign(skull, { sub: null, sink: 0, canHit: false, canHits: 0, g: G, g0: G, wet: false, banked: 0, seal: 0, vine: null, clones: null, rew: null, homed: false, p0: { x: 0, y: START_Y, z: 0 }, v0: { x: 0, y: 0, z: 0 }, t: 0, crossed: false, resting: true, missed: false, ghosted: 0,
+    Object.assign(skull, { sub: null, sink: 0, canHit: false, canHits: 0, g: G, g0: G, wet: false, banked: 0, seal: 0, vine: null, clones: null, rew: null, homed: false, homeDv: 0, tChain: 0, p0: { x: 0, y: START_Y, z: 0 }, v0: { x: 0, y: 0, z: 0 }, t: 0, crossed: false, resting: true, missed: false, ghosted: 0,
       bounces: 0, angle: 0, spin: 0, spawn: 0, alpha: 1, flightTime: 0, pullOff: { x: 0, y: 0 }, trail: [], emit: 0 });
     skull.pos = { ...skull.p0 };
     kick(rig, 1, 0, Math.PI / 2); rig.tilt = 0; rig.dots = 0; setMood(rig, "idle", game.time);
@@ -340,7 +341,7 @@
     seedRun(opts.seed != null ? opts.seed : sandbox ? 1933 : (Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0);   // the run's dice (07e_directors.js)
     setScene(map);   // Story starts on map 1; Arcade on the map picked
     ring.frozen = null; ring.flash = 0; ring.wobble = 0; ring.morph = 0;
-    stageReset(); clearPowers(); clearPickups(); powerDirectorReset(); plusReset(); portalReset(); attrReset(); clearCans(); travelSnap();
+    stageReset(); clearPowers(); clearPickups(); powerDirectorReset(); plusReset(); portalReset(); attrReset(); persReset(); clearCans(); travelSnap();
     if (mode !== "story") { game.stage = map + 1; VisualSystem.setStage(game.stage); }
     snapRing();
     VisualSystem.emit("start");
@@ -441,8 +442,9 @@
     const L = ringTargets(), k = Math.min(1, dt * 2.2);
     ring.amp += (L.amp - ring.amp) * k; ring.omega += (L.omega - ring.omega) * k;
     ring.rc += (L.rc - ring.rc) * k; ring.bob += (L.bob - ring.bob) * k;
+    updatePersonality(dt);   // (v60: the ring's character and its tells, 07z_rings.js)
     const phase0 = ring.phase;
-    if (!ring.frozen) ring.phase += ring.omega * dt * plusPhaseRate(dt);   // (v51: Adventure+'s fake-outs, 07s_plus.js)
+    if (!ring.frozen) ring.phase += ring.omega * dt * plusPhaseRate(dt) * persRate();   // (v51: Adventure+'s fake-outs, 07s_plus.js; v60: an angry ring's lunge)
     const rp = ringAt(ring.phase);
     if (ring.glide) {   // after a change of act the ring glides from where it was onto its new path
       const g = ring.glide; g.t += dt; const e = smooth(clamp(g.t / g.dur, 0, 1));

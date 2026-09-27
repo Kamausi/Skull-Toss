@@ -235,7 +235,13 @@
     "mods": [
       "bob"
     ],
-    "path": "circle"
+    "path": "circle",
+    "personality": {
+      "_doc": "v60: the third act's ring has a character, told before it matters (07z_rings.js)",
+      "kind": "shy",
+      "from": 20,
+      "to": 30
+    }
   },
   "tiers": [
     "III",

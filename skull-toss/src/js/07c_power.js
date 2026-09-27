@@ -23,7 +23,7 @@
     dive:     { name: "Diving Skull", uses: 2, throws: 8, color: "#3A8FB8", tip: "Short into the water? It dives, swims and leaps for the ring", map: 5, water: true },
     clones:   { name: "Clone Skull",  throws: 4, color: "#B8A0E8", tip: "Every throw splits in three: whichever goes through counts", map: 5 },
     rewind:   { name: "Rewind Bone",  uses: 1, throws: 10, color: "#D8B25A", tip: "Miss, and the film runs back: the throw never happened", map: 6 },
-    homing:   { name: "Homing Bone",  throws: 4, color: "#E85A5A", tip: "A near miss locks on and curves into the ring", map: 7 },
+    homing:   { name: "Homing Bone",  throws: 4, color: "#E85A5A", tip: "A near miss gets a nudge toward the ring", map: 7 },
     flip:     { name: "Gravity Flip", throws: 4, color: "#7A6AE8", tip: "The skull falls up: it dips, then climbs", map: 8 }
   };
   const POWER_IDS = Object.keys(POWERS);

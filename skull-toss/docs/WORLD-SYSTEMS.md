@@ -1,4 +1,4 @@
-# World systems (v54, v56, v57)
+# World systems (v54, v56–v60)
 
 This covers these systems:
 
@@ -8,7 +8,9 @@ This covers these systems:
 - the portals between places;
 - the carnival's attractions (the mini-games);
 - the land (hills, dips and a bending road);
-- the band (layers over the music).
+- the band (layers over the music);
+- v60's research translation: the Drowned Theater's water, surfaces and Bank Rings, depth lanes, and the ring's
+  personalities and tells.
 
 Each section says where the code lives and what the tests check.
 
@@ -167,7 +169,7 @@ the portal goes straight to the next map.
 | Diving Skull | the water maps | A first touch on open water before the ring dives (`s.sub.dive`): it settles 0.55 m down, steers under the ring, and within 1.6 m of the ring's plane breaches on a 0.45 s arc to where the ring will be. |
 | Clone Skull | map 5 | Two analytic clones fanned ±0.75 m/s. At the ring's plane, if the skull would miss and a clone is through, the clone takes its place (`cloneSwap`). |
 | Rewind Bone | map 6 | A miss while it's on isn't counted (no life, no streak lost). When the miss has played, the skull runs back along its recorded path over 0.9 s, the ring's phase returns to the launch, and the throw is taken off the count. |
-| Homing Bone | map 7 | Proportional steering: in the last 0.75 s before the ring's plane, if the predicted crossing is within 1.5 m of where the ring will be, the skull accelerates toward it (up to 14 m/s²). |
+| Homing Bone | map 7 | v60: a nudge, not a lock-on (the owner's call). In the last 0.45 s before the ring's plane, if the predicted crossing is within 0.75 m of where the ring will be, the skull is steered toward it (gain 0.6, up to 6 m/s²), with 0.8 m/s of correction in all per throw (`s.homeDv`): enough to turn a clank into a rim-in, never enough to save a wide one. |
 | Gravity Flip | map 8 | The throw's gravity is −G (`skull.g`). The aim mapping, the guide and the ground test all use the throw's own gravity, so the aim still marks the ring-plane crossing. A miss goes up and away. |
 
 ## The attractions (`07u_attractions.js`, v56)
@@ -483,3 +485,102 @@ the five existing moves:
 | consequence | A short push toward `ENC.focus` for about a second. |
 
 All of it stays inside the map's camera bounds and the ring's safe box.
+
+## The Drowned Theater's water (`07x_water.js`, v60)
+
+The map's `medium` block (`{ kind: "water", g, drag: [across, up/down] }`, validated by the build) puts the whole throw
+under water, not only a miss that falls in (`08l_water.js`).
+
+- **The step.** `waterPush` runs at the top of each flight step, after the obstacles' push and the power-ups': it rebases
+  the arc, damps `v.x` and `v.y` by `exp(−drag·dt)` and sets the step's gravity to `g0 × medium.g`. Along the lane (`v.z`)
+  nothing is lost, so every throw still reaches the ring plane when it always did.
+- **The aim** (`waterAim`, called from `aimVelocity`). The aim point still means where the throw crosses the ring plane,
+  as it does under a Gravity Flip: the launch is solved through still water (drag and buoyancy). The crossing is linear
+  in the launch, so two runs of the same step give the coefficients, cached per flight time, gravity, wind and medium.
+- **The water's own things.** `current` (an undertow: a box that pushes, on a slow tide `swell: [period, min]`), `jet`
+  (a vent at `at: [x, z]` that bursts a column `h` high on `pulse: [on, off]`, fizzing for the last 0.5 s first), and
+  `pocket` (trapped air, radius 0.3–1.2 m, drifting: inside it the throw flies at full weight with no drag). Currents,
+  vents and pockets are not compensated by the aim: they're the player's to read.
+- **One model.** The flight, the aim guide (`forcedPath`), Skull Sense and the spec's aim all step the same model. The
+  obstacles' clock ticks before each step, as the game's update does, so the guide and the throw agree to 1 mm through
+  the undertow.
+- **Tests:** "v60 Under the sea", "v60 The water's own things".
+
+## Surfaces, bank boards and Bank Rings (`07y_banks.js`, v60)
+
+**Surfaces.** `SURFACES` gives each material a restitution `e` (how much of the speed into it comes back) and a friction
+`f` (how much along it is lost), a sound (`Sound.surface`) and bits:
+
+| Material | e | f | Where |
+|---|---|---|---|
+| bone | 0.85 | 0.10 | the Bone Desert's ground |
+| stone | 0.65 | 0.20 | the Gilded Graveyard's headstone and ground, the Clockwork Caves' ground |
+| metal | 0.95 | 0.05 | the gilded urns (their bounce is exactly what it was), the gilded plaque |
+| ghost | 1.10 | 0.00 | the Black Abyss's urns and floor (it gives back more than it got) |
+| mud | 0.20 | 0.60 | the Drowned Theater's sand and the Black Marsh's ground |
+
+`surfaceBounce(v, n, mat)` returns `v_t·(1 − f) − e·v_n·n`. A map's `ground` scales the ground bounce relative to stone
+(which is how packed earth always bounced), so it only changes how a decided throw lands.
+
+**Bank boards** (`kind: "bank"`): `at: [x, z]` the middle of the face, `len` along the lane, `y: [low, high]`, `mat`,
+optional `yaw` (≤ 30°), `slide: [amp, period]` (a moving bank) and `seal`.
+
+- The flight finds the exact touch (`bankTime`: the arc against the face's plane, pushed out by the skull's radius) as
+  it does the ring and the ground, and bounces off by the board's material.
+- The aim guide steps the same bounce (`bankStep`). The Full guide shows it, the Short guide doesn't reach it, and an
+  urn's bounce is never drawn.
+
+**Bank Rings.** `seal: { need, every }`: counted from the board's arrival, every `every`th ring fills with a gilt film
+showing a pip per bank it wants. A throw that has banked `need` times (off a board or an urn) opens it with a ding; any
+other throw through the window bounces off (`sealed`, a miss). A miss leaves the count, so a sealed ring stays sealed
+until it's banked in.
+
+The Gilded Graveyard teaches it:
+
+- Act III: a stone headstone on the right (from hit 20; hits 22, 25 and 28 are sealed).
+- The approach: a sliding gilt plaque on the left.
+
+A board-to-board double bank can't reach the ring: the aim reaches at most 0.47 m across per metre of depth. So a ring
+that wants two banks counts an urn as the second; no map asks for two yet.
+
+**Chains climb.** `chainPitch(n)` raises each bank, urn bounce and target hit in one throw by two semitones.
+
+**Tests:** "v60 Surfaces", "v60 A bank board", "v60 Bank Rings".
+
+## Depth lanes (`07z_lanes.js`, v60)
+
+`ring.lanes: { z: [near, mid, far], from }` (the build checks they sit inside the ring's zone, at least 1.5 m apart).
+
+- **Which lane.** In the first half's line or static ring, from hit `from`, each ring stands in one lane. The lane is a
+  hash of the run's seed, the map and the hit, so a miss throws at the same ring again and a replay sees the same
+  lanes. It's fixed as the skull settles (`lanesAfterThrow`), so it never moves under a throw.
+- **How it reads:**
+  - scale (the projection);
+  - its post walking down the lane;
+  - a haze over a far ring (`drawLaneHaze`);
+  - a pair of stakes per lane with the live one's lanterns lit (`drawLanes`);
+  - the camera's lean with the aim, which slides a near ring further than a far one;
+  - a whistle up or down, with FURTHER BACK! / CLOSER!
+- **The physics doesn't change.** The ring is only nearer or further along the same lane.
+- **Where:** the Bone Desert (5.6 / 6.6 / 7.6 m, from hit 10) and the Black Abyss (5.0 / 6.0 / 7.1 m, from hit 20).
+- **Test:** "v60 Depth lanes".
+
+## Ring personalities and tells (`07z_rings.js`, v60)
+
+`ring.personality: { kind, from, to }`. It applies in the first half's line or static ring, on the simulation's own
+clock `PERS.t`, and the flight judges the ring where its character put it.
+
+| Kind | Map (Act III) | What it does | Its tell |
+|---|---|---|---|
+| timid | the Whistling Woods | Within 2.2 m of the ring plane, a throw makes it flinch along its line away from the skull's predicted crossing (0.32 m, never out of its zone). It eases back after. | Aimed at, it trembles and ticks nervously. |
+| shy | the Drowned Theater | Every 3.2 s it turns edge-on and back (up to 72°). Its window's width across is `cos(yaw)`, and `hitRing` divides `dx` by it. | A whirr 0.5 s before. |
+| decoy | the Black Marsh | A will-o'-the-wisp ring hangs 1.05 m above, mirrored across the lane (never overlapping the real one). Through its window is `decoy`. Not in Adventure+, which has its own ghost rings. | No post, no reflection, a green flicker, a hiss when aimed at. |
+| aggressive | the Clockwork Caves | Every 2.6 s it lunges along its line at three times its pace for 0.4 s (`persRate`, used by the phase, the crossing test and the judging alike). | A whirr 0.5 s before. |
+
+**Tells for every ring:**
+
+- A ring on its line ticks softly 0.22 s before it turns round, while you're aiming.
+- The Final Reel's ring dings as its film starts to flicker.
+
+**Tests:** "v60 Ring personalities"; the Homing Bone's nudge is in "v57 power-ups".
+

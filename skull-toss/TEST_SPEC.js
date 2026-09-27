@@ -2749,6 +2749,49 @@
     assert(need(20) === 0 && need(21) === 0 && need(22) === 1 && need(23) === 0 && need(25) === 1, "the headstone: two free looks, then every third ring is sealed");
     T.toTitle(); T.setStats(ZERO);
   });
+  test("v60 Depth lanes: where the map teaches distance, the first half's ring stands near, mid or far down the lane, fixed as the skull settles; it reads as depth, and the throw is a throw", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.unfreezeRing(); T.setStage(1); T.setHits(15); T.lanesSync(); assert(!T.lanes().live && !T.lanes().def, "Crow Hollow: one depth");
+    fresh(); T.unfreezeRing(); T.setStage(6); T.calm(); T.setHits(5); T.lanesSync(); assert(!T.lanes().live, "the Bone Desert: not before hit 10");
+    const L = T.lanes().def, seen = new Set(); let iFar = -1, iNear = -1;
+    for (let h = 10; h < 30; h++) { T.setHits(h); T.lanesSync(); const s = T.lanes(); assert(s.live && L.z.includes(s.z), `hit ${h}: in a lane (${JSON.stringify(s)})`); seen.add(s.z); if (s.z === L.z[2] && iFar < 0) iFar = h; if (s.z === L.z[0] && iNear < 0) iNear = h; }
+    assert(seen.size === 3 && iFar >= 0 && iNear >= 0, `all three lanes turn up (${[...seen]})`);
+    T.setHits(iNear); T.lanesSync(); T.step(0.6); const N = T.lanes(); T.setHits(iFar); T.lanesSync(); T.step(0.6); const F = T.lanes();
+    near(N.ringZ, L.z[0], 1e-6, "the ring stands in the near lane"); near(F.ringZ, L.z[2], 1e-6, "and in the far one");
+    assert(N.depth === 0 && F.depth === 1, `the far ring sits in the haze, the near one clear (${N.depth} / ${F.depth})`);
+    const sN = T.ringScreen(0, C.RING_Y, L.z[0]), sF = T.ringScreen(0, C.RING_Y, L.z[2]); assert(sF.y < sN.y, "further down the lane is higher on the screen");
+    const lives = T.state().lives; T.throwAt(2.8, 4.9); T.step(3); assert(T.state().lives === lives - 1 && T.lanes().z === L.z[2], "a miss: the same ring, in the same lane");
+    const tc = C.FLIGHT_T * L.z[2] / C.RING_Z, R = T.ringAhead(tc), a = T.aimFor(R.x, R.y, R.z), z0 = T.lanes().ringZ;
+    T.throwAt(a.AX, a.AY); T.step(tc + 0.15); const r = T.state(); assert(r.lastResult && r.lastResult.make, `aimed for the far lane, it goes in (${r.lastResult && r.lastResult.kind})`);
+    assert(T.lanes().ringZ === z0, "and the ring doesn't move under the throw, even once the hit's counted"); T.step(3);
+    T.toTitle(); T.setStats(ZERO);
+  });
+  test("v60 Ring personalities: in the third act four maps' rings have a character (timid, shy, decoy, angry), each told before it matters and judged where it puts the ring", () => {
+    T.setStats({ ...ZERO, bestStage: 9 });
+    const at = (st, h) => { fresh(); T.unfreezeRing(); T.setStage(st); T.calm(); T.setHits(h); T.step(0.1); return T.pers(); };
+    fresh(); T.step(0.5); assert(T.pers().t < 1, `its clock starts with the run, so a replay sees the same beats (${T.pers().t.toFixed(2)})`);
+    assert(at(1, 25).kind === null && at(3, 19).kind === null && at(3, 20).kind === "timid" && at(4, 25).kind === "shy" && at(5, 25).kind === "decoy" && at(7, 25).kind === "aggressive", "Crow Hollow plain; the Woods timid from its third act, the Theater shy, the Marsh a decoy, the Caves angry");
+    // timid: it flinches along its line, away from a throw that's coming straight for it, then settles back
+    at(3, 22); let R = T.ringAhead(C.FLIGHT_T), a = T.aimFor(R.x, R.y); T.throwAt(a.AX, a.AY); let most = 0;
+    for (let i = 0; i < 240 && T.state().state === "flying"; i++) { T.step(1 / 240); most = Math.max(most, Math.abs(T.pers().off)); }
+    assert(most > 0.2, `the timid ring flinches (${most.toFixed(2)} m)`); T.step(3); assert(Math.abs(T.pers().off) < 0.05, `and settles back (${T.pers().off.toFixed(3)})`);
+    // shy: face on, a throw a little off centre goes in; turned edge-on, the same throw is wide. A whirr first
+    const shy = (u, dx) => { at(4, 22); T.persClock(u - C.FLIGHT_T); const tl = T.pers().tells, Q = T.ringAhead(C.FLIGHT_T), b = T.aimFor(Q.x + dx, Q.y); T.throwAt(b.AX, b.AY); T.step(C.FLIGHT_T + 0.1); const r = T.state().lastResult; T.step(3); return { r, tl, tells: T.pers().tells }; };
+    const face = shy(1.0, 0.2), edge = shy(2.55, 0.2);
+    assert(face.r.make && !edge.r.make, `face on it goes in (${face.r.kind}); turned away, wide (${edge.r.kind})`);
+    assert(edge.tells > edge.tl, "and it whirrs before it turns");
+    at(4, 22); T.persClock(2.55); assert(T.pers().narrow < 0.4, `edge-on (${T.pers().narrow.toFixed(2)})`); T.persClock(1.0); assert(T.pers().narrow === 1, "then face on");
+    // decoy: through the will-o'-the-wisp is a miss
+    at(5, 22); R = T.ringAhead(C.FLIGHT_T); const F = { x: R.x * -0.8, y: R.y + 1.05 }; a = T.aimFor(F.x, F.y); T.throwAt(a.AX, a.AY); T.step(C.FLIGHT_T + 0.1);
+    assert(T.state().lastResult.kind === "decoy", `HONK: the wisp (${T.state().lastResult.kind})`); T.step(3);
+    at(5, 22); R = T.ringAhead(C.FLIGHT_T); a = T.aimFor(R.x, R.y); T.throwAt(a.AX, a.AY); T.step(C.FLIGHT_T + 0.1); assert(T.state().lastResult.make, `the real one's still real (${T.state().lastResult.kind})`); T.step(3);
+    // angry: on the beat it lunges at three times its pace, and a whirr goes first
+    at(7, 22); T.persClock(2.2); let p0 = T.pers().phase; T.step(0.1); const fast = T.pers().phase - p0; T.persClock(1.0); p0 = T.pers().phase; T.step(0.1); const slow = T.pers().phase - p0;
+    assert(fast > slow * 2.5, `it lunges (${fast.toFixed(3)} vs ${slow.toFixed(3)} rad)`);
+    // the tells anyone can hear: a line ring ticks before it turns round, while you aim
+    at(1, 15); const t0 = T.pers().tells; T.holdAim(0.2, 0.6); T.step(4); assert(T.pers().tells > t0, "a line ring ticks before it turns round"); T.letGo(); T.step(3);
+    assert(T.chainPitch(1) === 1 && T.chainPitch(2) > 1 && T.chainPitch(3) > T.chainPitch(2), "and a chain of bounces or hits climbs in pitch");
+    T.toTitle(); T.setStats(ZERO);
+  });
   // ── v58: the sky keeps time with the road; one ring reflection; every mode travels ──
   test("v58 The sky: the further the road has come, the lower the moon (setting on its own side, clear of the ring) and the later the night; the picture-house screen stays put", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.step(0.5); const s0 = T.sky();
@@ -2816,7 +2859,7 @@
     T.calm(); T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); assert(T.state().lastResult.make, "and a throw is a throw");
     T.toTitle(); T.setStats(ZERO);
   });
-  test("v58 Encounters: RING → THROW → INTERACTION → CONSEQUENCE. Through the ring and on into its bell is a chain (bonus, and the way clears for the next throw); a straight make isn't; the ring is still the judge", () => {
+  test("v59 Encounters: RING → THROW → INTERACTION → CONSEQUENCE. Through the ring and on into its bell is a chain (bonus, and the way clears for the next throw); a straight make isn't; the ring is still the judge", () => {
     const E0 = T.enc(); assert(E0.cats.length === 11 && E0.cats.includes("Weak Point") && E0.cats.includes("Set Piece"), "eleven categories, not \"obstacle\"");
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(2); T.setHits(22); T.step(0.5); T.syncObstacles(); T.calm(); T.encForce(true); T.freezeRing(0, C.RING_Y); T.step(0.3);
     const I = T.enc().it; assert(I && I.kind === "bell" && I.cons === "path", `the Gilded Graveyard hangs a bell behind its ring (${JSON.stringify(I)})`);
@@ -2829,7 +2872,7 @@
     T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); assert(T.enc().calm === 0, "for one throw");
     T.encForce(false); T.toTitle(); T.setStats(ZERO);
   });
-  test("v58 Behavioural hazards: idle → notice → telegraph → active → recover, with eyes; a threat's weak point knocks it out; Skull Sense stirs what the aim would pass", () => {
+  test("v59 Behavioural hazards: idle → notice → telegraph → active → recover, with eyes; a threat's weak point knocks it out; Skull Sense stirs what the aim would pass", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(7); T.setHits(22); T.step(0.3); T.syncObstacles(); T.encForce(true);
     const seen = new Set(); for (let t = 0; t < 3.6; t += 0.05) { T.obClock(t); T.step(0); const c = T.enc().obs.find(o => o.kind === "crusher"); seen.add(c.beh); }
     assert(["idle", "telegraph", "active", "recover"].every(b => seen.has(b)), `a crusher's cycle, read in its eyes (${[...seen]})`);
@@ -2878,7 +2921,9 @@
     const setup = st => { at(st); T.setHits(5); T.step(0.5); T.calm(); T.freezeRing(0, C.RING_Y); };
     setup(8); T.givePower("flip"); T.throwThrough(0, C.RING_Y, C.RING_Z); T.step(0.3); assert(T.skullInfo().g < 0, "Gravity Flip: it falls up"); T.step(2.5); assert(T.state().lastResult.make, `and the aim still meets the ring (${T.state().lastResult.kind})`);
     setup(7); T.throwThrough(0.62, C.RING_Y + 0.3, C.RING_Z); T.step(2.5); assert(!T.state().lastResult.make, "without it, a throw that far off misses");
-    setup(7); T.givePower("homing"); T.throwThrough(0.62, C.RING_Y + 0.3, C.RING_Z); T.step(0.6); const homed = T.skullInfo().homed; T.step(2); assert(homed && T.state().lastResult.make, `Homing Bone: it locks on and curves in (${T.state().lastResult.kind})`);
+    setup(7); T.givePower("homing"); T.throwThrough(0.62, C.RING_Y + 0.3, C.RING_Z); T.step(2.5); assert(!T.state().lastResult.make, `v60 Homing Bone: a nudge, not a lock-on; that far off it still misses (${T.state().lastResult.kind})`);
+    setup(7); const clank = T.state().ring.rc + 0.1; T.throwThrough(clank, C.RING_Y, C.RING_Z); T.step(2.5); assert(T.state().lastResult.kind === "clank", `a throw just outside the window clanks off the rim (${T.state().lastResult.kind})`);
+    setup(7); T.givePower("homing"); T.throwThrough(clank, C.RING_Y, C.RING_Z); T.step(0.6); const homed = T.skullInfo().homed; T.step(2); assert(homed && T.state().lastResult.make, `with the Homing Bone the nudge takes it in (${T.state().lastResult.kind})`);
     setup(5); T.givePower("clones"); T.throwThrough(-0.62, C.RING_Y, C.RING_Z); T.step(0.2); assert(T.skullInfo().clones === 2, "Clone Skull: three in the air"); T.step(2.5); assert(T.state().lastResult.make, `the clone through the ring counts (${T.state().lastResult.kind})`);
     setup(6); T.givePower("rewind"); const l0 = T.state().lives, n0 = T.state().throws; T.throwThrough(2.6, C.RING_Y, C.RING_Z); let rw = false; for (let i = 0; i < 80 && !rw; i++) { T.step(0.05); rw = T.skullInfo().rew; } assert(rw, "Rewind Bone: a miss, and the film runs back");
     T.step(1.5); assert(T.state().lives === l0 && T.state().throws === n0 && T.state().state === "ready" && !T.powers().rewind, `and the throw never happened (${T.state().lives}, ${T.state().throws})`);

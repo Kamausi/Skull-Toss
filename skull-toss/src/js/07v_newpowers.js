@@ -5,8 +5,11 @@
   const gNow = () => (powerOn("flip") ? -G : G);   // the gravity the next throw will fly under
   const skullG = s => (s.g != null ? s.g : G);
 
-  // ── Homing Bone: proportional steering toward where the ring will be when the skull gets there
-  const HOMING = { window: 0.75, reach: 1.5, gain: 0.85, max: 14 };
+  // ── Homing Bone: proportional steering toward where the ring will be when the skull gets there. v60 (the owner's
+  // call, with the research's "no auto-hit power-up"): a nudge, not a lock-on. It only wakes for a throw that's close,
+  // in the last moments, and it has 0.8 m/s of correction to give a throw in all: enough to turn a clank into a rim-in,
+  // never enough to save a wide one.
+  const HOMING = { window: 0.45, reach: 0.75, gain: 0.6, max: 6, dv: 0.8 };
   function powerPush(s, dt) {
     if (!powerOn("homing") || s.resting || s.sub || s.vine || s.rew || s.hang > 0 || s.crossed || game.result || s.v0.z <= 0) return;
     const v = velAt(s, s.t), dz = ring.z - s.pos.z; if (dz < 0.05 || v.z <= 0) return;
@@ -14,8 +17,11 @@
     const g = skullG(s), ax = s.ax || 0, rp = ring.frozen ? ringAt(ring.phase) : ringAt(ring.phase + ring.omega * tg);
     const px = s.pos.x + v.x * tg + 0.5 * ax * tg * tg, py = s.pos.y + v.y * tg - 0.5 * g * tg * tg, ex = rp.x - px, ey = rp.y - py, e = Math.hypot(ex, ey);
     if (e > HOMING.reach || e < 0.01) return;
-    const k = HOMING.gain * (1 - e / HOMING.reach * 0.5), aX = clamp((2 * ex) / (tg * tg) * k, -HOMING.max, HOMING.max), aY = clamp((2 * ey) / (tg * tg) * k, -HOMING.max, HOMING.max);
-    rebase(s, s.t); s.v0 = { x: s.v0.x + aX * dt, y: s.v0.y + aY * dt, z: s.v0.z };
+    const room = HOMING.dv - (s.homeDv || 0); if (room <= 1e-9) return;
+    const k = HOMING.gain, aX = clamp((2 * ex) / (tg * tg) * k, -HOMING.max, HOMING.max), aY = clamp((2 * ey) / (tg * tg) * k, -HOMING.max, HOMING.max);
+    let dx = aX * dt, dy = aY * dt; const m = Math.hypot(dx, dy); if (m > room) { dx *= room / m; dy *= room / m; }
+    s.homeDv = (s.homeDv || 0) + Math.min(m, room);
+    rebase(s, s.t); s.v0 = { x: s.v0.x + dx, y: s.v0.y + dy, z: s.v0.z };
     if (!s.homed) { s.homed = true; Sound.toon("tick"); }
   }
 

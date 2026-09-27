@@ -244,7 +244,13 @@
     "mods": [
       "shrink"
     ],
-    "path": "triangle"
+    "path": "triangle",
+    "personality": {
+      "_doc": "v60: the third act's ring has a character, told before it matters (07z_rings.js)",
+      "kind": "aggressive",
+      "from": 20,
+      "to": 30
+    }
   },
   "tiers": [
     "IV",
