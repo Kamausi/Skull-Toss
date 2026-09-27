@@ -114,7 +114,7 @@
   }
 
   function buildPreview(AX, AY, guide) {
-    const v = aimVelocity(AX, AY), front = [], back = [], zr = ring.z, tc = zr / v.z, wx = 0.5 * windNow(), G = gNow();   // (the guide bends with the wind; v57: and falls up under a Gravity Flip)
+    const v = aimVelocity(AX, AY), front = [], back = [], zr = ring.z, tc = zr / v.z, wx = 0, G = gNow();   // (v61: the guide never solves the wind: the player reads it and aims into it (owner, playtest 2026-09-27); v57: and falls up under a Gravity Flip)
     const tg = groundTime({ p0: { y: START_Y }, v0: v, g: G });
     const reaches = tg >= tc;
     if (guide === "off") return { front, back, cross: null, land: null };
@@ -136,7 +136,7 @@
       land: reaches ? null : { x: v.x * tg + wx * tg * tg, z: v.z * tg } };
   }
   function forcedPreview(v, guide, tc0, tEnd0) {
-    const zr = ring.z, path = forcedPath(v, tc0 * 1.6 + 0.8), front = [], back = [];
+    const zr = ring.z, path = forcedPath(v, tc0 * 1.6 + 0.8, { wind: false }), front = [], back = [];
     const k = path.findIndex(q => q.z >= zr), cross = k > 0 ? (() => { const a = path[k - 1], b = path[k], u = (zr - a.z) / (b.z - a.z); return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, z: zr, t: a.t + (b.t - a.t) * u }; })() : null;
     const land = cross ? null : path[path.length - 1], tc = cross ? cross.t : tc0, tEnd = guide === "short" ? Math.min(tEnd0, tc * 0.36) : cross ? tc + 0.7 : path.length ? path[path.length - 1].t : tEnd0;   // (a throw that falls short: the guide follows it all the way down)
     const rest = project(0, START_Y, 0), off = pullOffset(), kx = rest.x + off.x, ky = rest.y + off.y, kr = SKULL_R * rest.s * 1.35;
@@ -367,7 +367,7 @@
     drawImpactStars(ctx, true);   // a contact further off than the ring: its star goes behind the ring
     const flying = game.state === "flying" || (game.state === "over" && skull.flightTime > 0);
     const behind = flying && skull.pos.z > ring.z;
-    const pv = aim.active && aim.valid && game.state === "ready" ? buildPreview(aim.AX, aim.AY, settings.guide) : null;
+    const pv = aim.active && aim.valid && game.state === "ready" ? buildPreview(aim.AX, aim.AY, guideNow()) : null;
     drawGhostShot();   // (v51: the last miss, faint, 08k_feel.js)
     if (pv) drawDots(pv.back, true);
     if (flying && behind) { drawClones(); drawFlyingSkull(); }

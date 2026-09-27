@@ -501,6 +501,7 @@ under water, not only a miss that falls in (`08l_water.js`).
   (a vent at `at: [x, z]` that bursts a column `h` high on `pulse: [on, off]`, fizzing for the last 0.5 s first), and
   `pocket` (trapped air, radius 0.3–1.2 m, drifting: inside it the throw flies at full weight with no drag). Currents,
   vents and pockets are not compensated by the aim: they're the player's to read.
+- **Wind (v61).** The aim guide, Skull Sense and `waterAim` never include the wind (`forcedPath({wind: false})`); the flight does.
 - **One model.** The flight, the aim guide (`forcedPath`), Skull Sense and the spec's aim all step the same model. The
   obstacles' clock ticks before each step, as the game's update does, so the guide and the throw agree to 1 mm through
   the undertow.
@@ -583,4 +584,20 @@ clock `PERS.t`, and the flight judges the ring where its character put it.
 - The Final Reel's ring dings as its film starts to flicker.
 
 **Tests:** "v60 Ring personalities"; the Homing Bone's nudge is in "v57 power-ups".
+
+## The owner's playtest fixes (v61)
+
+- **The aim line.** `guideNow()` (`07u_attractions.js`) is the guide in force: `"off"` in Long Shot, Can Alley and
+  Perfect Pitch (`NO_GUIDE`), otherwise `settings.guide`. It gates the dots, the crosshair and the last throw's ghost
+  (`08k_feel.js`).
+- **The wind.** The guide (`buildPreview`, `forcedPreview`), Skull Sense and `waterAim` leave the wind out. The flight
+  (`posAt`, `forcedPath` by default) keeps it. Gale Force's levels are breeze 1.2, gust 2.0, gale 2.8, storm 3.6 and
+  hurricane 4.4 m/s².
+- **The progression bar.** `renderProgress` adds `.off` (hidden) in a mini-game, and `.noarea` (no stage chip, boss
+  marks or ticks) in every mode but the Adventure.
+- **Adventure+'s print.** The red cast only. `plusPrintHold` (the stuck frame) and the torn frames were removed.
+- **Perfect Pitch.** The pockets are laid out so the drawn rims (1.45 × r) clear each other by 0.12 m or more, and the
+  catch zones (r + the skull's radius) never touch. `PITCH.rim` is the drawn scale.
+- **Tests:** "v61 The aim line", "v61 Gale Force", "v61 The area progression bar", "v61 Perfect Pitch"; the woods wind
+  test now checks that the guide leaves the wind out.
 

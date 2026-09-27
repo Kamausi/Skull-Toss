@@ -11,13 +11,14 @@
   //   bosses      quicker in everything they do, quicker still in their last phase
   //   scoring     Speed Toss (in within a second and a half of Morty being ready), Trick Shot (in off a bounce), and
   //               a Perfect Map bonus for a map finished without a miss
-  //   the print   darker and damaged: a red cast, a jumpier gate, a torn frame now and then, a frame that sticks
-  const PLUS = { wind: 0, fake: 0, fakeNext: 0, fakeKind: 0, cracked: false, readyAt: 0, mapMisses: 0, hold: 0, nextHold: 6, decoys: [] };
+  //   the print   darker: a red cast. (v61, the owner's playtest: the torn frames that flashed across the screen and
+  //               the frame that stuck in the gate every few seconds are gone: they got in the way of the throw)
+  const PLUS = { wind: 0, fake: 0, fakeNext: 0, fakeKind: 0, cracked: false, readyAt: 0, mapMisses: 0, decoys: [] };
   const plusOpen = () => (realProfile().storyClears || 0) > 0;
   const plusOn = () => !!game.plus && game.mode === "story" && game.state !== "title";
   const plusK = (st = game.stage || 1) => 1.25 + 0.75 * clamp((st - 1) / 7, 0, 1);   // 1.25× on map 1 … 2× on map 8
   function plusReset() {
-    Object.assign(PLUS, { wind: 0, fake: 0, fakeNext: 5 + runRand() * 4, cracked: false, readyAt: game.time, mapMisses: 0, hold: 0, nextHold: 6, decoys: [] });
+    Object.assign(PLUS, { wind: 0, fake: 0, fakeNext: 5 + runRand() * 4, cracked: false, readyAt: game.time, mapMisses: 0, decoys: [] });
     if (game.plus) plusDecoys();
   }
   // the ring's targets, pushed: quicker, a touch wider-swinging, a little smaller (never for a boss's own path)
@@ -83,19 +84,12 @@
     if (PLUS.mapMisses === 0) { const b = Math.round(5000 * plusK()); game.score += b; flyPoints(`${t("plus.perfect")} +${fmtN(b)}`, W / 2, H * 0.34, true); Sound.toon("fanfare"); }
     PLUS.mapMisses = 0; plusDecoys();
   }
-  // the damaged print: a red cast, a torn frame now and then, and a frame that sticks (the draw is skipped: it holds)
-  function plusPrintHold(dt) {
-    if (!plusOn() || reduceMotion || settings.flashes === "off") return false;
-    if (PLUS.hold > 0) { PLUS.hold -= dt; return true; }
-    PLUS.nextHold -= dt; if (PLUS.nextHold <= 0) { PLUS.hold = 1 / 12; PLUS.nextHold = 5 + Math.random() * 6; }
-    return false;
-  }
+  // the darker print: a red cast (and Morty's crack), nothing that flickers or holds the picture
   function drawPlusPrint() {
     if (!plusOn()) return;
     ctx.save(); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.globalCompositeOperation = "multiply"; ctx.fillStyle = "#B88A8A"; ctx.globalAlpha = 0.35; ctx.fillRect(0, 0, W, H);
     ctx.globalCompositeOperation = "source-over";
-    if (Math.random() < 0.04 && settings.flashes !== "off") { const y = Math.random() * H, h2 = 2 + Math.random() * 6; ctx.globalAlpha = 0.5; ctx.fillStyle = "#F2E7C9"; ctx.fillRect(0, y, W, h2); ctx.fillStyle = "#1A0A0A"; ctx.fillRect(0, y + h2, W, 1.5); }
     if (PLUS.cracked) { ctx.globalAlpha = 0.9; const p = project(0, START_Y, 0), r = SKULL_R * p.s * 1.12; ctx.strokeStyle = INK; ctx.lineWidth = Math.max(1.5, r * 0.06);
       if (game.state === "ready") { ctx.beginPath(); ctx.moveTo(p.x + r * 0.1, p.y - r * 0.95); ctx.lineTo(p.x - r * 0.05, p.y - r * 0.55); ctx.lineTo(p.x + r * 0.15, p.y - r * 0.3); ctx.lineTo(p.x - r * 0.02, p.y - r * 0.05); ctx.stroke(); } }
     ctx.restore();

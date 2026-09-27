@@ -48,8 +48,8 @@
     // Skull Sense: sample the throw the aim would make (no forces: it's a feeling, not a guide)
     ENC.sense = 0; for (const O of OB.list) O.sense = 0;
     if (game.state === "ready" && aim.active && aim.valid && !attrOn()) {
-      const v = aimVelocity(aim.AX, aim.AY), wx = 0.5 * windNow(), G = gNow(), P = I ? encPos() : null, T = ring.z / Math.max(0.5, v.z) + 0.5;
-      const wet = waterFlight() || banksLive() ? forcedPath(v, T, { forces: false }) : null;   // (v60: under the sea it's the water's curve it feels along, and off a bank board the bounce)
+      const v = aimVelocity(aim.AX, aim.AY), wx = 0, G = gNow(),   /* (v61: nor does Skull Sense) */ P = I ? encPos() : null, T = ring.z / Math.max(0.5, v.z) + 0.5;
+      const wet = waterFlight() || banksLive() ? forcedPath(v, T, { forces: false, wind: false }) : null;   // (v60: under the sea it's the water's curve it feels along, and off a bank board the bounce)
       for (let t = 0.05; t < T; t += 0.05) {
         const q = wet ? wet[Math.min(wet.length - 1, Math.round(t / SIM_STEP) - 1)] : { x: v.x * t + wx * t * t, y: START_Y + v.y * t - 0.5 * G * t * t, z: v.z * t }; if (!q || q.y < 0) break;
         if (P) ENC.sense = Math.max(ENC.sense, clamp(1 - Math.hypot(q.x - P.x, q.y - P.y, q.z - P.z) / 0.9, 0, 1));

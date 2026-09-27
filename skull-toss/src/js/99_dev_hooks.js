@@ -266,7 +266,9 @@
     surfaces: () => JSON.parse(JSON.stringify(SURFACES)), surfaceBounce: (v, n, mat) => surfaceBounce(v, n, mat),
     aimFromDrag(dx, dy) { const m = mapDrag(dx, dy); return { ...m, ...aimPoint(m.nx, m.ny) }; },
     predictCrossing(AX, AY) { const v = aimVelocity(AX, AY), tc = ring.z / v.z; if (obstacleForcesLive() || waterFlight() || banksLive()) { const P = forcedPath(v, tc * 1.6 + 0.8), k = P.findIndex(q => q.z >= ring.z); if (k > 0) { const a = P[k - 1], b = P[k], u = (ring.z - a.z) / (b.z - a.z); return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, z: ring.z }; } } return { x: v.x * tc + 0.5 * windNow() * tc * tc, y: START_Y + v.y * tc - 0.5 * G * tc * tc, z: ring.z }; },
-    previewInfo(AX, AY) { const p = buildPreview(AX, AY, settings.guide); return { dots: p.front.length + p.back.length, crosshair: !!p.cross }; },
+    pitchBoard: () => ({ rim: PITCH.rim, holes: PITCH.holes.map(h => ({ ...h })), box: [PITCH.x0, PITCH.x1, PITCH.y0, PITCH.y1] }), skullR: SKULL_R,
+    guideCross(AX, AY) { const p = buildPreview(AX, AY, "full"); return p.cross; }, guideNow: () => guideNow(),
+    previewInfo(AX, AY) { const p = buildPreview(AX, AY, guideNow()); return { dots: p.front.length + p.back.length, crosshair: !!p.cross }; },
     ringAhead(sec) { return ringAt(ring.phase + ring.omega * sec); },
     state() {
       return { state: game.state, score: game.score, hits: game.hits, throws: game.throws, stage: game.stage, stageHits: game.stageHits, phase: game.phase, lives: game.lives, slots: game.slots, streak: game.streak,

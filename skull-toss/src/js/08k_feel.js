@@ -19,7 +19,7 @@
     ghostShot.near = L && skull.crossed && L.d < L.rc * 2.2 ? { x: L.x, y: L.y, z: L.ringZ } : null;
   }
   function drawGhostShot() {
-    const G0 = ghostShot.last; if (!G0 || G0.length < 3 || game.state !== "ready" || settings.guide === "off") return;
+    const G0 = ghostShot.last; if (!G0 || G0.length < 3 || game.state !== "ready" || guideNow() === "off") return;
     const rest = project(0, START_Y, 0), kr = SKULL_R * rest.s * 1.6;
     ctx.save(); let lx = null, ly = null, i = 0;
     for (const q of G0) {

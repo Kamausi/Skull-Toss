@@ -261,6 +261,10 @@
   const progEl = $("prog"), progFill = $("progFill"), progSt = $("progStage"), progLbl = $("progLabel"), progArc = $("progArc");
   function renderProgress() {
     if (!progEl) return;
+    // v61 (owner, playtest 2026-09-27): the area progression (the stage, the track to the bosses) is the Adventure's
+    // alone. A mini-game has no bar at all; the other modes keep only what isn't area progression (a clock, a count)
+    const inRun = game.state !== "title", mini = inRun && !!MODES[game.mode] && !!MODES[game.mode].mini && game.mode !== "story";
+    progEl.classList.toggle("off", mini); progEl.classList.toggle("noarea", inRun && game.mode !== "story");
     if (modeProgress()) return;   // Practice, Boss Rush, the mini-games and the encore (07i_modes.js)
     progEl.classList.toggle("arcade", game.mode === "arcade" && game.state !== "title");
     if (game.mode === "arcade" && game.state !== "title") {   // Arcade: the clock, racing your best time on this map

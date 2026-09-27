@@ -36,7 +36,7 @@
   const WAIM = { key: "", k: null };
   function waterAim(AX, AY) {
     const M = mediumDef(); if (!M) return null;
-    const T = flightT(), g0 = gNow(), wx = windNow(), vz = RING_Z / T, dt = SIM_STEP, key = `${T}|${g0}|${wx}|${M.g}|${M.drag}`;
+    const T = flightT(), g0 = gNow(), wx = 0, vz = RING_Z / T,   /* (v61: the aim never solves the wind) */ dt = SIM_STEP, key = `${T}|${g0}|${wx}|${M.g}|${M.drag}`;
     if (WAIM.key !== key) {
       const run = (vx, vy) => {
         let p = { x: 0, y: START_Y, z: 0 }, u = { x: vx, y: vy, z: vz };

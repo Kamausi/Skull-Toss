@@ -27,6 +27,10 @@
     const T = flightT(), z = ATTR.zp, tc = z * T / RING_Z, vy = (y - START_Y + 0.5 * G * tc * tc) / tc;
     return { AX: x * RING_Z / z, AY: START_Y + vy * T - 0.5 * G * T * T };
   }
+  // v61 (owner, playtest 2026-09-27): the skill attractions have no aim line at all, whatever the setting; nor the last
+  // throw's ghost. Everywhere else the guide is the player's setting.
+  const NO_GUIDE = { longshot: 1, cans: 1, pitch: 1 };
+  const guideNow = () => (ATTR.on && NO_GUIDE[ATTR.kind] ? "off" : settings.guide);
   const attrWind = () => ATTR.on && (ATTR.kind === "gale" || ATTR.kind === "longshot");
   const attrFar = () => ATTR.on ? Math.max(48, ATTR.zp + 24) : 48;
 
@@ -91,11 +95,13 @@
   const longDist = n => n < LONG.dists.length ? LONG.dists[n] : LONG.dists[LONG.dists.length - 1] + 25 * (n - LONG.dists.length + 1);
   const longR = d => 0.45 + 0.0065 * d;
   const CURT = { z: 7.2, back: 7.6, x0: -2.3, x1: 2.3, floor: 1.0, top: 3.75 };
-  const PITCH = { z: 7.2, x0: -2.2, x1: 2.2, y0: 0.95, y1: 3.9, holes: [
-    { x: 0, y: 3.45, r: 0.2, pts: 100 }, { x: -1.35, y: 2.95, r: 0.26, pts: 50 }, { x: 1.35, y: 2.95, r: 0.26, pts: 50 },
-    { x: -0.62, y: 2.25, r: 0.34, pts: 25 }, { x: 0.62, y: 2.25, r: 0.34, pts: 25 },
-    { x: -1.3, y: 1.5, r: 0.46, pts: 10 }, { x: 0, y: 1.5, r: 0.46, pts: 10 }, { x: 1.3, y: 1.5, r: 0.46, pts: 10 }] };
-  const GALE_LV = [{ w: 0.7, id: "breeze" }, { w: 1.4, id: "gust" }, { w: 2.2, id: "gale" }, { w: 3.0, id: "storm" }, { w: 3.8, id: "hurricane" }];
+  // (v61, the owner's playtest: the pockets overlapped. Each is drawn with a rim 1.45× its radius; now every drawn rim
+  // clears its neighbours by 12 cm or more, and no two pockets' catch zones (radius + the skull's) touch)
+  const PITCH = { z: 7.2, x0: -2.2, x1: 2.2, y0: 0.95, y1: 3.9, rim: 1.45, holes: [
+    { x: 0, y: 3.5, r: 0.2, pts: 100 }, { x: -1.45, y: 3.15, r: 0.26, pts: 50 }, { x: 1.45, y: 3.15, r: 0.26, pts: 50 },
+    { x: -0.72, y: 2.5, r: 0.32, pts: 25 }, { x: 0.72, y: 2.5, r: 0.32, pts: 25 },
+    { x: -1.5, y: 1.6, r: 0.38, pts: 10 }, { x: 0, y: 1.55, r: 0.38, pts: 10 }, { x: 1.5, y: 1.6, r: 0.38, pts: 10 }] };
+  const GALE_LV = [{ w: 1.2, id: "breeze" }, { w: 2.0, id: "gust" }, { w: 2.8, id: "gale" }, { w: 3.6, id: "storm" }, { w: 4.4, id: "hurricane" }];   // (v61: even a breeze carries a straight throw off the bullseye)
   const SWING = { z: 7.0, py: 4.6, L: 2.5, r: 0.42 };
   const SUDDEN = { z: 7.0, y: 2.3 };
 
@@ -633,7 +639,7 @@
     }
     for (const h of PITCH.holes) {
       const p = project(h.x, h.y, PITCH.z), r = h.r * p.s, col = h.pts === 100 ? "#C0392B" : h.pts === 50 ? "#356B68" : h.pts === 25 ? "#C49A42" : "#66506B";
-      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(p.x, p.y, r * 1.45, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(p.x, p.y, r * PITCH.rim, 0, TAU); ctx.fill(); ctx.stroke();
       ctx.fillStyle = "#0E0A08"; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, TAU); ctx.fill(); ctx.stroke();
       ctx.fillStyle = "rgba(255,255,255,.15)"; ctx.beginPath(); ctx.arc(p.x, p.y + r * 0.15, r * 0.8, Math.PI * 1.1, Math.PI * 1.9); ctx.fill();
       const fs = Math.max(8, Math.round(p.s * 0.2)); ctx.fillStyle = CREAM; ctx.font = `${fs}px ${NUMFONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(`${h.pts}`, p.x, p.y - r * 1.45 - fs * 0.1 + (h.pts === 10 ? r * 2.9 + fs * 0.2 : 0));

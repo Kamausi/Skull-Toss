@@ -1195,12 +1195,13 @@
     beatCrow(8); assert(T.ringMode().mode === "jumpcut", `the Black Abyss cuts (${T.ringMode().mode})`);
     T.toTitle();
   });
-  test("Wind pushes the throw sideways in the Whistling Woods, and the guide bends with it", () => {
+  test("Wind pushes the throw sideways in the Whistling Woods; the aim guide leaves the wind to you (v61)", () => {
     fresh(); T.setStage(3); T.freezeRing(0.8, C.RING_Y);
     T.setWind(0); throwAndSettle(0, C.RING_Y); assert(!T.state().lastResult.make, `no wind: aimed at the middle, a ring 0.8 m off is missed (${T.state().lastResult.kind})`);
     fresh(); T.setStage(3); T.freezeRing(0.8, C.RING_Y); T.setWind(2.4);
     const pc = T.predictCrossing(0, C.RING_Y), drift = 0.5 * 2.4 * C.FLIGHT_T * C.FLIGHT_T;
-    near(pc.x, drift, 0.02, "the guide's crossing should drift with the wind");
+    near(pc.x, drift, 0.02, "the throw's crossing drifts with the wind");
+    near(T.guideCross(0, C.RING_Y).x, 0, 1e-9, "but the guide's crosshair doesn't: reading the wind is the player's job");
     assert(!$("wind").hidden && /2\.4/.test($("wind").textContent), `the HUD shows the wind (${$("wind").textContent})`);
     throwAndSettle(0, C.RING_Y); const s = T.state();
     assert(s.lastResult.make && Math.abs(s.lastCross.x - drift) < 0.03, `the wind should carry it into the ring (${s.lastResult.kind}, crossed at ${s.lastCross.x.toFixed(3)})`);
@@ -2792,6 +2793,44 @@
     assert(T.chainPitch(1) === 1 && T.chainPitch(2) > 1 && T.chainPitch(3) > T.chainPitch(2), "and a chain of bounces or hits climbs in pitch");
     T.toTitle(); T.setStats(ZERO);
   });
+  // ── v61: the owner's playtest fixes ──
+  test("v61 The aim line: none at all in Long Shot, Can Alley and Perfect Pitch (nor the last throw's ghost); elsewhere it follows the setting and never solves the wind", () => {
+    T.setStats(OPENED);
+    for (const m of ["longshot", "cans", "pitch"]) { T.toTitle(); T.startMode(m); T.step(0.5); const P = T.previewInfo(0, 2.3); assert(T.guideNow() === "off" && P.dots === 0 && !P.crosshair, `${m}: no aim line (${JSON.stringify(P)})`); }
+    for (const m of ["gale", "gallery", "curtain"]) { T.toTitle(); T.startMode(m); T.step(0.5); assert(T.guideNow() === "full" && T.previewInfo(0, 2.3).dots > 0, `${m}: the guide as set`); }
+    T.toTitle(); T.startMode("gale"); T.step(0.5); T.attrWindSet(0); const c0 = T.guideCross(0, 2.3); T.attrWindSet(3); const c1 = T.guideCross(0, 2.3);
+    assert(c0 && c1 && c0.x === c1.x && c0.y === c1.y, "Gale Force's guide is the same in a gale as in a calm");
+    T.setStats(ZERO); T.toTitle();
+  });
+  test("v61 Gale Force: the wind carries Morty off a straight throw, even a breeze, and aiming into it brings him back", () => {
+    T.setStats(OPENED); T.startMode("gale"); T.step(0.5);
+    T.attrWindSet(1.2); T.attrThrow(0, 2.3); T.step(2.5); assert(T.state().hits === 0, "a breeze: straight at the bullseye, and it's carried off");
+    const drift = 0.5 * 1.2 * Math.pow(7 * C.FLIGHT_T / C.RING_Z, 2);
+    T.attrWindSet(1.2); T.attrThrow(-drift, 2.3); T.step(2.5); assert(T.state().hits === 1, `aimed ${drift.toFixed(2)} m into the wind: a hit`);
+    T.attrWindSet(-1.2); T.attrThrow(drift, 2.3); T.step(2.5); assert(T.state().hits === 2, "and the other way");
+    T.setStats(ZERO); T.toTitle();
+  });
+  test("v61 The area progression bar is the Adventure's alone: none in a mini-game, no stage or boss track in the other modes", () => {
+    T.setStats({ ...OPENED, bestStage: 9, bossKills: 3 });
+    const shown = el => getComputedStyle(el).display !== "none", bar = () => document.getElementById("prog"), chip = () => document.getElementById("progStage").parentElement, marks = () => [...bar().querySelectorAll(".mark")].some(shown);
+    const look = m => { T.toTitle(); T.startMode(m, 0); T.step(1); T.skipReel && T.skipReel(); T.step(0.5); return { bar: shown(bar()), chip: shown(chip()), marks: marks() }; };
+    let L = look("story"); assert(L.bar && L.chip && L.marks, `the Adventure: stage and track (${JSON.stringify(L)})`);
+    for (const m of ["curtain", "longshot", "gallery", "cans", "pitch", "sudden", "gale", "swing"]) { L = look(m); assert(!L.bar, `${m}: no bar (${JSON.stringify(L)})`); }
+    for (const m of ["practice", "arcade", "rush", "director"]) { L = look(m); assert(!L.chip && !L.marks, `${m}: no stage and no boss track (${JSON.stringify(L)})`); }
+    T.setStats(ZERO); T.toTitle();
+  });
+  test("v61 Perfect Pitch: no two pockets overlap, drawn or caught, and a throw into each is scored as that pocket", () => {
+    const P = T.pitchBoard(), H = P.holes;
+    for (let i = 0; i < H.length; i++) for (let j = i + 1; j < H.length; j++) {
+      const d = Math.hypot(H[i].x - H[j].x, H[i].y - H[j].y);
+      assert(d - (H[i].r + H[j].r) * P.rim >= 0.12, `pockets ${i} and ${j}: their rims clear each other (${(d - (H[i].r + H[j].r) * P.rim).toFixed(2)} m)`);
+      assert(d > H[i].r + H[j].r + 2 * T.skullR, `pockets ${i} and ${j}: their catch zones don't touch`);
+    }
+    for (const h of H) assert(h.x - h.r * P.rim >= P.box[0] && h.x + h.r * P.rim <= P.box[1] && h.y - h.r * P.rim >= P.box[2] && h.y + h.r * P.rim <= P.box[3], `pocket ${h.pts} at ${h.x},${h.y} sits on the board`);
+    T.setStats(OPENED);
+    for (const h of H) { T.toTitle(); T.startMode("pitch"); T.step(0.5); const s0 = T.attr().score; T.attrThrow(h.x, h.y); T.step(2.5); assert(T.attr().score - s0 >= h.pts, `into the ${h.pts} at ${h.x}: ${T.attr().score - s0}`); }
+    T.setStats(ZERO); T.toTitle();
+  });
   // ── v58: the sky keeps time with the road; one ring reflection; every mode travels ──
   test("v58 The sky: the further the road has come, the lower the moon (setting on its own side, clear of the ring) and the later the night; the picture-house screen stays put", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.step(0.5); const s0 = T.sky();
@@ -2952,9 +2991,9 @@
   });
   test("v56 Gale Force: a still bullseye and a wind that turns every throw and gets up every three hits (breeze, gust, gale…)", () => {
     T.setStats(OPENED); T.startMode("gale"); let A = T.attr();
-    assert(A.lvl === 0 && Math.abs(A.wind) >= 0.5 && Math.abs(A.wind) <= 0.9, `a breeze to start (${A.wind})`);
+    assert(A.lvl === 0 && Math.abs(A.wind) >= 1.0 && Math.abs(A.wind) <= 1.4, `a breeze to start (${A.wind})`);
     for (let i = 0; i < 3; i++) { T.attrWindSet(0); T.attrThrow(0, 2.3); T.step(2.5); }
-    A = T.attr(); assert(T.state().hits === 3 && A.lvl === 1 && Math.abs(A.wind) >= 1.1, `three hits: a gust (${A.lvl}, ${A.wind})`);
+    A = T.attr(); assert(T.state().hits === 3 && A.lvl === 1 && Math.abs(A.wind) >= 1.7, `three hits: a gust (${A.lvl}, ${A.wind})`);
     T.attrWindSet(0); T.attrThrow(1.5, 2.3); T.step(2.5); assert(T.state().lives === 2, "a miss costs a skull");
     T.setStats(ZERO); T.toTitle();
   });

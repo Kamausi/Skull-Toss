@@ -22,7 +22,7 @@
     let dt = real;
     if (!manual) { pollPad(); if (game.slowmo > 0 && !paused) { game.slowmo -= dt; dt *= 0.3; } advance(dt * (Replay.play ? Replay.speed : 1)); }
     if (aim.active && !paused) Sound.pull(aim.tension);
-    if (!plusPrintHold(real)) VisualSystem.render(); gpuFrame(real); drawUI(ts);   // (v51: in Adventure+ a frame sticks in the gate now and then)   // (the GPU layer goes on over the picture: 08j_gpu.js)
+    VisualSystem.render(); gpuFrame(real); drawUI(ts);   // (the GPU layer goes on over the picture: 08j_gpu.js)
     if (visualsOn()) visualTick(raw, performance.now() - t0);
     requestAnimationFrame(frame);
   }

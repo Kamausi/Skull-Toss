@@ -1,8 +1,36 @@
-# SKULL TOSS v60
+# SKULL TOSS v61
 
 Lob the skull through a ring in a haunted graveyard. Play **Story** to climb through the stages and beat the bosses, or **Arcade** to pick any map and see how long you can last. Three misses and you're buried.
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
+
+## New in v61: the playtest's first fixes
+
+These come from the owner's playtest, recorded in Notion (QA & Playtesting, 2026-09-27).
+
+- **No aim line in the skill attractions.** Long Shot, Can Alley and Perfect Pitch never show the aim line, whatever
+  the setting, and they don't show the last throw's ghost either. The other mini-games and the Adventure keep the
+  guide as set.
+- **The aim line never solves the wind.** The skull still flies with the wind. The guide, Skull Sense and the aim
+  itself no longer bend for it, so reading the wind and aiming into it is the player's job.
+- **Gale Force's wind carries Morty.** Even the breeze now carries a straight throw off the bullseye:
+
+  | Level | Wind (m/s² across) |
+  |---|---|
+  | breeze | 1.2 |
+  | gust | 2.0 |
+  | gale | 2.8 |
+  | storm | 3.6 |
+  | hurricane | 4.4 |
+
+  Aiming into it brings him back.
+- **The area progression bar is the Adventure's alone.** A mini-game has no bar. Practice, Boss Rush, Arcade and the
+  Director's Challenge keep only what isn't area progression (a clock, a count, a boss's health), with no stage chip
+  or boss track.
+- **Adventure+ no longer flickers.** The torn frames that flashed across the screen and the frame that stuck in the
+  gate every few seconds are gone. The darker, red-cast print stays.
+- **Perfect Pitch's pockets don't overlap.** Every pocket's rim clears its neighbours by at least 12 cm, and no two
+  catch zones touch.
 
 ## New in v60: under the sea, what things are made of, near and far, and rings with a character
 

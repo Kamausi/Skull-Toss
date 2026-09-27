@@ -103,6 +103,7 @@
 .prog .arc{display:none;font-size:13px;color:#FFD94E}
 .prog.arcade .arc{display:block}
 .prog.arcade .st:not(.arc),.prog.arcade .mark{display:none}
+.prog.off{display:none}.prog.noarea .st:not(.arc),.prog.noarea .mark,.prog.noarea .tick{display:none}
 .prog.arcade.beat .track i{background:repeating-linear-gradient(-45deg,#FFE9A0 0 6px,#FFC93C 6px 12px)}
 .prog.arcade.beat .lbl{color:#FFD94E}
 .prog .mini.done{opacity:.45;transform:scale(.8) rotate(-20deg)}
