@@ -1,8 +1,8 @@
   // ───────────────────────── Adventure+ (v51) ─────────────────────────
   // Finish the Adventure and it opens again, remixed: the same eight maps, the same 80 hits each, but the world has
   // gone wrong around a skull that's survived it once. Adventure is learning the world; Adventure+ is mastering it.
-  // It isn't everything doubled: several systems get harder a little each, climbing from about 1.25× on the first
-  // map to 2× on the last —
+  // It isn't everything doubled: several systems get harder a little each, climbing from about 1.2× on the first
+  // map to 1.7× on the last (v62: it was 1.25× to 2×; the owner wants it finishable too) —
   //   the ring    quicker and a little smaller, and now and then it fakes you out: stops dead, or doubles back
   //   decoys      from the third map, one or two ghost rings ride along beside the real one; they fade before the
   //               skull gets there, and only the real one counts
@@ -16,7 +16,7 @@
   const PLUS = { wind: 0, fake: 0, fakeNext: 0, fakeKind: 0, cracked: false, readyAt: 0, mapMisses: 0, decoys: [] };
   const plusOpen = () => (realProfile().storyClears || 0) > 0;
   const plusOn = () => !!game.plus && game.mode === "story" && game.state !== "title";
-  const plusK = (st = game.stage || 1) => 1.25 + 0.75 * clamp((st - 1) / 7, 0, 1);   // 1.25× on map 1 … 2× on map 8
+  const plusK = (st = game.stage || 1) => 1.2 + 0.5 * clamp((st - 1) / 7, 0, 1);   // 1.2× on map 1 … 1.7× on map 8 (v62: was 1.25 … 2, the owner: finishable)
   function plusReset() {
     Object.assign(PLUS, { wind: 0, fake: 0, fakeNext: 5 + runRand() * 4, cracked: false, readyAt: game.time, mapMisses: 0, decoys: [] });
     if (game.plus) plusDecoys();
@@ -25,7 +25,7 @@
   function plusTargets(T) {
     if (!plusOn() || ring.mode === "boss") return T;
     const f = plusK() - 1;
-    return { ...T, omega: T.omega * (1 + 0.5 * f), amp: (T.amp || 0) * (1 + 0.2 * f), rc: Math.max(0.36, T.rc - 0.045 * f) };
+    return { ...T, omega: T.omega * (1 + 0.45 * f), amp: (T.amp || 0) * (1 + 0.15 * f), rc: Math.max(0.4, T.rc - 0.04 * f) };
   }
   // the fake-out: now and then the ring stops dead for a moment, or doubles back — a multiplier on its phase rate
   function plusPhaseRate(dt) {

@@ -142,7 +142,7 @@
   const hazardsAllowed = () => !MODES[game.mode].mini && game.phase !== "encore" && game.phase !== "crossing" && !(game.mode === "practice" && !practice.hazards);
   const hazardsLive = () => !boss && game.state !== "title" && game.state !== "cine" && hazardsAllowed();
   function hazardsReset() {
-    HZ.kind = mapData(game.stage || 1).mechanic.kind; HZ.wind = 0; HZ.windMul = 1; HZ.fog = 0; HZ.fogT = 0; HZ.list = []; HZ.since = 0; HZ.pendT = 0; HZ.lastTick = 0;
+    PARK.at = null; HZ.kind = mapData(game.stage || 1).mechanic.kind; HZ.wind = 0; HZ.windMul = 1; HZ.fog = 0; HZ.fogT = 0; HZ.list = []; HZ.since = 0; HZ.pendT = 0; HZ.lastTick = 0;
     if (HZ.kind === "balloons") for (let i = 0; i < 2; i++) HZ.list.push(newBalloon(rrIn(0.3, 3.8)));
     renderWind(); obstaclesReset(); encReset(); encSync();
   }

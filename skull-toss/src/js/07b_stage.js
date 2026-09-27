@@ -35,6 +35,7 @@
   function ringAt(p) {
     if (ring.frozen) return { x: ring.frozen.x, y: ring.frozen.y, z: ring.frozen.z == null ? RING_Z : ring.frozen.z };
     if (ring.mode === "boss" && boss) return boss.ringAt(p);
+    if (PARK.at && ring.mode !== "boss") return { ...PARK.at };   // (v62: a sealed ring waits for its bank, 07y_banks.js)
     return (RING_PATHS[ring.mode] || RING_PATHS.line).at(p);   // the Ring Path Director (07e_directors.js)
   }
   const ringFlat = () => !!ring.frozen || !!(RING_PATHS[ring.mode] && RING_PATHS[ring.mode].flat) || (ring.mode === "boss" && !!boss && !!boss.flat);
@@ -56,10 +57,25 @@
   const aLevel = h => A_TOP * Math.min(h, STAGE_MINI) / STAGE_MINI;
   const bHits = h => Math.max(0, h - (arcadeLike() ? STAGE_MINI : STAGE_LOOSE)), bPace = () => (arcadeLike() ? 25 : STAGE_BOSS - STAGE_LOOSE);
   const ringTargets = () => portalRingSpec() || plusTargets(ringTargets0());   // (v51: Adventure+ pushes the ring: 07s_plus.js; v54: a portal's open: 07t_portal.js)
+  // v62 (the owner: the Adventure must be finishable): the Adventure's ring follows the curve in the blueprint
+  // (src/maps/blueprint.json: curve), a gentle climb across all eight maps instead of reaching its fastest and smallest
+  // by the second; the Arcade keeps its own climb below
+  const CURVE = BLUEPRINT.curve, lerpC = (P, k) => P[0] + (P[1] - P[0]) * clamp(k, 0, 1);
+  const curveSpeed = (S, T) => 1 + (S.speed * T.speed - 1) * CURVE.damp;
   function ringTargets0() {
     const MR = modeRing(); if (MR && game.state !== "title") return MR;   // Curtain Call, the encore, a slow Practice ring
     const st = game.stage || 1, S = stageDef(st), h = game.stageHits || 0, cursed = (powerOn("cursed") ? 1.5 : 1) * (powerOn("time") ? 0.5 : 1), T = tierNow();
     if (game.state === "title") { const L = level(0); return { mode: "line", ...L }; }
+    if (!arcadeLike()) {
+      const C = clamp(st, 1, CURVE.a.length) - 1, shrink = hasMod("shrink") ? CURVE.shrink : 0;
+      if (ringFlies()) {
+        const b = bHits(h) / bPace(), L = level(lerpC(CURVE.b[C], b)), lap = RING_PATHS[ring.mode].lap || 1;
+        return { rc: L.rc - shrink + T.rc - (ring.rcShrink || 0), omega: lap * cursed * curveSpeed(S, T) * directorSpeed() / lerpC(CURVE.legs, b), amp: 0, bob: 0 };
+      }
+      if (ring.mode === "boss") return { rc: boss ? boss.rc : ring.rc, omega: 1, amp: 0, bob: 0 };
+      const L = level(lerpC(CURVE.a[C], h / STAGE_MINI));
+      return { amp: L.amp, omega: L.omega * cursed * curveSpeed(S, T) * directorSpeed(), rc: L.rc - shrink + T.rc - (ring.rcShrink || 0), bob: Math.max(L.bob, hasMod("bob") ? 0.16 : 0) };
+    }
     if (ringFlies()) {   // the second half: the map's path, legs per second (the carousel's circle runs in radians: three legs a lap)
       const b = bHits(h) / bPace(), L = level(16 + b * B_RISE + (st - 1) * 4), lap = RING_PATHS[ring.mode].lap || 1;
       return { rc: L.rc - (hasMod("shrink") ? 0.05 : 0) + T.rc - (ring.rcShrink || 0), omega: lap * cursed * S.speed * T.speed * directorSpeed() * arcadeRamp() / Math.max(0.72, 1.9 - b * B_SLOW), amp: 0, bob: 0 };
@@ -200,6 +216,7 @@
     profile.bossKills++; if (boss.flawless) { profile.bossFlawless++; profile.flawless[boss.kind] = 1; } game.run.bosses++;
     profile.bossLog[boss.kind] = (profile.bossLog[boss.kind] || 0) + 1;
     profile.bestStage = Math.max(profile.bestStage, game.stage + 1); game.stageHits = Math.max(game.stageHits || 0, STAGE_END);
+    if (game.plus) profile.plusStage = Math.max(profile.plusStage || 1, Math.min(game.stage + 1, MAP_COUNT));   // (v62: Adventure+'s own checkpoints)
     // the corrected roadmap's progression: END BOSS → BODY-PART REWARD → BLACK RING SHARD → BONUS ROUND (optional) → CROSSING → NEXT MAP
     const M = mapData(game.stage), frag = M.fragment, fresh = !profile.fragments.includes(frag), part = BODY_PART[boss.kind], partKey = part ? part.kind + ":" + part.id : "";
     if (fresh) profile.fragments.push(frag);
@@ -226,7 +243,7 @@
     changeoverCues(2.8 + 2.3);
     const nextMap = () => {
       game.stage++; game.stageHits = 0; game.phase = "A"; game.act = 0; game.ringHidden = false; VisualSystem.setStage(game.stage); setScene(game.stage - 1);
-      if (game.lives < MAX_LIVES) { game.lives++; game.slots = Math.max(game.slots, game.lives); }
+      game.lives = Math.min(MAX_LIVES, Math.max(game.lives + 1, START_LIVES)); game.slots = Math.max(game.slots, game.lives);   // (v62: a new map tops the skulls up to three at least, and one more)
       setRingMode("line"); snapRing(); Sound.setAct("A"); hazardsReset(); refillTargets();
       nextReel();   // the next reel's title card (and the intermission, halfway): 09i_reel.js
       updateHud();

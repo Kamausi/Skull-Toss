@@ -8,10 +8,11 @@
   //   shy         the Drowned Theater: on a beat it turns edge-on and back, so its window narrows across. A whirr first.
   //   decoy       the Black Marsh: a will-o'-the-wisp ring hangs above the real one, on the other side; it has no post
   //               and no reflection, and it flickers. Through it is a miss.
-  //   aggressive  the Clockwork Caves: on a beat it lunges along its line at three times its pace. A whirr first.
+  //   aggressive  the Clockwork Caves: on a beat it lunges along its line at 2.2 times its pace (v62: was three). A whirr first.
   // And while you aim, a ring on its line ticks softly just before it turns round, so its rhythm can be heard.
   const PERS = { t: 0, off: 0, fl: 0, nerve: 0, nerveT: 0, was: null, lastTell: -1, lastRev: 0, cutWas: 0, tells: 0 };
-  const SHY = { per: 3.2, turn: [2.2, 2.9], yaw: 1.25 }, LUNGE = { per: 2.6, at: [2.1, 2.5], rate: 3 }, TIMID = { reach: 2.2, dart: 0.32 }, DECOY = { up: 1.05, x: -0.8 };
+  const SHY = { per: 3.2, turn: [2.2, 2.9], yaw: 1.25 }, LUNGE = { per: 2.6, at: [2.1, 2.5], rate: 2.2 }, TIMID = { reach: 2.2, dart: 0.32 }, DECOY = { up: 1.05, x: -0.8 };
+  const TELL_LEAD = 1.0;   // v62: the whirr comes a whole second before the turn or the lunge, longer than a throw's flight, so a throw made after it never gets caught
   const persDef = () => { const P = stageDef().map.ring.personality; return P && P.kind ? P : null; };
   function persKind() {
     const P = persDef(); if (!P || game.state === "title" || game.phase !== "A" || boss || ring.frozen || attrOn() || portalOpen()) return null;
@@ -27,7 +28,7 @@
     const u = persU(SHY.per), [a, b] = SHY.turn; if (u < a || u > b) return 1;
     return Math.max(0.12, Math.cos(SHY.yaw * Math.sin(((u - a) / (b - a)) * Math.PI)));
   }
-  const persRate = () => { if (persKind() !== "aggressive") return 1; const u = persU(LUNGE.per); return u >= LUNGE.at[0] && u < LUNGE.at[1] ? LUNGE.rate : 1; };
+  const persRate = (dt = 0) => { if (persKind() !== "aggressive") return 1; const per = LUNGE.per, u = (((PERS.t + dt) % per) + per) % per; return u >= LUNGE.at[0] && u < LUNGE.at[1] ? LUNGE.rate : 1; };   // (dt: a moment on, for a look ahead)
   function decoyAt() { return persKind() === "decoy" && !plusOn() ? { x: ring.x * DECOY.x, y: ring.y + DECOY.up, z: ring.z } : null; }   // (Adventure+ has its own ghost rings, 07s_plus.js)
   // (hitRing, 07_game.js: through the will-o'-the-wisp's window is a miss)
   function decoyCatch(s, at) {
@@ -53,7 +54,7 @@
     if (k === "timid" && on && (PERS.nerveT -= dt) <= 0) { PERS.nerveT = 0.35; PERS.tells++; Sound.toon("tick", panOf(ring.x), 1.15); }
     if (k === "decoy" && aiming) { const F = decoyAt(); if (F && Math.hypot(aim.AX - F.x, aim.AY - F.y) < 0.6 && (PERS.nerveT -= dt) <= 0) { PERS.nerveT = 0.6; PERS.tells++; Sound.toon("hiss", panOf(F.x)); } }
     if (k === "shy" || k === "aggressive") {
-      const per = k === "shy" ? SHY.per : LUNGE.per, at = (k === "shy" ? SHY.turn[0] : LUNGE.at[0]) - 0.5, n = Math.floor(PERS.t / per);
+      const per = k === "shy" ? SHY.per : LUNGE.per, at = (k === "shy" ? SHY.turn[0] : LUNGE.at[0]) - TELL_LEAD, n = Math.floor(PERS.t / per);
       if (persU(per) >= at && PERS.lastTell !== n) { PERS.lastTell = n; if (game.state === "ready" || game.state === "flying") { PERS.tells++; Sound.toon("whirr", panOf(ring.x)); } }
     }
     // a line ring ticks softly a beat before it turns round (while you're aiming, when its rhythm is what you're reading)

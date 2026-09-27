@@ -1195,13 +1195,13 @@
     beatCrow(8); assert(T.ringMode().mode === "jumpcut", `the Black Abyss cuts (${T.ringMode().mode})`);
     T.toTitle();
   });
-  test("Wind pushes the throw sideways in the Whistling Woods; the aim guide leaves the wind to you (v61)", () => {
+  test("Wind pushes the throw sideways in the Whistling Woods, and the aim guide bends with it (v62: the owner's call, reversing v61)", () => {
     fresh(); T.setStage(3); T.freezeRing(0.8, C.RING_Y);
     T.setWind(0); throwAndSettle(0, C.RING_Y); assert(!T.state().lastResult.make, `no wind: aimed at the middle, a ring 0.8 m off is missed (${T.state().lastResult.kind})`);
     fresh(); T.setStage(3); T.freezeRing(0.8, C.RING_Y); T.setWind(2.4);
     const pc = T.predictCrossing(0, C.RING_Y), drift = 0.5 * 2.4 * C.FLIGHT_T * C.FLIGHT_T;
     near(pc.x, drift, 0.02, "the throw's crossing drifts with the wind");
-    near(T.guideCross(0, C.RING_Y).x, 0, 1e-9, "but the guide's crosshair doesn't: reading the wind is the player's job");
+    near(T.guideCross(0, C.RING_Y).x, drift, 0.02, "and so does the guide's crosshair");
     assert(!$("wind").hidden && /2\.4/.test($("wind").textContent), `the HUD shows the wind (${$("wind").textContent})`);
     throwAndSettle(0, C.RING_Y); const s = T.state();
     assert(s.lastResult.make && Math.abs(s.lastCross.x - drift) < 0.03, `the wind should carry it into the ring (${s.lastResult.kind}, crossed at ${s.lastCross.x.toFixed(3)})`);
@@ -2741,7 +2741,7 @@
     const A0 = T.aimFor(1.0, C.RING_Y), lives = T.state().lives, hits = T.state().stageHits;
     T.throwAt(A0.AX, A0.AY); T.step(C.FLIGHT_T + 0.2); let s = T.state();
     assert(s.lastResult.kind === "sealed" && !s.lastResult.make, `straight through the middle: the film throws it back (${s.lastResult.kind})`); T.step(3);
-    assert(T.state().lives === lives - 1 && T.state().stageHits === hits, `a miss (${T.state().lives}/${lives}, ${T.state().stageHits}/${hits})`); plant(); assert(T.bank().need === 1, "and the ring stays sealed");
+    assert(T.state().lives === lives && T.state().stageHits === hits, `not a hit, and (v62) no skull lost (${T.state().lives}/${lives}, ${T.state().stageHits}/${hits})`); plant(); assert(T.bank().need === 1, "and the ring stays sealed");
     const A = T.aimVia(1.0, C.RING_Y, 2.5, A0.AY); T.throwAt(A.AX, A.AY); T.step(C.FLIGHT_T + 0.4); s = T.state();
     assert(T.bank().seal === 1 && T.bank().banked === 1 && s.lastResult.make, `banked in: it opens (${s.lastResult.kind})`); T.step(3);
     T.clearObstacles(); fresh(); T.setStage(2);
@@ -2793,13 +2793,54 @@
     assert(T.chainPitch(1) === 1 && T.chainPitch(2) > 1 && T.chainPitch(3) > T.chainPitch(2), "and a chain of bounces or hits climbs in pitch");
     T.toTitle(); T.setStats(ZERO);
   });
+  // ── v62: wind in the line, and an Adventure a person can finish ──
+  test("v62 The Adventure's curve: a gentle climb over all eight maps (never the old top speed by the second); the Arcade keeps its own", () => {
+    T.setStats({ ...ZERO, bestStage: 9 });
+    const at = (st, h) => { fresh(); T.unfreezeRing(); T.setStage(st); T.calm(); T.setHits(h); const r = T.state().ring; return { amp: r.amp, omega: r.omega, rc: r.rc, v: r.amp * r.omega }; };
+    let last = 0;
+    for (let st = 1; st <= 8; st++) {
+      const a = at(st, 0), b = at(st, 29);
+      assert(b.v > a.v && b.rc <= a.rc, `map ${st}: it climbs through the first half (${a.v.toFixed(2)} → ${b.v.toFixed(2)} m/s)`);
+      assert(b.v >= last - 1e-9, `map ${st}: no easier at its end than the map before (${b.v.toFixed(2)} vs ${last.toFixed(2)})`); last = b.v;
+      assert(b.rc >= 0.45, `map ${st}: the ring never below 0.45 m at the end of the first half (${b.rc.toFixed(3)})`);
+    }
+    const m2 = at(2, 29); assert(m2.amp < 1.3 && m2.omega < 1.6, `the second map's third act is no longer the top of the old climb (${m2.amp.toFixed(2)}, ${m2.omega.toFixed(2)})`);
+    T.toTitle(); T.startMode("arcade", 1); T.calm(); T.setHits(29); const A = T.state().ring;
+    assert(A.amp > 1.45 && A.omega > 2, `the Arcade still climbs its old way (${A.amp.toFixed(2)}, ${A.omega.toFixed(2)})`);
+    T.toTitle(); T.setStats(ZERO);
+  });
+  test("v62 Sealed rings wait: a sealed ring glides within a bank's reach and holds there till it's banked open; a straight throw costs nothing", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.unfreezeRing(); T.setStage(2); T.calm();
+    const seal = h => { T.setHits(h); T.syncObstacles(); T.obOn(); T.banksSync(); T.step(1.2); return T.bank().need; };
+    assert(seal(21) === 0 && !T.bankPark(), "an open ring keeps to its path");
+    assert(seal(22) === 1, "hit 22: sealed");
+    const r0 = T.state().ring; T.step(1.5); const r1 = T.state().ring;
+    near(r0.x, 1.0, 1e-6, "it waits a metre out on the headstone's side"); near(r1.x, r0.x, 1e-9, "and holds still"); near(r1.y, C.RING_Y, 1e-6, "at the ring's own height");
+    const A = T.aimVia(1.0, C.RING_Y, 2.4, C.RING_Y); assert(T.bankedAim(A.AX, A.AY), "a bank off the headstone reaches it, inside the aim's range");
+    const lives = T.state().lives, S0 = T.aimFor(1.0, C.RING_Y); T.throwAt(S0.AX, S0.AY); T.step(3);
+    assert(T.state().lastResult.kind === "sealed" && T.state().lives === lives, `straight in: thrown back, no skull lost (${T.state().lastResult.kind}, ${T.state().lives}/${lives})`);
+    T.throwAt(A.AX, A.AY); T.step(C.FLIGHT_T + 0.4); assert(T.state().lastResult.make, `banked in (${T.state().lastResult.kind})`); T.step(3);
+    assert(T.bank().need === 0 && !T.bankPark(), "the next ring is open, and back on its path");
+    T.toTitle(); T.setStats(ZERO);
+  });
+  test("v62 Checkpoints: the Adventure starts at any map it's reached (Adventure+ on its own count); such a run finishes the story but stays off the leaderboard", () => {
+    T.setStats({ ...ZERO, bestStage: 4, plusStage: 2, storyClears: 1 });
+    T.startAt(3); assert(T.state().stage === 4 && T.state().lives === 3 && T.runStats().from === 4, `map 4, from its start with three skulls (${T.state().stage}, ${T.runStats().from})`);
+    T.toTitle(); T.startAt(6); assert(T.state().stage === 1 && !T.runStats().from, "a map not yet reached: the start");
+    T.toTitle(); T.startAt(1, true); assert(T.state().stage === 2 && T.plus().on, "Adventure+ from its second map");
+    T.toTitle(); T.startAt(3, true); assert(T.state().stage === 1, "but not from a map only the Adventure has reached");
+    const scored = from => { T.toTitle(); T.setStats({ ...ZERO, bestStage: 4 }); if (from) T.startAt(from); else T.start(); T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); const sc = T.state().score; T.endRun(); T.step(2); return sc > 0 && !!T.profile().boardBest; };
+    assert(!scored(3), "a run from a checkpoint doesn't go on the leaderboard"); assert(scored(0), "a run from the start does");
+    T.toTitle(); T.setStats({ ...ZERO, bestStage: 1 }); T.start(); T.setStage(3); T.setHits(12); T.endRun(); T.step(2); assert(T.profile().bestStage === 3, "a run that reached map 3 opens it");
+    T.toTitle(); T.setStats(ZERO);
+  });
   // ── v61: the owner's playtest fixes ──
-  test("v61 The aim line: none at all in Long Shot, Can Alley and Perfect Pitch (nor the last throw's ghost); elsewhere it follows the setting and never solves the wind", () => {
+  test("v61 The aim line: none at all in Long Shot, Can Alley and Perfect Pitch (nor the last throw's ghost); elsewhere it follows the setting, and (v62) bends with the wind", () => {
     T.setStats(OPENED);
     for (const m of ["longshot", "cans", "pitch"]) { T.toTitle(); T.startMode(m); T.step(0.5); const P = T.previewInfo(0, 2.3); assert(T.guideNow() === "off" && P.dots === 0 && !P.crosshair, `${m}: no aim line (${JSON.stringify(P)})`); }
     for (const m of ["gale", "gallery", "curtain"]) { T.toTitle(); T.startMode(m); T.step(0.5); assert(T.guideNow() === "full" && T.previewInfo(0, 2.3).dots > 0, `${m}: the guide as set`); }
     T.toTitle(); T.startMode("gale"); T.step(0.5); T.attrWindSet(0); const c0 = T.guideCross(0, 2.3); T.attrWindSet(3); const c1 = T.guideCross(0, 2.3);
-    assert(c0 && c1 && c0.x === c1.x && c0.y === c1.y, "Gale Force's guide is the same in a gale as in a calm");
+    assert(c0 && c1 && c1.x > c0.x + 0.05 && Math.abs(c1.y - c0.y) < 1e-6, `Gale Force's guide leans with the gale (${c0 && c0.x.toFixed(2)} → ${c1 && c1.x.toFixed(2)})`);
     T.setStats(ZERO); T.toTitle();
   });
   test("v61 Gale Force: the wind carries Morty off a straight throw, even a breeze, and aiming into it brings him back", () => {

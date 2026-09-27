@@ -10,7 +10,7 @@
   // v47 made the maps 80 hits, so a recording from before plays out differently: those are version 1, and no longer open.
   // v60 did it again (the Drowned Theater under water, bank boards, ghost-glass urns, a bank no longer counting for every
   // throw after it): version 2 no longer opens either
-  const REPLAY_V = 3;
+  const REPLAY_V = 4;   // (v62: the Adventure's curve, the bosses' tells and the sealed rings changed how a run plays: older recordings are refused)
   const Replay = {
     rec: null, last: null, play: null, speed: 1,
     begin(opts) {

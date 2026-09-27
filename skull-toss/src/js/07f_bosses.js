@@ -4,6 +4,9 @@
   // hand-tuned code (07d_boss.js); every other boss is data here. Mini-bosses carry the ring and never attack; end
   // bosses stand far off, attack, get angrier with each of their three phases (v47), and each is holding one of Morty's pieces.
   //   Production: concept → gimmick → carrier → attack → arena → phases → drawing → hit and defeat → sound → QA.
+  // v62 (the owner: the Adventure must be finishable): every tell comes at least a flight's time (0.82 s) before the
+  // change it warns of, so a player who waits for it is never caught mid-throw; and the bosses that carry the ring round
+  // a circle through depth go round it slower and closer in. Measured with tools/balance.mjs.
   const BOSS_DEFS = {
     batbaron:   { mini: true, hp: [5, 8], hang: 1.05, fall: "spin", bits: "#3A2A4A",
                   carrier: { kind: "perch", word: "SCREE!", sound: "screech", hold: [0.75, 1.5], tell: 0.45, move: 0.55,
@@ -21,13 +24,13 @@
     cuckoo:     { mini: true, hp: [5, 8], fall: "spin", bits: "#E3B64B", body: { x: 0, z: 7.6 },
                   carrier: { kind: "orbit", word: "CUCKOO!", sound: "tick", cx: 0, cy: 2.45, cz: 6.9, r: 0.95, steps: 8, hold: [0.7, 1.1], move: 0.2, flipEvery: 5, tell: 0.4 }, draw: drawCuckoo },
     projectionist: { mini: true, hp: [5, 8], fall: "topple", bits: "#8A8E96", body: { x: -2.9, z: 9.2 },
-                  carrier: { kind: "jump", word: "CLACK-CLACK", sound: "tick", hold: [0.9, 1.5], tell: 0.35,
+                  carrier: { kind: "jump", word: "CLACK-CLACK", sound: "tick", hold: [0.9, 1.5], tell: 0.9,
                              spots: [[-1.2, 2.2, 6.0], [1.2, 2.6, 6.4], [0, 3.1, 5.8], [-0.6, 1.7, 6.6], [1.0, 1.8, 5.7]] }, draw: drawProjectionist },
     undertaker: { hp: [8, 12], fall: "topple", bits: "#6A4A2E", body: { x: 0.5, z: 13.6 },
                   carrier: { kind: "loop", rate: [0.72, 0.95], spots: [[-1.25, 2.1, 5.2], [1.3, 2.0, 7.4], [0.1, 3.0, 6.2]], seq: [0, 1, 2, 0, 2, 1] },
                   attack: { word: "THWUMP!", sound: "shovel", every: [4.6, 3.6], n: [3, 4], from: [1.5, 2.8, 12.6], shot: "clod" }, draw: drawUndertaker },
     count:      { hp: [8, 12], fall: "burst", bits: "#3A1A3A", body: { x: 0, z: 13.8 },
-                  carrier: { kind: "circle", cx: 0, cy: 2.45, cz: 6.4, rx: 1.4, rz: 1.3, speed: [1.25, 1.7], flipEvery: 6, tell: 0.5, word: "BLAH!", sound: "screech" },
+                  carrier: { kind: "circle", cx: 0, cy: 2.45, cz: 6.4, rx: 1.3, rz: 1.1, speed: [0.95, 1.3], flipEvery: 6, tell: 1.0, word: "BLAH!", sound: "screech" },
                   attack: { word: "BATS!", sound: "screech", every: [4.8, 3.8], n: [3, 4], from: [0, 3.2, 12.8], shot: "bat" }, draw: drawCount },
     marrowroot: { hp: [8, 12], fall: "topple", bits: "#E4DAC4", body: { x: 0, z: 14.2 },
                   carrier: { kind: "sway", word: "CREEAK!", sound: "rumble", cx: 0, cy: 2.35, cz: 6.3, amp: 1.45, period: [3.2, 2.5], lurch: 4, tell: 0.7 },
@@ -37,15 +40,15 @@
                              spots: [[-1.3, 1.6, 5.2], [1.2, 1.8, 7.4], [0, 2.4, 6.0], [-0.8, 2.2, 7.8], [1.4, 1.5, 5.4]] },
                   attack: { word: "PTUI!", sound: "ptoo", every: [4.4, 3.4], n: [3, 4], from: [0, 2.0, 12.2], shot: "mud" }, draw: drawMadame },
     ringmaster: { hp: [8, 12], fall: "topple", bits: "#A94332", body: { x: 0, z: 13.6 },
-                  carrier: { kind: "circle", cx: 0, cy: 2.5, cz: 6.5, rx: 1.5, rz: 1.35, speed: [1.5, 2.0], hop: 0.35, flipEvery: 5, tell: 0.5, word: "ALLEZ-OOP!", sound: "boing" },
+                  carrier: { kind: "circle", cx: 0, cy: 2.5, cz: 6.5, rx: 1.35, rz: 1.1, speed: [1.0, 1.4], hop: 0.25, flipEvery: 5, tell: 1.0, word: "ALLEZ-OOP!", sound: "boing" },
                   attack: { word: "CATCH!", sound: "pop", every: [4.4, 3.4], n: [3, 4], from: [0.9, 3.0, 12.8], shot: "pin" }, draw: drawRingmaster },
     clockking:  { hp: [8, 12], fall: "burst", bits: "#C49A42", body: { x: 0, z: 14.0 },
                   carrier: { kind: "orbit", word: "TICK TOCK", sound: "tick", cx: 0, cy: 2.45, cz: 6.3, r: 1.1, steps: 12, hold: [0.6, 0.42], move: 0.16, flipEvery: 6, tell: 0.4 },
                   attack: { word: "CLANK!", sound: "clang", every: [4.4, 3.4], n: [3, 4], from: [0, 3.0, 13.0], shot: "gear" }, draw: drawClockKing },
     reaper:     { hp: [9, 13], fall: "burst", bits: "#1A1A1A", body: { x: 0, z: 14.4 },
-                  carrier: { kind: "jump", word: "CUT!", sound: "tick", hold: [1.1, 0.75], tell: 0.35, angry: "circle",
+                  carrier: { kind: "jump", word: "CUT!", sound: "tick", hold: [1.1, 0.8], tell: 0.9, angry: "circle",
                              spots: [[-1.3, 2.2, 6.0], [1.3, 2.7, 6.4], [0, 3.2, 5.7], [-0.7, 1.7, 6.8], [1.0, 1.8, 5.6], [0, 2.4, 6.3]],
-                             cx: 0, cy: 2.5, cz: 6.4, rx: 1.5, rz: 1.4, speed: [1.8, 1.8] },
+                             cx: 0, cy: 2.5, cz: 6.4, rx: 1.35, rz: 1.1, speed: [1.3, 1.3] },
                   attack: { word: "SNIP!", sound: "clang", every: [4.2, 3.2], n: [3, 5], from: [0, 3.2, 13.4], shot: "frame" }, draw: drawReaper }
   };
 

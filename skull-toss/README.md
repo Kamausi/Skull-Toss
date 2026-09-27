@@ -1,8 +1,39 @@
-# SKULL TOSS v61
+# SKULL TOSS v62
 
 Lob the skull through a ring in a haunted graveyard. Play **Story** to climb through the stages and beat the bosses, or **Arcade** to pick any map and see how long you can last. Three misses and you're buried.
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
+
+## New in v62: wind in the line, and an Adventure you can finish
+
+The owner, 2026-09-27: make the wind affect the aim line, and adjust the difficulty of the Adventure and Adventure+
+"so players can ACTUALLY finish the game". The details are in [docs/WORLD-SYSTEMS.md](docs/WORLD-SYSTEMS.md).
+
+- **The aim line bends with the wind again** (reversing v61), and so does Skull Sense. Gale Force keeps its stronger
+  wind.
+- **A gentle climb over all eight maps.** The ring used to reach its fastest, widest, smallest by the second map. Now
+  each map climbs a little further than the last (`src/maps/blueprint.json: curve`). The Arcade keeps its old climb.
+- **Sealed rings wait for their bank.** A sealed ring glides to where a bank off the board can reach it and holds
+  still. A throw straight into it bounces off and costs no skull.
+- **Fair warnings.** Every tell comes at least a throw's flight before what it warns of: the circling bosses'
+  turnabouts, the jump cuts, a ring's whirr before it turns or lunges. The circling bosses go round slower.
+- **Skulls.** Each new map tops you up to at least three, plus one.
+- **Checkpoints.** Once you're past the first map, Adventure (and Adventure+, on its own count) lets you start at any
+  map you've reached, and after a lost run the results screen's button says "Retry map N". A run from a checkpoint can
+  finish the story, but it stays off the leaderboard.
+- **Adventure+ is gentler but still the harder one:** its push climbs from 1.2× to 1.7× (was 1.25× to 2×).
+
+How it was measured: `tools/balance.mjs` plays whole runs with a model player that leads the ring and misses the way
+a person does (see WORLD-SYSTEMS). Six runs each, with continues:
+
+| Player | Before v62 | v62, one sitting | v62, from checkpoints |
+|---|---|---|---|
+| novice | — | 2/6 finished | about 13 map attempts for the whole story |
+| casual | 0/6 (every run lost on map 2) | 6/6 | — |
+| average | 0/6 (map 2) | 6/6 | — |
+| good | 0/6 (map 2) | 6/6, no continues used | — |
+| good, Adventure+ | 0/6 (map 2) | 2/6 | — |
+| average, Adventure+ | — | 0/6 | about 11 map attempts |
 
 ## New in v61: the playtest's first fixes
 

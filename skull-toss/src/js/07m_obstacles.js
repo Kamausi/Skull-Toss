@@ -126,7 +126,7 @@
   // the flight a throw would take through the fans and lodestones (and, v60, through the water), stepped the way the
   // game steps it (for the aim guide). o.forces: false leaves out the obstacles' pushes; o.pockets: false the air pockets
   function forcedPath(v, tEnd, o = {}) {
-    const out = [], dt = SIM_STEP, wx = o.wind === false ? 0 : windNow(), G0 = gNow(), forces = o.forces !== false, pockets = o.pockets !== false, wet = waterFlight(), banks = o.banks !== false && banksLive();
+    const out = [], dt = SIM_STEP, wx = windNow(), G0 = gNow(), forces = o.forces !== false, pockets = o.pockets !== false, wet = waterFlight(), banks = o.banks !== false && banksLive();
     let p = { x: 0, y: START_Y, z: 0 }, u = { ...v }, T = OB.t;   // (v57: under the throw's own gravity)
     for (let t = 0; t < tEnd; t += dt) {
       T += dt * obSpeed();   // (v60: the obstacles' clock ticks before the flight's step, as it does in the game's update)

@@ -33,6 +33,83 @@
     "phases": 3,
     "why": "v47: every map is 80 hits in 10-hit sections. Acts I–III (1–30), the mini-boss (31–40: ten hits and the ring breaks loose), the approach (41–50), then the end boss in three phases of ten (51–60, 61–70, 71–80). Every ten hits something changes. Boss Rush keeps its short fights."
   },
+  "curve": {
+    "_doc": "v62 (the owner, 2026-09-27: the Adventure and Adventure+ must be finishable). The ring's difficulty, map by map, for the Adventure (and Practice): a: the first half's level at its first hit and at its thirtieth (level(), 01_data.js: the swing, its pace, the ring's size); b: the flying ring's level over the approach (its size); legs: seconds a leg of the flying ring's path takes at the approach's start and at its end; damp: how much of the map's and the tier's own speed-ups counts; shrink: what the 'shrink' maps take off the ring. Arcade keeps its own climb. Measured with tools/balance.mjs.",
+    "a": [
+      [
+        0,
+        5
+      ],
+      [
+        1,
+        6
+      ],
+      [
+        2,
+        7
+      ],
+      [
+        3,
+        8
+      ],
+      [
+        3.5,
+        8.5
+      ],
+      [
+        4,
+        9
+      ],
+      [
+        4.5,
+        9.5
+      ],
+      [
+        5,
+        10
+      ]
+    ],
+    "b": [
+      [
+        8,
+        10
+      ],
+      [
+        8.5,
+        10.5
+      ],
+      [
+        9,
+        11
+      ],
+      [
+        9.5,
+        11.5
+      ],
+      [
+        10,
+        12
+      ],
+      [
+        10.5,
+        12.5
+      ],
+      [
+        11,
+        13
+      ],
+      [
+        11.5,
+        13.5
+      ]
+    ],
+    "legs": [
+      2.3,
+      1.2
+    ],
+    "damp": 0.5,
+    "shrink": 0.03
+  },
   "gameplayPlanes": {
     "foreground": {
       "z": [

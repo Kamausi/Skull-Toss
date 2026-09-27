@@ -114,8 +114,22 @@
     Sound.surface("metal", 0.8, panOf(rp.x), 0.75); VisualSystem.triggerImpact("rim", { at, hit: project(s.p0.x, s.p0.y, rp.z), strength: 0.8, pan: panOf(rp.x) });
     resolve("sealed", at);
   }
+  // v62 (the owner: the Adventure must be finishable): a sealed ring waits for its bank. It glides to where a bank off
+  // the live board can reach it (a metre out on the board's side, at the ring's own height and depth) and holds there
+  // till the film opens, so the puzzle is finding the bank on the guide, not catching a narrow moment of the swing; and
+  // a throw straight into it bounces off the film without costing a skull (RESULT.sealed.safe, 07_game.js)
+  const PARK = { at: null };
+  function sealPark() {
+    const I = OB.list.find(o => o.kind === "bank" && o.seal && !obStandsAside(o)); if (!I) return null;
+    return { x: (I.at[0] < 0 ? -1 : 1) * 1.0, y: RING_Y, z: RING_Z };
+  }
+  function parkRing(on) {
+    const to = on ? sealPark() : null;
+    if (!!to === !!PARK.at) return;
+    ring.glide = { from: { x: ring.x, y: ring.y, z: ring.z }, t: 0, dur: 0.6 }; PARK.at = to;
+  }
   function banksAfterThrow() {   // (settleThrow: a sealed ring coming up says so)
-    const need = bankSeal();
+    const need = bankSeal(); parkRing(need > 0);
     if (need && !BANK.was) { const p = project(ring.x, ring.y, ring.z); caption(need > 1 ? `${t("bank.seal")} ×${need}` : t("bank.seal"), p.x, p.y - ring.rc * p.s - U * 0.06); Sound.toon("ding", panOf(ring.x)); }
     BANK.was = need;
   }

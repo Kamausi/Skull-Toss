@@ -55,7 +55,8 @@
     showScreen("title"); updateHud();
   }
   $("play").addEventListener("click", () => openSheet("play"));   // Adventure or Arcade?
-  $("again").addEventListener("click", () => startGame({ mode: game.mode, map: game.map, plus: game.plus }));   // the same again (the same map, in Arcade and Practice)
+  $("again").addEventListener("click", () => startGame({ mode: game.mode, map: retryMap(), plus: game.plus }));   // the same again (the same map, in Arcade and Practice; v62: the Adventure picks up at the map it fell on)
+  const retryMap = () => (game.mode === "story" && !game.run.story ? Math.min(game.stage || 1, storyReach(game.plus)) - 1 : game.map);
 
   // ───────────────────────── Play: Story or Arcade, and Arcade's map ─────────────────────────
   const clockStr = s => `${Math.floor(s / 60)}:${String(Math.floor(s) % 60).padStart(2, "0")}`;
@@ -63,10 +64,11 @@
     const minis = maps === "minis"; if (minis) maps = false;
     ui.pickFor = pickFor;
     $("modePick").hidden = maps || minis; $("mapPick").hidden = !maps; $("miniPick").hidden = !minis;
-    $("h-play").textContent = minis ? t("ui.mini-games") : !maps ? t("ui.play") : pickFor === "practice" ? t("mode.practice.name") : t("card.arcade.k");
+    const story = pickFor === "story" || pickFor === "plus";
+    $("h-play").textContent = minis ? t("ui.mini-games") : !maps ? t("ui.play") : pickFor === "practice" ? t("mode.practice.name") : story ? t(pickFor === "plus" ? "ui.adventure-plus" : "ui.story") : t("card.arcade.k");
     if (minis) { renderMiniModes(); return; }
     const mb = MINI_IDS.map(m => modeRec(m)).filter(R => R.runs); $("minisBest").textContent = mb.length ? t("play.minisPlayed", { n: mb.length, total: MINI_IDS.length }) : "";
-    $("mapPickK").textContent = pickFor === "practice" ? t("play.pickPractice") : t("play.pickArcade");
+    $("mapPickK").textContent = pickFor === "practice" ? t("play.pickPractice") : story ? t("play.pickStory") : t("play.pickArcade");
     $("practiceOpts").hidden = pickFor !== "practice";
     segValue($("prac-ring"), practice.ring); segValue($("prac-half"), practice.half); segValue($("prac-hz"), practice.hazards ? "on" : "off");
     $("plusCard").classList.toggle("locked", !plusOpen()); $("plusBest").textContent = plusOpen() ? t("plus.open") : t("plus.locked");
@@ -76,7 +78,13 @@
     $("storyBest").textContent = profile.bestScore > 0 ? `Best ${fmtN(profile.bestScore)} · ${done ? `finished ${profile.storyClears > 1 ? profile.storyClears + " times" : ""}` : `reached map ${reached}`} · ${profile.fragments.length}/8 pieces` : "";
     const played = STAGES.map((S, i) => arcadeRec(i)).filter(a => a.runs), longest = played.length ? Math.max(...played.map(a => a.secs)) : 0;
     $("arcadeBest").textContent = played.length ? `Longest run ${clockStr(longest)}` : "";
-    $("mapList").classList.toggle("arcade", pickFor !== "practice");
+    $("mapList").classList.toggle("arcade", pickFor === "arcade");
+    if (story) {   // v62: the Adventure's checkpoints: the start, and every map it's reached (a later start plays for the ending, not the leaderboard)
+      const n = storyReach(pickFor === "plus");
+      $("mapList").innerHTML = STAGES.map((S, i) => { const open = i < n, lock = open ? "" : `<svg class="lk" aria-label="${t("mode.locked")}"><use href="#i-lock"/></svg>`;
+        return `<button class="map-card prac${open ? "" : " locked"}" type="button" data-map="${i}"${open ? "" : ' aria-disabled="true"'} style="--tint:${S.map.look.sky[1]}"><span class="n">${i ? `Map ${i + 1}` : t("play.fromStart")}${lock}</span><b>${S.name}</b></button>`; }).join("");
+      return;
+    }
     if (pickFor !== "practice") { $("mapList").innerHTML = STAGES.map((S, i) => cabinetHTML(S, i)).join(""); return; }   // the Arcade: a row of cabinets (09o_arcade.js)
     $("mapList").innerHTML = STAGES.map((S, i) => {   // (v50: Practice's list is slim: the number, a lock beside it when it's shut, the name)
       const open = mapUnlocked(i), lock = open ? "" : `<svg class="lk" aria-label="${t("mode.locked")}"><use href="#i-lock"/></svg>`;
@@ -86,16 +94,21 @@
   // v51: Adventure+ (07s_plus.js): open once the Adventure's been finished; the reel breaks first
   $("plusCard").addEventListener("click", () => {
     if (!plusOpen()) { Sound.ui("deny"); toast(t("plus.locked")); return; }
+    if (storyReach(true) > 1) { Sound.ui("flick"); renderPlay(true, "plus"); return; }   // (v62: its checkpoints)
     closeSheet(false); plusIntro(() => startGame({ mode: "story", plus: true }));
   });
   $("modePick").addEventListener("click", e => {
     const b = e.target.closest("[data-mode]"); if (!b) return;
     const m = b.dataset.mode, M = MODES[m];
     if ((M.open && !M.open()) || Flags.modeOff(m)) { Sound.ui("deny"); toast(t("mode.locked")); return; }
-    if (M.maps) { Sound.ui("flick"); renderPlay(true, m); const f = $("mapList").querySelector("button"); if (f && ui.kbd) f.focus({ preventScroll: true }); }
+    if (M.maps || (m === "story" && storyReach() > 1)) { Sound.ui("flick"); renderPlay(true, m); const f = $("mapList").querySelector("button"); if (f && ui.kbd) f.focus({ preventScroll: true }); }
     else { closeSheet(false); startGame({ mode: m }); }
   });
-  $("mapList").addEventListener("click", e => { const b = e.target.closest("[data-map]"); if (!b) return; if (!mapUnlocked(+b.dataset.map)) { Sound.ui("deny"); return; } closeSheet(false); startGame({ mode: ui.pickFor || "arcade", map: +b.dataset.map }); });
+  $("mapList").addEventListener("click", e => {
+    const b = e.target.closest("[data-map]"); if (!b) return; const i = +b.dataset.map, P = ui.pickFor;
+    if (P === "story" || P === "plus") { if (i >= storyReach(P === "plus")) { Sound.ui("deny"); return; } closeSheet(false); if (P === "plus") plusIntro(() => startGame({ mode: "story", plus: true, map: i })); else startGame({ mode: "story", map: i }); return; }
+    if (!mapUnlocked(i)) { Sound.ui("deny"); return; } closeSheet(false); startGame({ mode: P || "arcade", map: i });
+  });
   bindSeg("prac-ring", v => { practice.ring = v; segValue($("prac-ring"), v); Sound.ui("tick"); });
   bindSeg("prac-half", v => { practice.half = v; segValue($("prac-half"), v); Sound.ui("tick"); });
   bindSeg("prac-hz", v => { practice.hazards = v === "on"; segValue($("prac-hz"), v); Sound.ui("tick"); });
@@ -214,6 +227,7 @@
     $("newBest").textContent = r.story && !best ? "Morty is whole again!" : !arcade ? "New high score" : best ? `New best on ${STAGES[game.map].name}!` : "Your longest run on this map!";
     $("resTitle").textContent = best || longer ? "" : arcade ? `Arcade · ${STAGES[game.map].name}` : titleName();
     $("resBones").textContent = r.bones;
+    { const rm = retryMap(), lbl = $("again").querySelector("span"); lbl.textContent = game.mode === "story" && rm > 0 && !Replay.play ? t("res.retryMap", { n: rm + 1 }) : t("ui.toss-again"); }   // (v62: Retry map N)
     renderInitials();   // a cabinet's top five: your initials (09o_arcade.js)
     $("watchBtn").hidden = !Replay.last && !Replay.play; $("shareBtn").hidden = !Replay.last || !!Replay.play || Flags.on("kill.replays");   // (07j_replay.js)
     if (mode !== "story" && mode !== "arcade") {   // the other modes: their own record on the ribbon and the line below

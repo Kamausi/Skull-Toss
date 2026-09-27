@@ -180,6 +180,7 @@
     telemetry: () => Telemetry.events.map(e => ({ ...e })), migrateProfile: p => migrateProfile(JSON.parse(JSON.stringify(p))), saveSchema: SAVE_SCHEMA,
     readSaved: (k, st) => readSaved(k, st), boardEntry: () => Board.entry(), endRun: () => endRun(),
     step(sec) { const h = SIM_STEP; let t = 0; while (t < sec - 1e-9) { const d = Math.min(h, sec - t); update(d); t += d; } draw(); },
+    stepQuiet(sec) { const h = SIM_STEP; let t = 0; while (t < sec - 1e-9) { const d = Math.min(h, sec - t); update(d); t += d; } },   // (v62: the balance model's long runs; nothing drawn)
     freezeRing(x = 0, y = RING_Y, z = RING_Z) { ring.frozen = { x, y, z }; ring.x = x; ring.y = y; ring.z = z; },
     unfreezeRing() { ring.frozen = null; },
     setRingPhase(p) { ring.phase = p; const q = ringAt(p); ring.x = q.x; ring.y = q.y; ring.z = q.z; },
@@ -249,6 +250,70 @@
       return A;
     },
     throwThrough(x, y, z) { const a = this.aimFor(x, y, z); return this.throwAt(a.AX, a.AY); },
+    // v62 (the difficulty model, tools/balance.mjs): the aim that meets the ring's middle as it arrives (ringAhead: where
+    // it will be), flown the way the game flies it (the wind, the machinery, the water), and what a player times a throw by
+    bankPark: () => PARK.at && { ...PARK.at }, banksSync() { banksAfterThrow(); },   // (v62: a sealed ring waits for its bank)
+    seedsLive: () => seeds.some(sd => !sd.live || sd.z > 0) || (!!boss && !!boss.volley && (boss.volley.tell > 0 || boss.spit > 0)),   // (a volley told, on its way, or still in front of the pouch)
+    volleyTold: () => !!boss && ((!!boss.volley && (boss.volley.tell > 0 || boss.spit > 0)) || (boss.pathAt && (boss.pathAt(boss.t).tell || 0) > 0)),   // (a volley or a change of the ring's way, told)
+    // would this throw fly into a seed? (each seed flown on as updateSeeds flies it; the ones still to come launched when they will)
+    seedThreat(AX, AY) {
+      if (!seeds.length || !boss) return false;
+      const P = forcedPath(aimVelocity(AX, AY), 1.8), T0 = boss.t, fly = 1.45;
+      for (const sd0 of seeds) {
+        const q = { ...sd0 }; let tq = 0;
+        if (!q.live) { q.vx = (q.tx - q.x) / fly; q.vz = (q.tz - q.z) / fly; q.vy = (q.ty - q.y + 0.5 * 3 * fly * fly) / fly; }
+        const wait = q.live ? 0 : Math.max(0, q.at - T0);
+        for (const k of P) {
+          const dt = k.t - tq; tq = k.t; const move = Math.max(0, k.t - wait) - Math.max(0, k.t - dt - wait);
+          if (move > 0) { q.x += q.vx * move; q.z += q.vz * move; q.vy -= 3 * move; q.y += q.vy * move; }
+          if (Math.hypot(k.x - q.x, k.y - q.y, k.z - q.z) < SKULL_R + SEED_R + 0.12) return true;
+        }
+      }
+      return false;
+    },
+    // would this throw run into the machinery (or the pendulum) where it will be by then? (what a player times a throw around)
+    obThreat(AX, AY) {
+      const P = forcedPath(aimVelocity(AX, AY), 1.8), T0 = OB.t, k = obSpeed(), H0 = HZ.pendT;
+      for (const q of P) {
+        if (q.z > ring.z + 0.3) break;
+        const T = T0 + q.t * k;
+        for (const I of OB.list) {
+          if (obStandsAside(I)) continue;
+          if (I.kind === "bumper") { const c = bumperAt(I, T); if (Math.hypot(q.x - c.x, q.y - c.y, q.z - c.z) < I.r + SKULL_R + 0.08) return I.kind; }
+          else if (I.kind === "bar") { const E = barEnds(I, T); if (segDist(q, E.a, E.b) < BAR_R + SKULL_R + 0.08) return I.kind; }
+          else if (I.kind === "spikes") { const r = spikesRaise(I, T); if (r > 0.2 && q.x > I.span[0] - SKULL_R && q.x < I.span[1] + SKULL_R && q.y < I.h * r + SKULL_R + 0.08 && Math.abs(q.z - I.z) < 0.25 + SKULL_R) return I.kind; }
+          else if (I.kind === "crusher") { const [x0, x1, z0, z1] = I.box, B = crusherBottom(I, T); if (q.x > x0 - SKULL_R && q.x < x1 + SKULL_R && q.z > z0 - SKULL_R && q.z < z1 + SKULL_R && q.y > B.y - SKULL_R - 0.08 && q.y < B.y + CRUSHER_TALL + SKULL_R) return I.kind; }
+          else if (I.kind === "cannon") { const [per, tell] = I.every, ph = I.phase || 0; for (let j = Math.floor((T0 - ph - tell) / per) - 1; j <= Math.floor((T0 - ph) / per) + 1; j++) { const tf = ph + tell + j * per; if (tf - tell > T0 || j < 0) continue; const b = ballAt(I, { t0: tf }, T); if (T >= tf && Math.hypot(q.x - b.x, q.y - b.y, q.z - b.z) < BALL_R + SKULL_R + 0.1) return I.kind; } }   // (the balls in the air, and one whose fuse is lit)
+          else if (I.kind === "barrier") { const [x0, x1, y0, y1, z] = I.box; if (Math.abs(q.z - z) < 0.2 && barrierAlpha(I, T) > 0.3 && q.x > x0 - SKULL_R && q.x < x1 + SKULL_R && q.y > y0 - SKULL_R && q.y < y1 + SKULL_R) return I.kind; }
+        }
+        for (const h of HZ.list) if (h.kind === "balloon" && Math.hypot(q.x - h.x, q.y - (h.y + h.vy * q.t), q.z - h.z) < h.r + SKULL_R + 0.1) return "balloon";
+        if (HZ.kind === "pendulum" && hazardsLive()) { const b = pendBob(H0 + q.t); if (Math.hypot(q.x - b.x, q.y - b.y, q.z - b.z) < PEND.r + SKULL_R + 0.1) return "pendulum"; }
+      }
+      return false;
+    },
+    bankedAim(AX, AY) { const v = aimVelocity(AX, AY), P = forcedPath(v, 2.2), Q = forcedPath(v, 2.2, { banks: false }); return P.some((q, i) => Q[i] && Math.abs(q.x - Q[i].x) > 1e-4); },
+    boardsNow: () => OB.list.filter(I => I.kind === "bank" && !obStandsAside(I)).map(I => { const B = boardAt(I); return { x: B.x, z: B.z, len: I.len, y: I.y }; }),
+    leadAim(AX0, AY0) {   // (a first guess: off a bank board, say)
+      const ahead = t => this.ringAhead(t);
+      const cross = (AX, AY) => {
+        const P = forcedPath(aimVelocity(AX, AY), 2.2);
+        for (let k = 1; k < P.length; k++) {
+          const a = P[k - 1], b = P[k], ra = ahead(a.t), rb = ahead(b.t), fa = a.z - ra.z, fb = b.z - rb.z;
+          if (fa < 0 && fb >= 0) { const u = fa / (fa - fb), t = a.t + (b.t - a.t) * u, r = ahead(t); return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, t, r }; }
+        }
+        return null;
+      };
+      const r0 = ahead(ring.z / VZ), A = AX0 != null ? { AX: AX0, AY: AY0 } : { AX: r0.x * RING_Z / r0.z, AY: r0.y };
+      let c = cross(A.AX, A.AY);
+      for (let i = 0; i < 8 && c; i++) {
+        const ex = c.r.x - c.x, ey = c.r.y - c.y; if (Math.hypot(ex, ey) < 1e-4) break;
+        const h = 0.01, cx = cross(A.AX + h, A.AY), cy = cross(A.AX, A.AY + h); if (!cx || !cy) break;
+        const a = ((cx.x - cx.r.x) - (c.x - c.r.x)) / h, b = ((cy.x - cy.r.x) - (c.x - c.r.x)) / h, cc = ((cx.y - cx.r.y) - (c.y - c.r.y)) / h, d = ((cy.y - cy.r.y) - (c.y - c.r.y)) / h, det = a * d - b * cc;
+        if (Math.abs(det) < 1e-9) break;
+        A.AX += (d * ex - b * ey) / det; A.AY += (a * ey - cc * ex) / det; c = cross(A.AX, A.AY);
+      }
+      return c ? { AX: A.AX, AY: A.AY, t: c.t, ring: c.r, rc: ring.rc } : null;
+    },
     // v60: aim through (x, y) at the ring by way of whatever the guide shows (a bank board's bounce), from a first guess
     aimVia(x, y, AX, AY) {
       const A = { AX, AY };
@@ -363,6 +428,7 @@
     death: () => (boss && boss.death ? { arch: boss.death.arch, word: boss.death.word, gag: boss.death.gag, mat: boss.death.mat } : null), deathTable: () => JSON.parse(JSON.stringify(DEATH)), gags: () => GAGS.map(G => G.kind),   // (v51, 07r_bossdeath.js)
     plus: () => ({ on: !!game.plus, open: plusOpen(), wind: PLUS.wind, cracked: PLUS.cracked, decoys: PLUS.decoys.length, fake: PLUS.fake, k: plusK(), rc: ring.rc, omega: ring.omega }),   // (v51: Adventure+, 07s_plus.js)
     startPlus: () => startGame({ mode: "story", plus: true }),
+    startAt: (i, plus = false) => startGame({ mode: "story", map: i, plus: !!plus }),   // (v62: from a checkpoint)
     bossPath: t => (boss && boss.pathAt ? boss.pathAt(t == null ? boss.t : t) : null),
     intro(at = 0) { playIntro(); INTRO.t0 = performance.now() - at * 1000; return INTRO.on; }, introState: () => ({ on: INTRO.on, open: INTRO.open, lights: INTRO.lights.map(L => L.on), cls: $("title").className }),   // (v51: the spotlit opening, 09q_intro.js)
     boardLocal(list) { Board.fakeLocal = list; }, boardMode(m) { Board.mode = m; if (sheet === "board") renderBoard(); },

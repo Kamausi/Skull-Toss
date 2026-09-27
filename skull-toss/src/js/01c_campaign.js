@@ -18,5 +18,8 @@
   const tierData = id => TIER_DATA.find(t => t.id === id) || TIER_DATA[0];
   // Arcade: map 1 is always open; every other map opens once Story has reached it
   const mapUnlocked = i => i === 0 || (profile.bestStage || 1) >= i + 1;
+  // v62 (the owner: the Adventure must be finishable): every map the Adventure (or, on its own count, Adventure+) has
+  // reached is a checkpoint a run can start from; how many there are (1 … 8)
+  const storyReach = (plus = false) => clamp(((plus ? realProfile().plusStage : realProfile().bestStage) || 1) | 0, 1, MAP_COUNT);
   // (the body parts' goals: 01b_catalog.js)
   for (const id of BOSS_IDS) REQ_TEXT["beat:" + id] = n => (n > 1 ? `Beat ${BOSS_INFO[id].name} ${n} times` : `Beat ${BOSS_INFO[id].name}`);

@@ -501,7 +501,8 @@ under water, not only a miss that falls in (`08l_water.js`).
   (a vent at `at: [x, z]` that bursts a column `h` high on `pulse: [on, off]`, fizzing for the last 0.5 s first), and
   `pocket` (trapped air, radius 0.3–1.2 m, drifting: inside it the throw flies at full weight with no drag). Currents,
   vents and pockets are not compensated by the aim: they're the player's to read.
-- **Wind (v61).** The aim guide, Skull Sense and `waterAim` never include the wind (`forcedPath({wind: false})`); the flight does.
+- **Wind (v62).** The aim guide and Skull Sense bend with the wind again (the owner reversed v61). `waterAim` still leaves
+  it out, so the aim point means what it means on land and the guide shows the drift.
 - **One model.** The flight, the aim guide (`forcedPath`), Skull Sense and the spec's aim all step the same model. The
   obstacles' clock ticks before each step, as the game's update does, so the guide and the throw agree to 1 mm through
   the undertow.
@@ -590,7 +591,7 @@ clock `PERS.t`, and the flight judges the ring where its character put it.
 - **The aim line.** `guideNow()` (`07u_attractions.js`) is the guide in force: `"off"` in Long Shot, Can Alley and
   Perfect Pitch (`NO_GUIDE`), otherwise `settings.guide`. It gates the dots, the crosshair and the last throw's ghost
   (`08k_feel.js`).
-- **The wind.** The guide (`buildPreview`, `forcedPreview`), Skull Sense and `waterAim` leave the wind out. The flight
+- **The wind (reversed in v62).** The guide (`buildPreview`, `forcedPreview`), Skull Sense and `waterAim` left the wind out. The flight
   (`posAt`, `forcedPath` by default) keeps it. Gale Force's levels are breeze 1.2, gust 2.0, gale 2.8, storm 3.6 and
   hurricane 4.4 m/s².
 - **The progression bar.** `renderProgress` adds `.off` (hidden) in a mini-game, and `.noarea` (no stage chip, boss
@@ -600,4 +601,45 @@ clock `PERS.t`, and the flight judges the ring where its character put it.
   catch zones (r + the skull's radius) never touch. `PITCH.rim` is the drawn scale.
 - **Tests:** "v61 The aim line", "v61 Gale Force", "v61 The area progression bar", "v61 Perfect Pitch"; the woods wind
   test now checks that the guide leaves the wind out.
+
+## Wind in the line, and a finishable Adventure (v62)
+
+The owner, 2026-09-27: "Make wind affect the line", and the difficulty curve of the Adventure and Adventure+ adjusted
+"so players can ACTUALLY finish the game".
+
+- **The wind.** `buildPreview` bends by `0.5 · windNow() · t²` again, `forcedPreview` and `forcedPath` step the wind,
+  and Skull Sense samples the same curve. `waterAim` doesn't solve the wind, so a throw under water aims the way it does
+  on land and the guide shows the drift. Gale Force keeps its v61 levels.
+- **The measure.** `tools/balance.mjs` plays whole runs with a model player. It leads the ring to where it will be
+  (`leadAim`: the game's own flight, wind and machinery, against the ring's own path and character), then misses the
+  way a person does: a steady-hand error, a timing error (the ring where it will be a moment early or late) and now and
+  then a throw that's just off. It waits a little for a slow moment of the ring's swing. It respects a boss's tells,
+  threads between seeds (`seedThreat`), times the machinery (`obThreat`) and banks when a ring is sealed. Five levels:
+  novice, casual, average, good, and perfect (no error: a check on the model itself). `permap` starts each map from its
+  checkpoint and counts the tries the story takes.
+- **The ring's curve** (`blueprint.json: curve`, `ringTargets0`). Before v62 the first half's ring was at
+  `level(hits + 3 · (map − 1))`, so it reached its widest, fastest swing and smallest size by the second map. Now each
+  map has its own range (`curve.a`, level 0→5 on map 1 up to 5→10 on map 8), the flying ring's size has its own
+  (`curve.b`), a leg of its path takes 2.3 s at the approach's start and 1.2 s at its end (`curve.legs`, was 1.9 → 0.85),
+  only half of the map's and tier's own speed-ups count (`curve.damp`), and the 'shrink' maps take 3 cm off (was 5).
+  The Arcade keeps its old climb.
+- **Sealed rings wait for their bank** (`07y_banks.js: PARK`). A sealed ring glides to a metre out on the live board's
+  side, where a bank can reach it, and holds there till the film opens. A throw straight into it bounces off the film
+  and costs no skull (`RESULT.sealed.safe`).
+- **Fair tells.** Every tell comes at least a flight's time (0.82 s) before what it warns of: the Count's and the
+  Ringmaster's turnabouts (1.0 s, was 0.5), the Projectionist's and the Reaper's cuts (0.9 s, was 0.35), and a ring's
+  whirr before it turns or lunges (`TELL_LEAD` 1.0 s, was 0.5). The circling bosses go round slower and closer in (the
+  Count 0.95→1.3 rad/s, was 1.25→1.7; the Ringmaster 1.0→1.4, was 1.5→2.0; the Reaper's angry circle 1.3, was 1.8), and
+  the angry ring lunges at 2.2× its pace (was 3×).
+- **Skulls.** A new map tops the skulls up to three at least, and one more (was just one more).
+- **Checkpoints.** Every map the Adventure has reached (`profile.bestStage`) is a place a run can start. Adventure+ keeps
+  its own count (`profile.plusStage`, a new stat, merged by max). Tap Adventure (or Adventure+) once you're past the
+  first map and the Play sheet lists the start and every map reached. After a lost run, the results screen's button
+  reads "Retry map N" and starts there. A run from a checkpoint (`game.run.from`) can finish the story, but it doesn't
+  go on the leaderboard, like a run with a continue.
+- **Adventure+** stays the harder one, but gentler: its push climbs from 1.2× on map 1 to 1.7× on map 8 (was 1.25× to
+  2×); the ring is at most 45% quicker, 15% wider-swinging and 4 cm smaller at the top (was 50%, 20% and 4.5 cm, down
+  to 0.36 m; now never under 0.4 m).
+- **Tests:** "v62 Wind in the line", "v62 The Adventure's curve", "v62 Sealed rings wait", "v62 Checkpoints"; the
+  woods wind test and the v61 aim-line test check the guide bends with the wind.
 

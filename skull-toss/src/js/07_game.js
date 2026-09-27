@@ -189,7 +189,7 @@
     crusher: { make: false, hit: true },
     barrier: { make: false, hit: true },
     decoy:   { make: false, hit: true },
-    sealed:  { make: false, hit: true },   // (v60: a Bank Ring's film, not banked into: 07y_banks.js)   // (a decoy target hung in front of the ring: 07e_directors.js)
+    sealed:  { make: false, hit: true, safe: true },   // (v60: a Bank Ring's film, not banked into: 07y_banks.js; v62: it costs no skull)   // (a decoy target hung in front of the ring: 07e_directors.js)
     eye:     { make: true, pts: 1, fill: GOLD, text: INK, mood: "excited" },   // (v47: the Pumpkin King's eyes are targets, and a poke is one of the 80 hits)
     // v56: the attractions (07u_attractions.js): a hit, a hit in the middle, and the things a throw can go into instead
     tgt:     { make: true, pts: 1, fill: TEAL, text: CREAM, mood: "excited", attr: true },
@@ -333,7 +333,7 @@
     if (Replay.play && !opts.replay) Replay.stop(false);   // (a real run ends any replay: 07j_replay.js)
     const mode = !MODES[opts.mode] ? "story" : opts.replay || (!Flags.modeOff(opts.mode) && (!MODES[opts.mode].open || MODES[opts.mode].open())) ? opts.mode : "story";   // (the live config can take a mode off: 03d_flags.js)
     modeStart(mode);   // (Practice swaps in a copy of the profile here: 07i_modes.js)
-    const pick = clamp(opts.map | 0, 0, STAGES.length - 1), map = opts.replay ? pick : mode === "director" ? directorNow().map : mode === "feature" ? featureMap() : MODES[mode].maps ? (mapUnlocked(pick) ? pick : 0) : MODES[mode].mini ? miniMap(mode) : 0;
+    const pick = clamp(opts.map | 0, 0, STAGES.length - 1), map = opts.replay ? pick : mode === "story" ? (pick < storyReach(!!opts.plus) ? pick : 0) : mode === "director" ? directorNow().map : mode === "feature" ? featureMap() : MODES[mode].maps ? (mapUnlocked(pick) ? pick : 0) : MODES[mode].mini ? miniMap(mode) : 0;   // (v62: the Adventure can start at any map it's reached)
     if (mode === "director" && opts.seed == null) opts = { ...opts, seed: directorNow().seed };   // (everyone plays the same run this week)
     Object.assign(game, { state: "ready", score: 0, hits: 0, lives: START_LIVES, slots: START_LIVES, streak: 0, perfStreak: 0, peakLives: START_LIVES, throws: 0,
       result: null, lastCross: null, newBest: false, shake: 0, slowmo: 0, run: freshRun(), mode, map, plus: mode === "story" && !!opts.plus && (!!opts.replay || plusOpen()) });   // plus: Adventure+ (07s_plus.js)
@@ -342,7 +342,8 @@
     setScene(map);   // Story starts on map 1; Arcade on the map picked
     ring.frozen = null; ring.flash = 0; ring.wobble = 0; ring.morph = 0;
     stageReset(); clearPowers(); clearPickups(); powerDirectorReset(); plusReset(); portalReset(); attrReset(); persReset(); clearCans(); travelSnap();
-    if (mode !== "story") { game.stage = map + 1; VisualSystem.setStage(game.stage); }
+    if (mode !== "story" || map > 0) { game.stage = map + 1; VisualSystem.setStage(game.stage); }
+    if (mode === "story" && map > 0) { game.run.from = map + 1; plusDecoys(); }   // (v62: a run from a checkpoint: it counts for finishing, not for the leaderboard)
     snapRing();
     VisualSystem.emit("start");
     const r0 = ringAt(0); ring.x = r0.x; ring.y = r0.y; ring.z = r0.z;
@@ -377,11 +378,12 @@
       game.newBest = game.score > profile.bestScore;
       if (game.newBest) profile.bestScore = game.score;
       profile.bestStage = Math.max(profile.bestStage, game.stage);
-      if (!game.plus && !game.run.continues && game.score > (profile.boardBest ? profile.boardBest.score : 0)) profile.boardBest = { score: game.score, hits: game.hits, stage: game.stage, at: Date.now(),   // what the leaderboard posts
+      if (game.plus) profile.plusStage = Math.max(profile.plusStage || 1, Math.min(game.stage, MAP_COUNT));
+      if (!game.plus && !game.run.continues && !game.run.from && game.score > (profile.boardBest ? profile.boardBest.score : 0)) profile.boardBest = { score: game.score, hits: game.hits, stage: game.stage, at: Date.now(),   // what the leaderboard posts
         throws: game.throws, secs: Math.ceil(game.run.secs), perfects: game.run.perfects, bosses: game.run.bosses, targets: game.run.targets || 0, shots: (game.run.shots || []).length, fragments: (game.run.fragments || []).length, continues: 0 };
     }
     const bm = boardModeNow();   // (v53: an Adventure+ run goes to its own board)
-    if (BOARD_MODES.includes(bm) && bm !== "story" && !game.run.continues && !inPractice() && !Replay.play && game.score > ((profile.boardBests || {})[bm] || { score: 0 }).score)   // v45: every scored mode's board
+    if (BOARD_MODES.includes(bm) && bm !== "story" && !game.run.continues && !game.run.from && !inPractice() && !Replay.play && game.score > ((profile.boardBests || {})[bm] || { score: 0 }).score)   // v45: every scored mode's board
       (profile.boardBests = profile.boardBests || {})[bm] = { score: game.score, hits: game.hits, stage: game.stage, at: Date.now(), throws: game.throws, secs: Math.ceil(game.run.secs), perfects: game.run.perfects,
         bosses: game.run.bosses, targets: game.run.targets || 0, shots: (game.run.shots || []).length, fragments: bm === "plus" ? (game.run.fragments || []).length : 0, continues: 0 };
     profile.games++;
