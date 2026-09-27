@@ -663,6 +663,31 @@ The owner, 2026-09-27: "Make wind affect the line", and the difficulty curve of 
 - **Replays** are version 5.
 - **Tests:** "v63 The reel's grade", "v63 Mischief", "v63 The Drowned Theater", "v63 The bank plaques".
 
+## Moving gates and secret paths (v66)
+
+- **Decision:** the owner, 2026-09-27 (Decision Ledger: "Moving gates are real gates, tied to the interactive environment
+  actors, and they decide whether secret paths open"). Rail-shooter influence in encounter design only.
+- **The gate** (`07wa_gates.js`, obstacle kind `gate`, `src/maps/*.json obstacles.A`): `span [x0, x1]` (±1.6), `h` 3.3,
+  `z` 2.8, `cycle [open, shut]` = [3.2, 1.0] s with 0.4 s swings each way, `phase`, `look` (wood, gilt, iron, bone,
+  film), `from` 14 (16 on map 1). `gateOpen(I, T)` → `{k, tell}`; the tell is the last 0.7 s open. `gateLeaves` hinges
+  each leaf at ±half and swings it up to 1.5 rad toward the camera. `gateCross` runs as the skull crosses the plane:
+  through the gap it marks `s.gated`; the beam (h to h+0.25), a post or a leaf knocks it (`RESULT.gate`); round the
+  posts or over the beam passes. Checked before `obStandsAside`, since a gate standing aside is simply open. Ghost Toss
+  slips through. Build validation in `src/build.py`.
+- **The actor switch:** `encounterCheck` (07w_encounter.js) calls `gatesWorked()` when the interaction is rung;
+  `held = 3`, decremented in `encSync`, so the gate stands open for the next two throws.
+- **Keys:** the chain branch of `encounterCheck` calls `gateKey(s)`: a key when `s.gated`, phase A, story mode.
+  `SECRET.need` = 2 → `secretOpen()`: `SECRET.branch = {at: D + 26, side}` from the run's dice; stage card; the stat
+  `secretPaths`.
+- **The fork:** `landCx(d) = landCx0(d) + secretOff(d)`, `secretOff = side · 11 · smooth((d − at) / 55)`. `landSlices`
+  keeps the old road as `path0` (fading over 80 m past the fork); `drawLandPath` lights the secret road's edges;
+  `drawSecretFork` draws the keyhole arch 6 m past the fork. Roads, scenery and the v65 camera yaw all follow `landCx`.
+- **Down it** (`secretOn()`: B, the loose ring or the boss): ring `rc − 0.03` (`ringTargets0`), golden target chance
+  +0.2 (`spawnTarget`), 20 bones a ring (`secretMake`, into `game.run.secretBones`, paid by `runBones`), 300 at the end
+  boss (`secretBossDown`). Reset per map (`startGame`, `nextMap`).
+- **Tests:** "v66 Moving gates…", "v66 The actor works the gate…", "v66 Secret paths…"; older tests that throw past hit
+  14 with obstacles on hold the gate open (`T.gatesHold`) or stay under it.
+
 ## The road turns, the targets stand on their own (v65)
 
 - **Road yaw** (`06h_land.js: ROADYAW, roadYaw, roadYawOx`). The camera's heading is a quarter of the road's direction

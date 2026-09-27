@@ -221,6 +221,11 @@ def map_problems(m, fname):
             if "box" in o and k == "crusher": x0, x1, z0, z1 = o["box"]; pts += [[x0, o.get("low", 1), z0], [x1, o.get("top", 4), z1]]
             if k == "spikes": pts += [[o["span"][0], 0, o["z"]], [o["span"][1], o["h"], o["z"]]]
             if k == "cannon": pts.append([0, o["y"], o["z"]])
+            if k == "gate":   # (v66: a moving gate across the lane, 07wa_gates.js: span [x0, x1], its height h, at z, cycle [open, shut] s)
+                if not (isinstance(o.get("span"), list) and len(o["span"]) == 2 and o["span"][0] < o["span"][1] and isinstance(o.get("h"), (int, float)) and 2.4 <= o["h"] <= 4.0 and isinstance(o.get("z"), (int, float))): bad.append("obstacle gate: span [x0, x1], h 2.4–4 m and z")
+                elif not (isinstance(o.get("cycle"), list) and len(o["cycle"]) == 2 and o["cycle"][0] >= 1.5 and 0.5 <= o["cycle"][1] <= 2.5): bad.append("obstacle gate: cycle [open ≥ 1.5 s, shut 0.5–2.5 s]")
+                elif o.get("look") not in ("wood", "gilt", "iron", "bone", "film"): bad.append("obstacle gate: look is wood, gilt, iron, bone or film")
+                else: pts += [[o["span"][0], o["h"] * 0.6, o["z"]], [o["span"][1], o["h"] + 0.25, o["z"]]]
             if k == "jet": pts += [[o["at"][0], 0, o["at"][1]], [o["at"][0], o["h"], o["at"][1]]]   # (v60: a vent in the sea bed and its column)
             if k == "pocket" and not (isinstance(o.get("r"), (int, float)) and 0.3 <= o["r"] <= 1.2): bad.append("obstacle pocket: r (its radius) must be 0.3–1.2 m")
             if k in ("current", "jet", "pocket") and not isinstance(m.get("medium"), dict): bad.append(f"obstacle {k} belongs under water: the map needs a water medium")

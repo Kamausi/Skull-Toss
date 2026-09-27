@@ -188,7 +188,9 @@
     setRingPhase(p) { ring.phase = p; const q = ringAt(p); ring.x = q.x; ring.y = q.y; ring.z = q.z; },
     setScore(n) { game.stageHits = n; game.hits = n; snapRing(); updateHud(); },   // (in hits: how far into the stage)
     setHits(n) { game.stageHits = n; game.hits = Math.max(game.hits, n); snapRing(); updateHud(); },
-    setStage(n) { game.stage = n; setScene(n - 1); hazardsReset(); snapRing(); updateHud(); },
+    setStage(n) { game.stage = n; setScene(n - 1); hazardsReset(); secretReset(); snapRing(); updateHud(); },
+    gates: () => OB.list.filter(I => I.kind === "gate").map(I => ({ ...I, open: gateOpen(I), leaves: gateLeaves(I) })), secret: () => ({ ...SECRET, on: secretOn(), branch: SECRET.branch && { ...SECRET.branch } }), secretOffAt: d => secretOff(d),
+    secretKeys(n) { SECRET.keys = n; SECRET.stage = game.stage; if (n >= SECRET.need && !SECRET.open) secretOpen(); }, gateClock(t) { OB.t = t; }, gatesHold(n = 99) { for (const I of OB.list) if (I.kind === "gate") I.held = n; }, encAlways(on = true) { encDefOverride = on; },   // (v66)
     setPoints(n) { game.score = n; }, blueprint: () => JSON.parse(JSON.stringify(BLUEPRINT)), tiers: () => JSON.parse(JSON.stringify(TIER_DATA)),
     plantObstacle(o) { OB.off = false; OB.list.push({ ...o, key: "test" + OB.list.length, born: OB.t, hitAt: -9, fired: -1, balls: o.balls || [] }); }, clearObstacles() { OB.list = []; }, banked: () => skull.banked || 0,
     reactAt(x, z, k = 1) { envImpact(x, z, k); return GY.props.filter(p => p.react || p.fallen || p.cracked).map(p => ({ kind: p.kind, does: p.react ? p.react.does : p.fallen ? "fall" : "crack" })); },
@@ -282,6 +284,7 @@
         if (q.z > ring.z + 0.3) break;
         const T = T0 + q.t * k;
         for (const I of OB.list) {
+          if (I.kind === "gate") { if (Math.abs(q.z - I.z) < 0.08 && q.y < I.h + GATE.beam + SKULL_R) { const L = gateLeaves(I, T); if (q.y > I.h - SKULL_R || q.x < L[0].edge + SKULL_R + 0.05 || q.x > L[1].edge - SKULL_R - 0.05) return I.kind; } continue; }   // (v66: a person waits for the gate)
           if (obStandsAside(I)) continue;
           if (I.kind === "bumper") { const c = bumperAt(I, T); if (Math.hypot(q.x - c.x, q.y - c.y, q.z - c.z) < I.r + SKULL_R + 0.08) return I.kind; }
           else if (I.kind === "bar") { const E = barEnds(I, T); if (segDist(q, E.a, E.b) < BAR_R + SKULL_R + 0.08) return I.kind; }

@@ -4,6 +4,26 @@ Lob the skull through a ring in a haunted graveyard. Play **Story** to climb thr
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
 
+## New in v66: moving gates and secret paths
+
+The owner's call: real moving gates, tied to the interactive environment's actors, deciding whether secret paths open
+(the rail-shooter influence, in encounters only: the camera and the controls are unchanged).
+
+- **A real gate on every map.** From the second act of each map's first half (hit 14; the Hollow's from 16) a gate
+  stands across the lane between Morty and the ring: two barred leaves on hinges under an arch, in the map's own
+  material (wood, gilt, iron, bone, film). It swings open, stands open 3.2 s, rattles and flashes its lamps (the tell)
+  and swings shut for a second. Shut, it stops the skull like any blocker; open, the throw goes through the middle; a
+  lob over the arch clears it too. It opens toward Morty, clear of the ring and of the bank boards.
+- **The actors work it.** Ring the map's lantern, bell, chime or crank (its ring interaction, hung behind the ring) with
+  any throw, and the gate's winch hauls it open and holds it for the next two throws: its lamps go gold.
+- **Keys and the secret path.** Through the open gate, through the ring, and on into that actor, in one throw, is a
+  key; a notch lights on the gate's keyhole. Two keys in the first half open the map's secret path: the road forks up
+  ahead, the hidden way lamplit and marked by a keyhole arch, the old road carrying on and fading. The second half is
+  played down it: a smaller ring, gold targets far more often, 20 bones for every ring through and 300 more for
+  reaching the end boss that way. Adventure and Adventure+ only; the profile counts secret paths found.
+- The balance model (tools/balance.mjs) waits for a gate the way a person does; with gates in, casual, average and
+  good players still finish (5–6 of 6).
+
 ## New in v65: the road turns, the targets stand on their own
 
 From the owner's playtest (Notion, QA & Playtesting).

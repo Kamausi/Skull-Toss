@@ -58,6 +58,7 @@
     if (I.kind === "fan") { const [x0, x1, y0, y1, z0, z1] = I.box; return [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2]; }
     if (I.kind === "crusher") { const [x0, x1, z0, z1] = I.box; return [(x0 + x1) / 2, I.low + 1.2, (z0 + z1) / 2]; }
     if (I.kind === "barrier") { const [x0, x1, y0, y1, z] = I.box; return [(x0 + x1) / 2, (y0 + y1) / 2, z]; }
+    if (I.kind === "gate") return [(I.span[0] + I.span[1]) / 2, I.h / 2, I.z];   // (v66: 07wa_gates.js)
     if (I.kind === "current") { const [x0, x1, y0, y1, z0, z1] = I.box; return [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2]; }   // (v60: the water's own things, 07x_water.js)
     return [0, 2, 4];
   }
@@ -154,6 +155,7 @@
     if (!OB.list.length) return false;
     const P = s.pos;
     for (const I of OB.list) {
+      if (I.kind === "gate") { const g = gateCross(s, prev, I); if (!g) continue; if (powerOn("ghost")) { s.gated = true; continue; } obstacleKnock(s, I, g.at); return true; }   // (v66: 07wa_gates.js; open or held, only its frame stops a throw)
       if (obStandsAside(I)) continue;   // (v58: knocked out, or the way cleared by a chain: 07w_encounter.js)
       let hit = false, near = false, at = null;
       if (I.kind === "bumper") {
@@ -190,7 +192,7 @@
     const p = project(s.pos.x, s.pos.y, s.pos.z);
     s.p0 = { ...s.pos }; s.t = 0; s.v0 = { x: (s.pos.x - q.x) * 6 + (I.kind === "cannon" ? -I.side * 2.5 : 0), y: I.kind === "crusher" ? -3 : 2.2, z: -1.8 }; s.crossed = true; s.spin *= -2; s.ax = 0;
     I.hitAt = OB.t;
-    Sound.toon(I.kind === "spikes" ? "bonk" : I.kind === "barrier" ? "poof" : I.kind === "magnet" ? "clang" : I.kind === "cannon" ? "bonk" : "clang", panOf(s.pos.x));
+    Sound.toon(I.kind === "gate" ? "clang" : I.kind === "spikes" ? "bonk" : I.kind === "barrier" ? "poof" : I.kind === "magnet" ? "clang" : I.kind === "cannon" ? "bonk" : "clang", panOf(s.pos.x));
     VisualSystem.triggerImpact("seed", { at: project(ring.x, ring.y, ring.z), hit: p, strength: 1, pan: panOf(s.pos.x) });
     resolve(I.kind, project(ring.x, ring.y, ring.z), p);
     profile.hazardHits++;
@@ -202,7 +204,7 @@
     for (const I of OB.list) {
       const zc = obCentre(I)[2]; if ((zc < ring.z) !== front) continue;
       ctx.save(); ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = INK;
-      if (obStandsAside(I)) ctx.globalAlpha *= 0.45;   // (standing aside: faded back)
+      if (obStandsAside(I) && I.kind !== "gate") ctx.globalAlpha *= 0.45;   // (standing aside: faded back; a gate just stands open)
       OB_DRAW[I.kind](I);
       ctx.restore();
       drawObEyes(I);   // (v58: what it's about to do, in a pair of eyes: 07w_encounter.js)

@@ -58,7 +58,7 @@
     profile.bones += n; profile.bonesTotal += n; renderBones();
     for (const el of document.querySelectorAll(".bones")) bump(el);
   }
-  function runBones(r, hits, newBest, score = 0) { return 10 + hits * 8 + r.perfects * 5 + r.bestCombo * 4 + Math.floor(score / 2500) * 5 + (r.powerups || 0) * 6 + (newBest && hits > 0 ? 25 : 0); }
+  function runBones(r, hits, newBest, score = 0) { return 10 + hits * 8 + r.perfects * 5 + r.bestCombo * 4 + Math.floor(score / 2500) * 5 + (r.powerups || 0) * 6 + (newBest && hits > 0 ? 25 : 0) + (r.secretBones || 0); }
   function buy(kind, id) {
     const it = findItem(kind, id);
     if (!it || !it.price || it.shop || canUse(kind, it) || profile.bones < it.price) return false;   // exclusives are only sold at the Curio Cart

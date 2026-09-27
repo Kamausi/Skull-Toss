@@ -67,7 +67,7 @@
     const st = game.stage || 1, S = stageDef(st), h = game.stageHits || 0, cursed = (powerOn("cursed") ? 1.5 : 1) * (powerOn("time") ? 0.5 : 1), T = tierNow();
     if (game.state === "title") { const L = level(0); return { mode: "line", ...L }; }
     if (!arcadeLike()) {
-      const C = clamp(st, 1, CURVE.a.length) - 1, shrink = hasMod("shrink") ? CURVE.shrink : 0;
+      const C = clamp(st, 1, CURVE.a.length) - 1, shrink = (hasMod("shrink") ? CURVE.shrink : 0) + (secretOn() ? 0.03 : 0);   // (v66: the secret road's ring is a little smaller)
       if (ringFlies()) {
         const b = bHits(h) / bPace(), L = level(lerpC(CURVE.b[C], b)), lap = RING_PATHS[ring.mode].lap || 1;
         return { rc: L.rc - shrink + T.rc - (ring.rcShrink || 0), omega: lap * cursed * curveSpeed(S, T) * directorSpeed() / lerpC(CURVE.legs, b), amp: 0, bob: 0 };
@@ -212,6 +212,7 @@
   }
   function mainBossDown() {
     clearStageForDefeat();   // (v54: the ring, its pole and the targets go at once; the defeat plays on an empty stage, 07t_portal.js)
+    secretBossDown();   // (v66: reached down the secret path, 07wa_gates.js)
     plusMapDone();   // (v51: Adventure+'s Perfect Map, 07s_plus.js)
     profile.bossKills++; if (boss.flawless) { profile.bossFlawless++; profile.flawless[boss.kind] = 1; } game.run.bosses++;
     profile.bossLog[boss.kind] = (profile.bossLog[boss.kind] || 0) + 1;
@@ -242,7 +243,7 @@
     };
     changeoverCues(2.8 + 2.3);
     const nextMap = () => {
-      game.stage++; game.stageHits = 0; game.phase = "A"; game.act = 0; game.ringHidden = false; VisualSystem.setStage(game.stage); setScene(game.stage - 1);
+      game.stage++; secretReset(); game.stageHits = 0; game.phase = "A"; game.act = 0; game.ringHidden = false; VisualSystem.setStage(game.stage); setScene(game.stage - 1);
       game.lives = Math.min(MAX_LIVES, Math.max(game.lives + 1, START_LIVES)); game.slots = Math.max(game.slots, game.lives);   // (v62: a new map tops the skulls up to three at least, and one more)
       setRingMode("line"); snapRing(); Sound.setAct("A"); hazardsReset(); refillTargets();
       nextReel();   // the next reel's title card (and the intermission, halfway): 09i_reel.js

@@ -84,7 +84,7 @@
     const M = mapData(game.stage || 1), kind = M.target, T0 = tierNow();
     const pool = targetTypesNow().filter(ty => ty !== "golden" && ty !== "secret"), has = ty => targets.some(T => T.type === ty && !T.pop);
     let type = forceType || pool[(runRand() * pool.length) | 0] || "standard";
-    if (!forceType) { const r = runRand(); if (r < (T0.golden || 0) || (targetTypesNow().includes("golden") && r < 0.12)) type = "golden"; else if (r < (T0.golden || 0) + (T0.secret || 0) || (targetTypesNow().includes("secret") && r > 0.86)) type = "secret"; }
+    if (!forceType) { const r = runRand(); if (r < (T0.golden || 0) + (secretOn() ? 0.2 : 0) || (targetTypesNow().includes("golden") && r < 0.12)) type = "golden"; else if (r < (T0.golden || 0) + (T0.secret || 0) || (targetTypesNow().includes("secret") && r > 0.86)) type = "secret"; }
     if (type === "decoy" && has("decoy")) type = "standard";
     sawIt("target", type);
     const S = stageSpot(targets.filter(T => !T.pop && T.corner != null).map(T => T.corner));

@@ -30,7 +30,8 @@
     return h;
   }
   // the road's middle, across the track, at d
-  const landCx = d => LAND.curve ? LAND.curve * 9 * (0.7 * Math.sin(d * TAU / LAND.bend + LAND.ph[4]) + 0.3 * Math.sin(d * TAU / (LAND.bend * 0.47) + LAND.ph[5])) : 0;
+  const landCx = d => landCx0(d) + secretOff(d);   // (v66: and, once a secret path is open, the fork: 07wa_gates.js)
+  const landCx0 = d => LAND.curve ? LAND.curve * 9 * (0.7 * Math.sin(d * TAU / LAND.bend + LAND.ph[4]) + 0.3 * Math.sin(d * TAU / (LAND.bend * 0.47) + LAND.ph[5])) : 0;
   const landKH = z => smooth(clamp((z - LAND_NEAR) / (LAND_H_FULL - LAND_NEAR), 0, 1));
   const landKC = z => smooth(clamp((z - (LAND_NEAR - 1)) / (LAND_C_FULL - LAND_NEAR + 1), 0, 1));
   const landD = () => (TRAVEL.on ? TRAVEL.D : 0);
@@ -76,7 +77,9 @@
         const p = project(x, y, z); pts.push(p); ys.push(y); lo = Math.min(lo, y); hi = Math.max(hi, y);
       }
       const path = [-PH, PH].map(u => { const y = kh ? (landH(D + z, u) - base) * kh : 0; return project(cxz + u, y, z); });
-      out.push({ z, pts, ys, lo, hi, path, flatY: project(0, 0, z).y });
+      const fork = secretOff(D + z) - secretOff(D), old = Math.abs(fork) > 0.25 && SECRET.branch ? clamp(1 - (D - SECRET.branch.at) / 80, 0, 1) : 0;   // (v66: the road not taken)
+      const path0 = old ? [-PH, PH].map(u => { const y = kh ? (landH(D + z, u) - base) * kh : 0; return project(cxz - fork * landKC(z) + u, y, z); }) : null;
+      out.push({ z, pts, ys, lo, hi, path, path0, old, flatY: project(0, 0, z).y });
     }
     // how far down each slice must paint: to the highest point any nearer slice reaches at that x (below that, the
     // nearer slice's own curtain takes over), so nothing is painted twice more than it has to be
@@ -122,10 +125,14 @@
   function drawLandPath(S, N) {
     const kind = look().lane, a = pathIn((S.z + N.z) / 2) * clamp((150 - S.z) / 60, 0, 1);
     if (a <= 0.02 || kind === "none") return;
+    if (S.path0 && N.path0) { ctx.save(); ctx.globalAlpha *= a * Math.min(S.old, N.old) * 0.6; ctx.beginPath(); ctx.moveTo(S.path0[0].x, S.path0[0].y); ctx.lineTo(S.path0[1].x, S.path0[1].y); ctx.lineTo(N.path0[1].x, N.path0[1].y); ctx.lineTo(N.path0[0].x, N.path0[0].y); ctx.closePath(); ctx.fillStyle = "rgba(120,92,62,.3)"; ctx.fill(); ctx.restore(); }   // (v66: the old road carries on, fading)
     const [l0, r0] = S.path, [l1, r1] = N.path;
     ctx.save(); ctx.globalAlpha *= a; ctx.beginPath(); ctx.moveTo(l0.x, l0.y); ctx.lineTo(r0.x, r0.y); ctx.lineTo(r1.x, r1.y); ctx.lineTo(l1.x, l1.y); ctx.closePath();
     const fill = { dirt: "rgba(120,92,62,.34)", flagstone: "rgba(150,146,150,.3)", boardwalk: "#5A3E26", sand: "rgba(236,196,140,.3)", rails: "rgba(40,30,24,.5)", void: "rgba(160,120,255,.16)" }[kind] || "rgba(120,92,62,.3)";
     ctx.fillStyle = fill; ctx.fill();
+    if (secretLit(S.z) && secretLit(N.z)) {   // (v66: the secret road is lamplit along its edges, 07wa_gates.js)
+      ctx.strokeStyle = "rgba(255,214,120,.55)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(l0.x, l0.y); ctx.lineTo(l1.x, l1.y); ctx.moveTo(r0.x, r0.y); ctx.lineTo(r1.x, r1.y); ctx.stroke();
+    }
     ctx.lineWidth = 1; ctx.lineCap = "round";
     if (kind === "boardwalk") {   // planks across, and the edge boards
       ctx.strokeStyle = "rgba(23,19,15,.55)"; ctx.stroke();
@@ -147,6 +154,7 @@
     while (LANDQ.i < S.length && S[LANDQ.i].z > z) {
       const cur = S[LANDQ.i], next = S[LANDQ.i + 1] || null;
       drawLandSlice(cur, next, S[LANDQ.i - 1] || null);
+      drawSecretFork(next ? next.z : 0, cur.z);   // (v66: the arch where the hidden way turns off, 07wa_gates.js)
       drawTravelDecals(next ? next.z : 0, cur.z);
       LANDQ.i++;
     }

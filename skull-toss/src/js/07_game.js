@@ -188,6 +188,7 @@
     magnet:  { make: false, hit: true },
     crusher: { make: false, hit: true },
     barrier: { make: false, hit: true },
+    gate: { make: false, hit: true },   // (v66: shut in its face, 07wa_gates.js)
     decoy:   { make: false, hit: true },
     sealed:  { make: false, hit: true, safe: true },   // (v60: a Bank Ring's film, not banked into: 07y_banks.js; v62: it costs no skull)   // (a decoy target hung in front of the ring: 07e_directors.js)
     eye:     { make: true, pts: 1, fill: GOLD, text: INK, mood: "excited" },   // (v47: the Pumpkin King's eyes are targets, and a poke is one of the 80 hits)
@@ -212,7 +213,7 @@
     const x = at ? at.x : W / 2, y = at ? at.y - ring.rc * at.s - U * 0.05 : H * 0.3;
     if (R.make) {
       if (game.lives === 1) profile.clutch++;
-      game.streak++; game.hits++; game.stageHits++;   // (every make counts, boss hits too: the map is 80 of them)
+      game.streak++; game.hits++; game.stageHits++; secretMake();   // (v66: 07wa_gates.js)   // (every make counts, boss hits too: the map is 80 of them)
       // SCORE: base × combo × stage, and the power-ups that gamble on it
       const blast = powerOn("blast"), syn = synergyNow(), chaos = powerOn("chaos") ? 1 + Math.floor(runRand() * 4) : 1;
       const mult = comboMult(game.streak) * stageMult() * (powerOn("cursed") ? 3 : 1) * (blast ? 3 : 1)
@@ -353,7 +354,7 @@
     resetSkull(); aim.active = false; Sound.pullEnd(); Sound.flightStop(true);
     paused = false; Sound.setPaused(false); showCombo(0); gameOverCard(false); contEl.hidden = true; game.cont = null;
     showScreen("play");
-    OB.off = false; hazardsReset(); refillTargets();
+    OB.off = false; hazardsReset(); secretReset(); refillTargets();
     misc.lastMap = 0; misc.lastThrow = -99; misc.kind = null;   // (mischief's once-a-map is per run)
     modeBegin();   // each mode's own opening (07i_modes.js)
     if (opts.quiet || (mode !== "story" && mode !== "arcade" && mode !== "practice")) setHint(game.mode === "rush" ? "" : MODES[mode].mini ? (MODES[mode].timed ? t("hint.timed") : t("hint.untimed")) : t("hint.start")); else introReel(mode, map);   // the leader and the reel's title card (09i_reel.js)

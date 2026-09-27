@@ -33,6 +33,7 @@
     else if (!ENC.it || ENC.it.kind !== E.interaction) ENC.it = { kind: E.interaction, cons: E.consequence, side: h % 2 ? 1 : -1, ang: 0, av: 0, rung: -9, sense: 0 };
     if (ENC.calm > 0) ENC.calm--;
     for (const I of OB.list) if (I.out > 0) I.out--;
+    gatesSync();
   }
   function encReset() { ENC.it = null; ENC.calm = 0; ENC.chain = 0; ENC.cons = 0; ENC.focus = null; ENC.chains = 0; }
   // where the interaction hangs: from the ring's own support, just behind it and off to one side, swinging
@@ -62,10 +63,11 @@
     const P = s.pos, I = ENC.it;
     if (I && OB.t - I.rung > 0.4) {
       const c = encPos(); if (segDist(c, prev, P) < INTER_R + SKULL_R) {
-        I.rung = OB.t; I.av += (Math.sign(P.x - prev.x || I.side) * 6 + (P.z - prev.z) * 3);
+        I.rung = OB.t; I.av += (Math.sign(P.x - prev.x || I.side) * 6 + (P.z - prev.z) * 3); gatesWorked();   // (v66: the actor works the gate, 07wa_gates.js)
         const p = project(c.x, c.y, c.z); Sound.toon(I.kind === "crank" ? "clang" : "bell", panOf(c.x));
         if (game.result && game.result.make) {   // RING → THROW → INTERACTION → CONSEQUENCE
           ENC.chain++; ENC.chains++; ENC.chained = true; const pts = 150 * ENC.chain; game.score += pts; profile.scoreTotal += pts; game.result.pts = (game.result.pts || 0) + pts; game.result.chain = ENC.chain;
+          gateKey(s);   // (v66: through the gate first? a key to the secret path)
           if (I.cons === "path") ENC.calm = 2;   // (this throw's settle takes one: the next throw finds them standing aside)
           ENC.cons = 1.1; ENC.focus = { x: c.x, y: c.y, z: c.z };
           impact(t("enc.chain", { n: ENC.chain }), p.x, p.y - U * 0.05, { fill: GOLD, text: INK, scale: 0.6, bits: true });

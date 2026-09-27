@@ -1692,7 +1692,7 @@
     T.setStats(ZERO); T.toTitle();
   });
   test("The Codex notes things as they turn up: a boss when you meet it, a power-up when you grab it, each map's hazard and target", () => {
-    T.setStats(ZERO); let K = T.codex(); assert(K.total === 123 && K.count === 2, `123 entries (v50: 32 areas; v54 and v57: six more power-ups each; v60: four more obstacles), only Crow Hollow and its first act known at first (${K.count}/${K.total})`);
+    T.setStats(ZERO); let K = T.codex(); assert(K.total === 124 && K.count === 2, `124 entries (v50: 32 areas; v54 and v57: six more power-ups each; v60: four more obstacles; v66: the gate), only Crow Hollow and its first act known at first (${K.count}/${K.total})`);
     fresh(); toHit(C.STAGE_MINI); assert(T.codex().seen.includes("boss:crow"), "meeting the Crow King notes him");
     T.givePower("rush"); assert(T.codex().seen.includes("power:rush"), "grabbing a power-up notes it");
     fresh(); T.setStage(2); T.setHits(10); T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y);
@@ -1713,7 +1713,7 @@
     assert(ends.length === 8 && ends.every(r => r.classList.contains("unseen")) && ends.find(r => r.dataset.entry === "boss:reaper").textContent.startsWith("???"), "8 end bosses, none met");
     tabs.find(b => b.dataset.cat === "area").click(); const areas = [...document.querySelectorAll("#codexList .entry")];
     assert(areas.length === 32 && areas.filter(r => !r.classList.contains("unseen")).length === 5, `32 areas, map 1's four and map 2's first seen (${areas.filter(r => !r.classList.contains("unseen")).length})`);
-    assert(/of 123 found/.test($("codexCount").textContent), $("codexCount").textContent);
+    assert(/of 124 found/.test($("codexCount").textContent), $("codexCount").textContent);
     T.closeSheet(); T.setStats(ZERO); T.toTitle();
   });
   test("The Production Archive unseals the studio's paperwork as the story goes on", () => {
@@ -1733,12 +1733,12 @@
     T.mischiefOn(true); T.clearMisc(); T.setStats(ZERO); fresh(); T.seedRun(7);
     for (let i = 0; i < 4; i++) { T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); }
     assert(!T.misc().log.length, "nothing in the first five throws");
-    for (let i = 0; i < 60 && !T.misc().log.length; i++) { T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); if (T.state().hits >= 24) T.setHits(10); }
+    for (let i = 0; i < 60 && !T.misc().log.length; i++) { T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); if (T.state().hits >= 15) T.setHits(10); }
     assert(T.misc().log.length === 1, `one misbehaviour on the map (${T.misc().log})`);
-    for (let i = 0; i < 30; i++) { T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); if (T.state().hits >= 24) T.setHits(10); }
+    for (let i = 0; i < 30; i++) { T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); if (T.state().hits >= 15) T.setHits(10); }
     assert(T.misc().log.length === 1, `and only one a map (${T.misc().log})`);
     fresh(); T.clearMisc(); T.throwAt(0, C.RING_Y); T.step(0.2); assert(T.misbehave("jam") === null, "never while the skull's in the air");
-    T.step(2.5); T.setSetting("mischief", false); T.clearMisc(); for (let i = 0; i < 60; i++) { T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); if (T.state().hits >= 24) T.setHits(10); }
+    T.step(2.5); T.setSetting("mischief", false); T.clearMisc(); for (let i = 0; i < 60; i++) { T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); if (T.state().hits >= 15) T.setHits(10); }
     assert(!T.misc().log.length, "Mischief off: never"); T.setSetting("mischief", true);
     T.toTitle();
   });
@@ -2361,8 +2361,8 @@
   test("A map brings its obstacles in on its beats: one thing, then more, then the second half's", () => {
     fresh(); T.setStage(2); T.setHits(C.ACT_LEN - 1); T.syncObstacles(); assert(T.obstacles().length === 0, "nothing in Act I");
     T.setHits(C.ACT_LEN); T.syncObstacles(); assert(T.obstacles().map(o => o.kind).join() === "bumper", `a gilded urn as Act II begins (${JSON.stringify(T.obstacles())})`);
-    T.setHits(2 * C.ACT_LEN); T.syncObstacles(); assert(T.obstacles().length === 2, "two by Act III");
-    for (let n = 1; n <= 8; n++) { fresh(); T.setStage(n); T.setHits(C.STAGE_MINI - 1); T.syncObstacles(); const k = T.obstacles().map(o => o.kind); assert(n === 1 ? !k.length : k.length >= 1, `map ${n}'s first half (${k})`); }
+    T.setHits(2 * C.ACT_LEN); T.syncObstacles(); assert(T.obstacles().length === 3, "three by Act III (v66: the gate came in at hit 14)");
+    for (let n = 1; n <= 8; n++) { fresh(); T.setStage(n); T.setHits(C.STAGE_MINI - 1); T.syncObstacles(); const k = T.obstacles().map(o => o.kind); assert(n === 1 ? k.join() === "gate" : k.length >= 1, `map ${n}'s first half (${k}; v66: Crow Hollow's only one is its gate)`); }
     T.toTitle();
   });
   test("A gilded urn bounces the skull instead of stopping it; the rest knock it out of the air, and Ghost Toss slips through", () => {
@@ -2431,7 +2431,7 @@
   test("A decoy in the throw's way is a miss; the Codex knows all nine targets and twelve obstacles (v60: the undertow, the bilge vent, the air pocket and the bank board)", () => {
     fresh(); T.setStage(3); T.calm(); T.freezeRing(0, C.RING_Y); const { a, q } = pathAt(3.6); T.plantDecoy(q.x, q.y, q.z); const lives = T.state().lives;
     T.throwAt(a.AX, a.AY); T.step(2.5); assert(T.state().lastResult.kind === "decoy" && T.state().lives === lives - 1, `HONK (${T.state().lastResult.kind})`);
-    T.setStats(ZERO); T.openSheet("codex"); document.querySelector('#codexTabs [data-cat="obstacle"]').click(); assert(document.querySelectorAll("#codexList .entry").length === 12, "twelve obstacles");
+    T.setStats(ZERO); T.openSheet("codex"); document.querySelector('#codexTabs [data-cat="obstacle"]').click(); assert(document.querySelectorAll("#codexList .entry").length === 13, "thirteen obstacles (v66: the gate)");
     document.querySelector('#codexTabs [data-cat="target"]').click(); assert(document.querySelectorAll("#codexList .entry").length === 9, "nine targets");
     T.closeSheet(); T.toTitle();
   });
@@ -2800,6 +2800,45 @@
     assert(T.chainPitch(1) === 1 && T.chainPitch(2) > 1 && T.chainPitch(3) > T.chainPitch(2), "and a chain of bounces or hits climbs in pitch");
     T.toTitle(); T.setStats(ZERO);
   });
+  // ── v66: moving gates, the actors that work them, and the secret paths they open ──
+  test("v66 Moving gates: a real gate across the lane swings open, stands open, rattles (the tell) and swings shut; shut, it stops the skull; open, the throw goes through", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(3); T.calm(); T.setHits(10); T.obOn(); assert(!T.gates().length, "not in the first act");
+    T.setHits(20); T.obOn(); let G = T.gates()[0]; assert(G && G.look === "wood" && G.span[0] <= -1.5 && G.span[1] >= 1.5 && G.z < 3.2, `the Woods' gate, across the lane (${JSON.stringify(G && G.span)})`);
+    const at = u => { T.gateClock(u - G.phase); return T.gates()[0].open; };
+    const o1 = at(0.2), o2 = at(1.5), o3 = at(3.3), o4 = at(3.8), o5 = at(4.5);   // (open 3.2 s, shut 1 s, 0.4 s swinging each way)
+    assert(o1.k > 0 && o1.k < 1 && o2.k === 1 && !o2.tell && o3.k === 1 && o3.tell > 0 && o4.k > 0 && o4.k < 1 && o5.k === 0, `opening, open, the rattle, shutting, shut (${[o1, o2, o3, o4, o5].map(o => o.k.toFixed(2) + "/" + (o.tell || 0).toFixed(2))})`);
+    for (let n = 1; n <= 8; n++) { fresh(); T.setStage(n); T.calm(); T.setHits(22); T.obOn(); assert(T.gates().length === 1, `map ${n} has its gate`); }
+    fresh(); T.setStage(3); T.calm(); T.setHits(20); T.obOn(); G = T.gates()[0]; T.freezeRing(0, C.RING_Y); const lives = T.state().lives;
+    at(4.0); let a = T.aimFor(0, C.RING_Y, C.RING_Z); T.throwAt(a.AX, a.AY); T.step(2.5);
+    assert(T.state().lastResult.kind === "gate" && T.state().lives === lives - 1, `shut: CLANG (${T.state().lastResult.kind})`);
+    T.step(1); T.freezeRing(0, C.RING_Y); at(0.1); a = T.aimFor(0, C.RING_Y, C.RING_Z); T.throwAt(a.AX, a.AY); T.step(2.5);
+    assert(T.state().lastResult.make, `open: through the gate and the ring (${T.state().lastResult.kind})`);
+    T.toTitle(); T.setStats(ZERO);
+  });
+  test("v66 The actor works the gate: ring the map's lantern, bell or crank and the gate is held open for the next two throws; through the gate, the ring and on into the actor is a key", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(3); T.calm(); T.setHits(20); T.obOn(); T.freezeRing(0, C.RING_Y); T.encForce(true); T.step(0.3);
+    const G = T.gates()[0], at = u => T.gateClock(u - G.phase);
+    at(0.1); const P = T.enc().it.pos; let a = T.aimFor(P.x * 0.4, P.y, P.z); T.throwAt(a.AX, a.AY); for (let i = 0; i < 60 && !T.enc().chains; i++) T.step(0.03); T.step(2.2);
+    assert(T.state().lastResult.make && T.enc().chains === 1, `through the gate, the ring and into the chime (${T.state().lastResult.kind})`);
+    assert(T.secret().keys === 1 && !T.secret().open, `a key (${JSON.stringify(T.secret())})`);
+    at(4.5); assert(T.gates()[0].open.k === 1 && T.gates()[0].open.held, "the actor's winch holds the gate open, even when its clock says shut");
+    T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); at(4.5); assert(T.gates()[0].open.k === 1, "for the next throw");
+    T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); at(4.5); assert(T.gates()[0].open.k === 0, "and the one after, then it's back on its clock");
+    T.encForce(false); T.toTitle(); T.setStats(ZERO);
+  });
+  test("v66 Secret paths: two keys in the first half open the map's secret path; the road forks ahead; the second half down it has a smaller ring, pays bones for every ring and 300 at the end; only the Adventure takes it", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(2); T.calm(); T.setHits(20); T.obOn();
+    T.secretKeys(1); assert(!T.secret().open, "one key isn't enough");
+    T.secretKeys(2); const S = T.secret(); assert(S.open && S.branch && Math.abs(S.branch.side) === 1, `two: the secret path opens (${JSON.stringify(S)})`);
+    assert(T.secretOffAt(S.branch.at - 1) === 0 && Math.abs(T.secretOffAt(S.branch.at + 60)) > 10, "the road forks a little way ahead, and the hidden way turns right off");
+    assert(T.profile().secretPaths === 1, "the profile counts it");
+    const rcAt = secret => { fresh(); T.setStage(2); T.calm(); if (secret) T.secretKeys(2); toHit(C.STAGE_MINI); T.step(2.6); T.hurtBoss(99); T.endThrow(); for (let i = 0; i < 80 && T.state().state !== "ready"; i++) T.step(0.1); T.calm(); T.step(0.2); return { rc: T.state().ring.rc, on: T.secret().on, phase: T.state().phase }; };
+    const plain = rcAt(false), hidden = rcAt(true);
+    assert(hidden.on && !plain.on && hidden.rc < plain.rc - 0.02, `down the secret path the ring is smaller (${hidden.rc.toFixed(3)} vs ${plain.rc.toFixed(3)}, ${hidden.phase})`);
+    T.calm(); T.freezeRing(0, C.RING_Y); const b0 = T.runStats().secretBones || 0; throwAndSettle(0, C.RING_Y); assert((T.runStats().secretBones || 0) === b0 + 20, "a ring through on it: 20 bones");
+    T.toTitle(); T.startArcade(2); T.calm(); T.setHits(20); T.secretKeys(2); assert(!T.secret().on, "Arcade has no secret path");
+    T.toTitle(); T.setStats(ZERO);
+  });
   // ── v65: the road turns, the targets stand on their own ──
   test("v65 The camera turns with the road: on a bend the sky, the far planes and the far ground pan against the turn, the play doesn't move, and the pan stays inside the painted planes", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(7); T.calm(); T.step(0.1);
@@ -2924,7 +2963,7 @@
   });
   test("v62 Sealed rings wait: a sealed ring glides within a bank's reach and holds there till it's banked open; a straight throw costs nothing", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.unfreezeRing(); T.setStage(2); T.calm();
-    const seal = h => { T.setHits(h); T.syncObstacles(); T.obOn(); T.banksSync(); T.step(1.2); return T.bank().need; };
+    const seal = h => { T.setHits(h); T.syncObstacles(); T.obOn(); T.gatesHold(); T.banksSync(); T.step(1.2); return T.bank().need; };   // (v66: the map's gate held open: this is about the seal)
     assert(seal(21) === 0 && !T.bankPark(), "an open ring keeps to its path");
     assert(seal(22) === 1, "hit 22: sealed");
     const r0 = T.state().ring; T.step(1.5); const r1 = T.state().ring;

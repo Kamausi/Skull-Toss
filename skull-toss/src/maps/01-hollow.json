@@ -255,7 +255,25 @@
     "kind": "none"
   },
   "obstacles": {
-    "A": [],
+    "A": [
+      {
+        "kind": "gate",
+        "_doc": "v66 (the owner's call): a real gate across the lane that swings open and shut on its clock; the map's ring interaction works it (ring it and it's held open two throws); through the gate, the ring and on into the actor is a key, and two keys in the first half open the secret path (07wa_gates.js)",
+        "span": [
+          -1.6,
+          1.6
+        ],
+        "h": 3.3,
+        "z": 2.8,
+        "cycle": [
+          3.2,
+          1.0
+        ],
+        "phase": 0.0,
+        "look": "wood",
+        "from": 16
+      }
+    ],
     "B": [],
     "boss": []
   },
