@@ -33,6 +33,12 @@ by default. Add `?r3d` to the address to see it, or call `SkullToss.debug.r3d(tr
 | The 16 bosses and their shots | `08rg_r3d_bosskit.js`, `08rh_r3d_bosses.js` | **Models**, not cut-outs (v69). A kit of toon parts (ellipsoids, lathes, extruded slabs, tubes, gears, pie-cut eyes) written in the 2D drawing's own coordinates, so each model matches its drawing's proportions. Each frame the model is posed from the same boss state the 2D drawing reads: hurt, tell, phase, sway, hoot, the gator's waterline, the jester's spring, the count's cape, the clock king's pendulum, the pumpkin's split. The 2D clips (the waterline, the boss-death shatter) cut the model too. The shots (seed, clod, bat, bone, mud, pin, gear, film frame) are small models batched with the scene. Checked idle, hurt and dead on every map with no failures; not yet reviewed at hero distance or on a device. |
 | Everything drawn live | `08rd_r3d_sets.js` (`r3dCapture`, `r3dLiveAt`, `r3dWrap`) | **Live pieces**, cut out the same way on twos (12 a second). Wildlife, sea life, the cat and the cast are also painted and sent to the GPU only on those twos, and are cut out only while their depth shows; the protected pieces (below) are painted every frame. The 2D drawing is run into an offscreen copy of the stage, lifted off, traced and stood up at its depth. This covers the cat, the owls and deer, the fish, crabs and eels, targets, obstacles (with their eyes), gates, the coach, hazards, the encounter's actor, the power-up, the cans, the lanes' stakes, the overhead anchors, the attractions, the gravedigger, the portal ring, Morty's hats, and Vault launchers and poles. |
 
+**One depth buffer a frame (Phase 1, v70).** The depth buffer is cleared once, at the frame's first 3D render; after that
+each render clears only the colour inside its box. So a 3D piece hides behind any 3D piece already drawn in front of it
+by true depth (Morty passing through the ring, the ring through a boss), while the 2D art in between keeps the
+painter's order. An overlay meant to sit on Morty (a hat, a frame launcher) goes down on its own, on fresh depth.
+`SkullToss.debug.r3dShared(false)` turns it off for comparison.
+
 **Batching.** Hero pieces with 2D drawn over them (Morty, the ring, the slingshot, the post) render at once, into their
 own box. Everything else is queued. The queue renders as one scene in a single call (clones posed by their own
 matrices; a faded piece wears copies of its materials, in tenths) and is copied in once, at the next hero piece or
@@ -92,6 +98,11 @@ math core (`MC.PF`, `docs/MATH-TOOLKIT.md`).
 - Before, every live piece was painted and sent to the GPU every frame, including a fish two pixels long. On the Drowned
   Theatre that was about 770 ms of texture upload a frame. With the screen-space test and the cadence, map 7 fell from
   about 400 ms a frame to about 15 ms, and map 4's P90 from 733 ms to 17 ms.
+- Re-measured in Phase 1 (docs/PRODUCTION-AUDIT.md §10): in this container maps 6 and 7 cost about 400–500 ms a frame
+  again, before and after the boss models. The render call's own time is almost all canvas-texture uploads in the
+  software renderer (one 260 × 188 upload took 12 s), so those numbers vary from run to run and say nothing about a
+  phone. `tools/perf3d.mjs` now prints the costliest live pieces and render kinds per map (`MAPS=6,7` runs only
+  those).
 - What's left in the headless runs is the copy of each rendered box into the 2D canvas. Headless, the 2D canvas lives
   on the CPU, so every copy reads the WebGL canvas back. On a phone both canvases are on the GPU and the copy stays
   there. Real-device frame pacing is still the gate before shipping.

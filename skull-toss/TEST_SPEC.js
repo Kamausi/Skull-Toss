@@ -3096,6 +3096,16 @@
     T.r3dHold(0.3); T.step(0.1); P = T.r3dPerf(); assert(P.parts.portal < 89 && P.parts.portal > 0 && T.r3dState().fails === 0, `short of time, they thin (${P.parts.portal})`);
     T.portalsOn(false); T.r3dHold(null); T.r3d(null); T.step(0.1); assert(!T.r3dState().on, "and off again"); T.toTitle();
   });
+  test("v70 3D renderer, Phase 1: one depth buffer a frame, so 3D pieces hide each other by true depth; a hat on Morty still sits on him; nothing fails", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); const on = T.r3d(true);
+    if (!T.r3dState().ok) { assert(!on, "no WebGL here: it stays off"); T.r3d(null); T.toTitle(); T.setStats(ZERO); return; }
+    const frame = shared => { T.r3dShared(shared); T.step(1 / 60); const a = T.r3dState(); T.step(1 / 60); const b = T.r3dState(); return { clears: b.clears - a.clears, renders: b.renders - a.renders, fails: b.fails }; };
+    const S = frame(true), O = frame(false);
+    assert(S.renders > 1 && S.clears === 1 && S.fails === 0, `shared: ${S.renders} renders, the depth cleared once (${S.clears})`);
+    assert(O.renders > 1 && O.clears === O.renders, `off (for comparison): cleared every render (${O.clears}/${O.renders})`);
+    T.r3dShared(true); T.freezeRing(0, C.RING_Y); assert(throwAndSettle(0, C.RING_Y).lastResult.make && T.r3dState().fails === 0, "a throw through the middle still goes in, and nothing fails");
+    T.r3d(null); T.toTitle(); T.setStats(ZERO);
+  });
   test("v69 3D bosses: all sixteen are modelled (not cut-outs), and each draws in place, idle, hurt and dead, with the shots they throw, and no errors", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); const on = T.r3d(true);
     if (!T.r3dState().ok) { assert(!on, "no WebGL here: it stays off"); T.r3d(null); T.toTitle(); T.setStats(ZERO); return; }

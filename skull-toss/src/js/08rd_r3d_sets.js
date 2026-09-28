@@ -98,7 +98,13 @@
   // animated on twos) and it's stood up at its own depth: lit, inked, with sides. box: the screen rect it fits in;
   // zc: its distance from the camera (F / p.s); thick: how deep it is, in metres.
   const R3D_LIVE = { cv: null, g: null, fps: 12, maxPx: 240 };
-  function r3dCapture(key, box, zc, thick, draw, alpha = 1, maxPx = R3D_LIVE.maxPx) {
+  // (what each live piece costs, painting and cutting included, for tools/perf3d.mjs: 08rf_r3d_budget.js)
+  function r3dCapture(key, box, zc, thick, draw, alpha, maxPx) {
+    const t0 = performance.now();
+    try { return r3dCapture0(key, box, zc, thick, draw, alpha, maxPx); }
+    finally { const k = key.replace(/[:\d]+$/, ""), C = R3D_RCM.cost; C[k] = (C[k] || 0) + performance.now() - t0; }
+  }
+  function r3dCapture0(key, box, zc, thick, draw, alpha = 1, maxPx = R3D_LIVE.maxPx) {
     if (!R3D_LIVE.cv) { R3D_LIVE.cv = document.createElement("canvas"); R3D_LIVE.g = R3D_LIVE.cv.getContext("2d", { willReadFrequently: true }); }
     const C = R3D_LIVE.cv; let x0 = Math.max(0, Math.floor(box.x)), y0 = Math.max(0, Math.floor(box.y)), x1 = Math.min(W, Math.ceil(box.x + box.w)), y1 = Math.min(H, Math.ceil(box.y + box.h));
     if (x1 - x0 < 3 || y1 - y0 < 3) return false;
@@ -166,7 +172,9 @@
   function r3dNearMorty(key, x, y, r, ext, thick, draw) {
     if (!r3dOn()) { draw(); return; }
     const zc = F * SKULL_R / Math.max(0.5, r);
-    if (!r3dCapture(key, { x: x - r * ext, y: y - r * ext, w: r * ext * 2, h: r * ext * 2, auto: true }, zc, thick, draw, 1, 320)) draw();
+    r3dFlush();   // (it's drawn over him, so it goes down on its own, on fresh depth: 08r_r3d.js)
+    if (!r3dCapture(key, { x: x - r * ext, y: y - r * ext, w: r * ext * 2, h: r * ext * 2, auto: true }, zc, thick, draw, 1, 320)) { draw(); return; }
+    R3D.over = true; try { r3dFlush(); } finally { R3D.over = false; }
   }
   // a whole 2D drawing pass (a boss, the anchor overhead, an attraction's booth) as one live piece at depth z
   function r3dWrap(key, z, thick, draw, maxPx = 420) {

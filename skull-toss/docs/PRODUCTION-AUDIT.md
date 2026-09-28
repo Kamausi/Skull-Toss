@@ -234,7 +234,7 @@ non-overlap, notification readability, the results layout, the title card) join 
 
 | ID | System | Source | Status |
 |---|---|---|---|
-| SYS-001 | 3D renderer foundation: one scene, one depth buffer, shared lights and shadows (see change control CC-001, §7) | `08r_r3d.js` | NOT STARTED |
+| SYS-001 | 3D renderer foundation: one scene, one depth buffer, shared lights and shadows (see change control CC-001, §7) | `08r_r3d.js` | IN PROGRESS (step 1 done: one depth buffer per frame) |
 | SYS-002 | Camera: rostrum camera, shot director, encounter states, road-turn camera | `04c_camera.js`, `04e_director.js` | 2D camera drives the 3D camera; unchanged |
 | SYS-003 | Lighting: key, fill and rim per map; ring light; boss light; GPU light pools | `07n_environment.js`, `08j_gpu.js`, `08r_r3d.js` | per-piece today |
 | SYS-004 | Material library (families in §3) | `08r_r3d.js` (`r3dToon`), `08rg_r3d_bosskit.js` | toon ramp + ink only |
@@ -518,8 +518,33 @@ marked v68–v69 in the code because it is off by default):
 - `node tools/perf3d.mjs`: the 3D frame report per map;
 - `node tools/perf.mjs`: the 2D game.
 
-**Not yet run for this audit.** The last recorded numbers are the v52 2D audit (`docs/PERF-AUDIT.md`, `docs/perf/`) and the v68 3D report (`docs/RENDER3D.md`). A fresh run of both tools at this head is the first step of Phase 1, so the renderer change has a baseline to compare against. Real-device baselines are outstanding (brief §389: Low 30 fps, Medium 60, High
-60–120; pass mark P99 within budget after a 15–30 minute soak).
+**3D frame report, before Phase 1** (`6081bde`, 240 frames a map, governor free; median / P95 / P99 frame gap in ms,
+and the 3D's share of the frame's work):
+
+| Map | median | P95 | P99 | 3D share |
+|---|---|---|---|---|
+| 1 Crow Hollow | 10.5 | 22.2 | 718.7 | 91% |
+| 2 Gilded Graveyard | 15.4 | 31.2 | 354.7 | 43% |
+| 3 Whistling Woods | 9.4 | 21.6 | 403.0 | 25% |
+| 4 Drowned Theater | 12.7 | 26.9 | 575.6 | 28% |
+| 5 Black Marsh | 10.1 | 21.8 | 400.3 | 19% |
+| 6 Bone Desert | 492.9 | 671.8 | 950.9 | 98% |
+| 7 Clockwork Caves | 416.6 | 580.3 | 793.5 | 98% |
+| 8 Black Abyss | 7.8 | 23.9 | 433.8 | 20% |
+
+**What that shows.**
+- Maps 6 and 7 are as slow at `879a27e` (553 and 438 ms medians), so this is not a regression from the boss models.
+  The v68 note that map 7 fell to "about 15 ms" doesn't hold in this container.
+- A per-piece breakdown (new in `tools/perf3d.mjs`) puts almost all of it inside three.js's render call. Wrapping
+  WebGL's upload calls showed why: only 3–4 texture uploads a frame on map 6, but one 260 × 188 canvas took 12 s to
+  upload. That is the software renderer uploading a canvas texture, not the game's work. Painting and cutting all the
+  live pieces together costs about 12 ms a frame.
+- So the headless 3D numbers mostly measure the software renderer's canvas uploads, and they vary from run to run for
+  the same map (map 6's median was 25 ms in a 120-frame run). Only a phone can say whether uploads matter there.
+  Real-device baselines are outstanding (brief §389: Low 30 fps, Medium 60, High 60–120; pass mark P99 within budget
+  after a 15–30 minute soak).
+- The 2D game's last full audit is v52 (`docs/PERF-AUDIT.md`); it is unchanged by the 3D work, which is off by
+  default.
 
 ---
 

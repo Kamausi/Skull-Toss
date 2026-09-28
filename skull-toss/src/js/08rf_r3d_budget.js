@@ -16,7 +16,7 @@
   //   · A build budget: new set pieces are cut a few milliseconds' worth a frame, the most visible first, so coming
   //     into a street of new scenery doesn't stall one frame (the map-entry hitch); the rest stay painted till built.
   //   · A particle budget: effects ask for particles and are given a share by importance.
-  const R3D_RCM = {
+  const R3D_RCM = { cost: {}, costFrames: 0,
     target: PERF.frameMs, a: 0.1, gap: null, work: null, work3d: null, hist: new Float32Array(240), n: 0, i: 0,
     pid: MC.PF.pid(), Q: 1, hold: null, ch: {}, scale: 1, sMin: 0.7, resAt: 0,
     T: [4, 12], D: 0.2, fade: 250, E: 1,   // (T: a set piece's threshold in pixels of error, at Q = 1 and Q = 0; Δ = 20% of it)
@@ -47,7 +47,7 @@
     if (!r3dOn()) { R.last = R.t0 = 0; return; }
     if (R.last) { const gap = R.now - R.last; if (gap < 1000) {   // (a longer gap is a pause, not a frame)
       R.hist[R.i] = gap; R.i = (R.i + 1) % R.hist.length; R.n = Math.min(R.n + 1, R.hist.length); R.gap = MC.PF.ema(R.gap, gap, R.a); } }
-    R.last = R.t0 = R.now; R.t3d = 0; R.build.spent = 0; R.stats = r3dZero();
+    R.last = R.t0 = R.now; R.t3d = 0; R.build.spent = 0; R.stats = r3dZero(); R3D.fresh = true;   // (the frame's depth starts clear: 08r_r3d.js)
   }
   function r3dFrameEnd() {
     const R = R3D_RCM; if (!R.t0 || !r3dOn()) return;
@@ -132,7 +132,9 @@
   function r3dPerf() {
     const R = R3D_RCM, gaps = Array.from(R.hist.slice(0, R.n)), st = MC.PF.stats(gaps, R.target);
     const share = R.work ? clamp((R.work3d || 0) / R.work, 0, 1) : 0;
-    return { Q: R.Q, ch: { ...R.ch }, give: R3D_GIVE.slice(), scale: R.scale, pr: R3D.pr, gap: R.gap, work: R.work, work3d: R.work3d, share3d: share, amdahl2x: MC.PF.amdahl(share, 2),
+    const nF = Math.max(1, R.frames - R.costFrames), cost = Object.entries(R.cost).map(([k, v]) => [k, +(v / nF).toFixed(2)]).sort((a, b) => b[1] - a[1]).slice(0, 12);   // (ms a frame per live piece since the last report)
+    R.cost = {}; R.costFrames = R.frames;
+    return { cost, Q: R.Q, ch: { ...R.ch }, give: R3D_GIVE.slice(), scale: R.scale, pr: R3D.pr, gap: R.gap, work: R.work, work3d: R.work3d, share3d: share, amdahl2x: MC.PF.amdahl(share, 2),
       frames: R.frames, n: R.n, parts: Object.fromEntries(R.parts.got), median: st.median, p95: st.p95, p99: st.p99, worst: st.worst, jank: st.jank, T: R.T[1] + (R.T[0] - R.T[1]) * R.ch.distant, ...R.stats, pending: R.pend.size,
       textures: R3D.gl ? R3D.gl.info.memory.textures : 0, geometries: R3D.gl ? R3D.gl.info.memory.geometries : 0, cached: Object.keys(R3D.cache).length, scene: (() => { let n = 0; if (R3D.scene) R3D.scene.traverse(() => n++); return n; })(), calls: R3D.gl ? R3D.gl.info.render.calls : 0 };
   }

@@ -26,11 +26,14 @@ if (!ok) { console.log("no WebGL here: nothing to measure"); await browser.close
 const f = (x, d = 1) => (x == null ? "–" : x.toFixed(d));
 console.log(`3D frame report: ${N} frames a map, the governor ${HOLD ? "held at Q = 1" : "free"} (software WebGL: compare, don't read absolutely)`);
 console.log("map   Q     scale  gave up                  median  P95    P99    worst  jank   3D share  2× 3D →  in 3D  painted  fading  culled");
-for (let m = 1; m <= 8; m++) {
+const costs = [];
+for (const m of (process.env.MAPS || "1,2,3,4,5,6,7,8").split(",").map(Number)) {
   const P = await page.evaluate(([m, N]) => { const T = window.SkullToss.debug; T.start(); T.setStage(m); T.calm(); for (let i = 0; i < N; i++) T.step(1 / 60); return T.r3dPerf(); }, [m, N]);
   const gave = P.give.filter(c => P.ch[c] < 1).map(c => `${c} ${Math.round((1 - P.ch[c]) * 100)}%`).join(", ") || "nothing";
+  costs.push(`map ${m}: ` + (P.cost.map(([k, v]) => `${k} ${v}`).join(", ") || "none"));
   console.log(`${String(m).padEnd(6)}${f(P.Q, 2).padEnd(6)}${f(P.scale, 2).padEnd(7)}${gave.slice(0, 24).padEnd(25)}${f(P.median).padEnd(8)}${f(P.p95).padEnd(7)}${f(P.p99).padEnd(7)}${f(P.worst).padEnd(7)}${f(P.jank, 2).padEnd(7)}${(Math.round(P.share3d * 100) + "%").padEnd(10)}${(f(P.amdahl2x, 2) + "×").padEnd(9)}${String(P.in3d).padEnd(7)}${String(P.painted).padEnd(9)}${String(P.morph).padEnd(8)}${P.culled}`);
 }
+console.log("\nthe costliest live pieces, ms a frame (painting, cutting and queueing; MAPS=6,7 to run only those maps):\n  " + costs.join("\n  "));
 await page.evaluate(() => { const T = window.SkullToss.debug; T.r3dHold(null); T.r3d(null); });
 if (errors.length) console.log("page errors:\n  " + errors.join("\n  "));
 await browser.close();

@@ -15,7 +15,7 @@
   //   - The look: MeshToonMaterial with a three-step ramp (lit, half, shadow) and an ink hull drawn a fixed number of
   //     pixels outside each model's silhouette, so a far model's line is as thick as a near one's, like a cel. Only faces
   //     seen edge-on are pushed (a flat piece's back isn't slid out from behind it).
-  const R3D = { force: null, ok: null, gl: null, canvas: null, scene: null, cam: null, key: null, fill: null, ramp: null, inkU: null, drawn: 0, fails: 0, ids: 0, cache: {} };
+  const R3D = { clears: 0, renders: 0, shared: true, fresh: true, over: false, force: null, ok: null, gl: null, canvas: null, scene: null, cam: null, key: null, fill: null, ramp: null, inkU: null, drawn: 0, fails: 0, ids: 0, cache: {} };
   const r3dAsked = (() => { try { return /[?&]r3d(=1|&|$)/.test(location.search); } catch (e) { return false; } })();
   const r3dOn = () => !R3D.capturing && !WATER.reflecting && (R3D.force == null ? r3dAsked : R3D.force) && r3dReady();   // (while a live piece is being captured, everything inside it draws in 2D)
   const r3dKey = (o, pre) => pre + (o.__r3d || (o.__r3d = ++R3D.ids));   // a lasting key for a thing in the world
@@ -101,7 +101,13 @@
   }
   function r3dRender(entries, x0, y0, x1, y1) {
     const gl = R3D.gl, t0 = performance.now();
-    gl.setScissorTest(true); gl.setScissor(x0, H - y1, x1 - x0, y1 - y0); gl.clear(true, true, false);
+    // (Phase 1, docs/PRODUCTION-AUDIT.md CC-001) one depth buffer for the whole frame: it's cleared once, at the frame's
+    // first 3D render, and after that each render clears only the colour inside its box. So a 3D piece hides behind
+    // any 3D piece already drawn in front of it (Morty through the ring, the ring through a boss) by true depth, while
+    // the 2D art between keeps the painter's order. An overlay (a hat on Morty) is meant to sit on him, so it gets
+    // fresh depth in its box.
+    if (R3D.fresh || !R3D.shared) { gl.setScissorTest(false); gl.clear(true, true, false); R3D.fresh = false; R3D.clears++; }
+    gl.setScissorTest(true); gl.setScissor(x0, H - y1, x1 - x0, y1 - y0); gl.clear(true, R3D.over, false);
     if (entries.length === 1 && !entries[0].m) {   // a hero piece: itself, as posed (cut by clipping planes if it has any)
       const E = entries[0]; R3D.inkU.uInk.value = E.ink; R3D.scene.add(E.root); gl.clippingPlanes = E.clip || R3D_NOCLIP;
       try { gl.render(R3D.scene, R3D.cam); } finally { R3D.scene.remove(E.root); gl.clippingPlanes = R3D_NOCLIP; }
@@ -118,7 +124,9 @@
       R3D.drawn += entries.length;
     }
     ctx.drawImage(R3D.canvas, x0 * R3D.pr, y0 * R3D.pr, (x1 - x0) * R3D.pr, (y1 - y0) * R3D.pr, x0, y0, x1 - x0, y1 - y0);
-    R3D_RCM.t3d += performance.now() - t0;   // (the 3D's share of the frame: 08rf_r3d_budget.js)
+    R3D.renders++;
+    const dt = performance.now() - t0, C = R3D_RCM.cost, k = entries.length === 1 && !entries[0].m ? "render: hero" : "render: batch";
+    R3D_RCM.t3d += dt; C[k] = (C[k] || 0) + dt; C[k + " ktri"] = (C[k + " ktri"] || 0) + gl.info.render.triangles / 1000; C[k + " n"] = (C[k + " n"] || 0) + entries.length; C[k + " Mpx"] = (C[k + " Mpx"] || 0) + (x1 - x0) * (y1 - y0) / 1e6;   // (the 3D's share of the frame, and what each kind of render costs: 08rf_r3d_budget.js)
   }
   function r3dFlush() {
     const Q = R3D_Q; if (!Q.list.length) return;
