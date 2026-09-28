@@ -2864,6 +2864,66 @@
     assert(plus[0] + plus[1] + plus[2] < plain[0] + plain[1] + plain[2] && plus[2] <= plain[2], `the darker, red-cast print (${plus} vs ${plain})`);
     T.toTitle(); T.setStats(ZERO);
   });
+  // ── v68: the math core (the owner's procedural geometry toolkit, docs/MATH-TOOLKIT.md) ──
+  test("v68 Math core: the deformations (twist keeps volume, det J = 1), the substitution curves (2^N and 3^N pieces, dimension 2), the rose, polyrhythms, barycentric coordinates and the golden angle", () => {
+    const M = T.mathCore(), D = M.D, near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
+    for (const p of [[0.3, 0.2, -0.4], [1.2, -0.7, 0.5], [-2, 0.1, 0.9]]) {
+      assert(near(D.detJ(D.twist(1.7), p), 1, 1e-6), `the twist keeps volume at ${p} (det J = ${D.detJ(D.twist(1.7), p)})`);
+      assert(near(D.detJ(D.squash(1.6), p), 1, 1e-6), "squash and stretch keeps volume");
+      assert(near(D.detJ(D.shear(0.4), p), 1, 1e-6), "a shear keeps volume");
+    }
+    const tw = D.twist(0.8)([2, 1, 0]); assert(near(tw[1], Math.cos(1.6)) && near(tw[2], Math.sin(1.6)), "the twist turns each slice by s·x");
+    assert(near(D.bend(0)([1, 2, 3])[0], 1) && near(D.bend(0.5)([0, 0, 0])[1], 0, 1e-9), "a bend of 0 is straight and fixes the origin");
+    const f = D.compose(D.twist(0.5), D.squash(1.2)), g = p => D.twist(0.5)(D.squash(1.2)(p)); assert(near(f([0.4, 0.5, 0.6])[2], g([0.4, 0.5, 0.6])[2]), "compose chains right to left");
+    for (const N of [1, 4, 8]) {
+      assert(M.segments(M.CURVES.levy(N)) === 2 ** N && M.segments(M.CURVES.dragon(N)) === 2 ** N, `Lévy and dragon: 2^${N} segments`);
+      assert(M.segments(M.CURVES.terdragon(N)) === 3 ** N, `terdragon: 3^${N} segments`);
+    }
+    assert(M.segments(M.CURVES.levy(8)) === 256 && M.segments(M.CURVES.terdragon(8)) === 6561, "at N = 8: 256 and 6561");
+    const L = M.CURVES.levy(10), end = L[L.length - 1]; assert(near(end[0], 1, 1e-6) && near(end[1], 0, 1e-6), "the Lévy curve still joins its two ends");
+    const tw2 = M.CURVES.twin(8); assert(Math.hypot(...tw2[tw2.length - 1]) < 1e-6, "the twin dragon closes");
+    assert(near(M.similarityDim(2, Math.SQRT1_2), 2) && near(M.similarityDim(3, 1 / Math.sqrt(3)), 2), "similarity dimension log N / log(1/r) = 2 for both");
+    const R = M.roseMesh(90, 4); assert(R.pos.length === 91 * 5 * 3 && R.idx.length === 90 * 4 * 6 && R.pos.every(Number.isFinite), "the rose makes a finite mesh");
+    assert(M.rosePoint(M.ROSE.from + 1, 0).every(v => Math.abs(v) < 1e-12), "its heart is a point");
+    const P = M.poly(3, 4); assert(P.lcm === 12 && P.gcd === 1 && P.hitsA.length === 3 && P.hitsB.length === 4 && P.both.length === 1, "3 against 4: 12 sub-beats, meeting once");
+    assert(M.poly(8, 4).both.length === 4, "8 against 4 meet four times");
+    const A = [0, 0], B = [4, 0], Cc = [0, 3], b = M.bary([1, 1], A, B, Cc); assert(near(b[0] + b[1] + b[2], 1) && M.inTriangle(b), "barycentric weights sum to 1 inside");
+    const back = M.fromBary(b, A, B, Cc); assert(near(back[0], 1) && near(back[1], 1), "and map back to the point");
+    assert(!M.inTriangle(M.bary([5, 5], A, B, Cc)), "outside, a weight goes negative");
+    const cen = M.fromBary([1 / 3, 1 / 3, 1 / 3], A, B, Cc); assert(near(cen[0], 4 / 3) && near(cen[1], 1), "(⅓, ⅓, ⅓) is the centroid");
+    assert(near(M.GOLDEN * 180 / Math.PI, 137.50776, 1e-4), "the golden angle is 137.50776°");
+    const ph = M.phyllotaxis(55); assert(ph.length === 55 && near(Math.hypot(...ph[54]), Math.sqrt(54.5), 1e-9), "phyllotaxis: r = √i");
+  });
+  test("v68 Math core: rays and 2π's convergents, Cantor, Monte Carlo, Voronoi, complex multiplication, logarithms, Dijkstra, conics, spacetime intercepts, eigenvectors, integrals, grad/div/curl, Stokes and spherical trigonometry", () => {
+    const M = T.mathCore(), near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
+    for (const [p, q] of M.TWO_PI_APPROX) assert(Math.abs(p / q - 2 * Math.PI) < 0.3, `${p}/${q} ≈ 2π`);
+    assert(Math.abs(44 / 7 - 2 * Math.PI) < 0.01 && Math.abs(710 / 113 - 2 * Math.PI) < 1e-6, "44/7 and 710/113 are the close ones");
+    const I = M.cantor(5); assert(I.length === 32 && near(I.reduce((s, [a, b]) => s + b - a, 0), (2 / 3) ** 5), "Cantor: 2^n pieces, (2/3)^n of the length");
+    assert(M.inCantor(0, I) && M.inCantor(1, I) && !M.inCantor(0.5, I), "the middle third is gone");
+    const mc = M.monteCarlo(r => (r() ** 2 + r() ** 2 < 1 ? 4 : 0), 40000, 3); assert(Math.abs(mc.mean - Math.PI) < 4 * mc.se + 0.01, `Monte Carlo finds π (${mc.mean.toFixed(3)} ± ${mc.se.toFixed(3)})`);
+    const sites = [[0.25, 0.5], [0.75, 0.5]], areas = M.voronoiAreas(sites, [0, 0, 1, 1]); assert(near(areas[0], 0.5, 0.02) && near(areas[1], 0.5, 0.02), "two sites split the square in half");
+    assert(M.nearest([0.1, 0.9], sites) === 0, "a point belongs to its nearest site");
+    const z = M.C.mul(M.C.polar(2, 0.3), M.C.polar(1.5, 0.4)); assert(near(M.C.abs(z), 3) && near(M.C.arg(z), 0.7), "complex multiplication multiplies lengths and adds angles");
+    const sp = M.C.spiral([1, 0], 0.9, 0.5, 10); assert(near(M.C.abs(sp[9]), 0.9 ** 9), "repeated multiplication makes a spiral");
+    assert(near(M.logCurve(0), 0) && M.logCurve(100) < 100 * M.logCurve(1), "log response flattens");
+    assert(near(M.gainToDb(M.dbToGain(-6)), -6) && M.shakeFrom(100) < 10 * M.shakeFrom(10), "decibels round-trip; shake grows with the log of the energy");
+    const G = { L: { A: 1, C: 4 }, A: { B: 1, C: 5 }, B: { T: 1 }, C: { T: 1 } }, dj = M.dijkstra(G, "L");
+    assert(dj.dist.T === 3 && dj.path("T").join("") === "LABT" && dj.path("Z") === null, "Dijkstra finds the cheapest route and knows an unreachable one");
+    const g = 9.8, v = 10, th = 0.6; assert(near(M.conic.parabolaY(M.conic.range(v, th, g), 0, th, v, g), 0, 1e-9), "the parabola lands back at its range");
+    const e = M.conic.ellipse(3, 2, 0); assert(near(e[0], 3) && near(e[1], 0), "an ellipse starts at (a, 0)");
+    const hit = M.intercept(t => [t, 0, 0], t => [2 - t, 0, 0], 0, 2); assert(near(hit.t, 1, 1e-4) && hit.dist < 1e-3, "two things moving together meet at t = 1");
+    const E = M.eig2([[2, 0], [0, 1]]); assert(near(E.values[0], 2) && near(Math.abs(E.v1[0]), 1), "the eigenvector of the bigger eigenvalue");
+    const pa = M.principalAxis([[1, 1.02], [2, 1.98], [-1, -1.01], [-2, -2]]); assert(Math.abs(pa.v1[0] - pa.v1[1]) < 0.05, "the principal axis of points along y = x is the diagonal");
+    assert(near(M.simpson(x => x * x, 0, 3), 9, 1e-9), "Simpson: ∫₀³ x² dx = 9");
+    const circ = Array.from({ length: 721 }, (_, i) => [Math.cos(i / 720 * 2 * Math.PI), Math.sin(i / 720 * 2 * Math.PI)]); assert(near(M.arcLength(circ), 2 * Math.PI, 1e-3), "the arc length of a circle is 2π");
+    assert(near(M.lineIntegral([[0, 0], [2, 0]], p => p[0]), 2, 1e-9), "a line integral: ∫ x ds along [0, 2] = 2");
+    const gr = M.grad(p => p[0] * p[0] + 3 * p[1], [2, 1]); assert(near(gr[0], 4, 1e-5) && near(gr[1], 3, 1e-5), "the gradient of x² + 3y");
+    assert(near(M.div(p => [p[0], p[1]], [0.3, 0.7]), 2, 1e-6) && near(M.curl2(p => [-p[1], p[0]], [0.3, 0.7]), 2, 1e-6), "div of (x, y) is 2; curl of (−y, x) is 2");
+    const F = M.portalField(0.6, 1.4); assert(M.div(F, [0.5, 0.2]) < 0 && M.circulation(F, [0, 0], 0.8) > 0, "the portal field pulls in and swirls round");
+    for (const Fx of [p => [-p[1], p[0]], p => [p[1] * p[1], p[0] * p[1] + p[0]], F]) { const c1 = M.circulation(Fx, [0.1, -0.2], 0.7), c2 = M.curlFlux(Fx, [0.1, -0.2], 0.7); assert(Math.abs(c1 - c2) < 0.01 * Math.max(1, Math.abs(c1)), `Stokes: circulation ${c1.toFixed(4)} = curl flux ${c2.toFixed(4)}`); }
+    const X = [1, 0, 0], Y = [0, 1, 0], Z = [0, 0, 1]; assert(near(M.sphExcess(X, Y, Z), Math.PI / 2) && near(M.sphArea(X, Y, Z, 2), 2 * Math.PI), "the octant: excess π/2, area R²E");
+    const mid = M.greatCircle(X, Y, 0.5); assert(near(mid[0], Math.SQRT1_2) && near(mid[1], Math.SQRT1_2) && near(Math.hypot(...mid), 1), "a great circle stays on the sphere");
+  });
   // ── v68: the 3D renderer (off by default until everything is converted: the owner's "Everything, then ship") ──
   test("v68 3D renderer: off by default; switched on, Morty, the ring, the slingshot, the post and the scenery draw as 3D models in place, with no errors, and the game plays the same", () => {
     fresh(); T.calm(); T.step(0.5);
@@ -2873,6 +2933,9 @@
       const S1 = T.r3dState(); assert(on && S1.drawn > S0.drawn + 3 && S1.fails === 0, `3D models drawn in place (${JSON.stringify(S1)})`);
       T.freezeRing(0, C.RING_Y); assert(throwAndSettle(0, C.RING_Y).lastResult.make, "a throw through the middle still goes in");
       assert(T.r3dState().fails === 0, "no draw failed through a throw");
+      T.freezeRing(0.52, C.RING_Y); throwAndSettle(0.52 + holeClear(C.RC_START) + 0.02, C.RING_Y); assert(T.r3dState().fails === 0, "a rim hit: the ring twists, the post bends, Morty wrings (the math core's deformations), and nothing fails");
+      T.portalsOn(true); T.portalNow(); T.step(0.8); assert(T.portal().phase === "open" && T.r3dState().fails === 0, "the portal's rose and its golden-angle motes draw");
+      T.portalsOn(false); T.toTitle(); fresh(); T.calm(); T.step(0.3);
     } else assert(!on, "no WebGL here: it stays off");
     T.r3d(null); T.step(0.1); assert(!T.r3dState().on, "and off again"); T.toTitle();
   });

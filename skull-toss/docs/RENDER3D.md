@@ -37,6 +37,15 @@ own box. Everything else is queued. The queue renders as one scene in a single c
 matrices; a faded piece wears copies of its materials, in tenths) and is copied in once, at the next hero piece or
 flush point. That keeps the painter's order at one copy per group instead of one per piece.
 
+## The math core at work (`08re_r3d_math.js`, see `docs/MATH-TOOLKIT.md`)
+
+- **Deformations.** Knocked, the ring twists while it wobbles. A contact's squash wrings Morty (squash ∘ twist, volume
+  kept). The post bends as the ring it holds shakes.
+- **The portal.** Its 2D lensing stays; over it goes a parametric rose, its petal edges drawn in light, with 89
+  golden-angle motes carried in by the portal field (pull and swirl).
+  - It turns at its field's circulation round the rim (Stokes).
+  - Its brightness is the field's energy through the disc (a Simpson integral).
+
 ## Still to convert
 
 - The sky, the far skyline and the ground stay painted backdrops (a 3D game's matte paintings). The land's slices are

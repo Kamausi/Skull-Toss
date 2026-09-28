@@ -48,6 +48,7 @@
     const along = clamp(o.a == null ? 1 : o.a, 0.35, 1.9), perp = 1 / Math.pow(along, 0.62), dir = o.dir || 0, ang = o.ang || 0;
     D.tilt.rotation.set(0, 0, -dir); D.squash.rotation.set(0, 0, 0); D.squash.scale.set(along, perp, Math.sqrt(along * perp));
     D.spin.rotation.set(0.12 * Math.sin(ang * 0.5), 0.28 * Math.sin(ang), -ang + dir);
+    r3dSkullTwist(D.spin, along);   // (v68: a contact's squash wrings him: 08re_r3d_math.js)
     r3dPlace(M, x, y, r, SKULL_R);
     M.lookAt(0, 0, 0);   // (he faces the camera wherever he is, as the drawing does; the light still falls from the map's side)
     M.scale.set(SKULL_R * 1.06, SKULL_R, SKULL_R);

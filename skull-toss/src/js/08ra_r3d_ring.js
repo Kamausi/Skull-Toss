@@ -43,6 +43,7 @@
     const Z = r3dPlace(M, x, y, r, 1); M.scale.setScalar(1);
     M.rotation.set(0, 0, R.style === "chain" || R.style === "bones" || R.style === "thorn" ? t * 0.15 : 0);   // (a studded ring turns slowly, so it reads as solid)
     void Z;
+    r3dRingTwist(M, t);   // (v68: knocked, it twists while it wobbles: 08re_r3d_math.js)
     const pad = r * (1 + tubeK * 2.2) + 8;
     return r3dDraw(M, { x: x - pad, y: y - pad, w: pad * 2, h: pad * 2 }, Math.max(1.5, r * 0.018));
   }

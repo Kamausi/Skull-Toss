@@ -66,7 +66,7 @@
     ctx.restore();
   }
   function drawRing() {
-    if (portalOpen()) { const q = project(ring.x, ring.y, ring.z); r3dWrap("portal", ring.z, 0.3, () => drawPortalRing(q, PORTAL.r * q.s)); return; }   // (v54: the way on, 07t_portal.js; v68: a live 3D piece)
+    if (portalOpen()) { const q = project(ring.x, ring.y, ring.z); drawPortalRing(q, PORTAL.r * q.s); r3dPortal(q, PORTAL.r * q.s, clamp(PORTAL.t / RIFT.open, 0, 1), game.time); return; }   // (v54: the way on, 07t_portal.js; v68: a live 3D piece)
     if (game.ringHidden) return;   // (v54: a beaten boss's stage is empty)
     const p = project(ring.x, ring.y, ring.z), T = VENT.ring || { t: game.time, sq: 0, dir: 0 }; p.x += persShake();   // (v60: a timid ring's nerves, 07z_rings.js)
     const wob = ring.wobble > 0 ? Math.sin(T.t * 38) * 0.035 * ring.wobble : 0, morph = ring.morph || 0;

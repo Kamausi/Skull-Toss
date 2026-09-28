@@ -51,7 +51,7 @@
     const M = r3dPostModel(), U = M.userData, Z = F * POST_HALF * 2 / Math.max(0.01, pw), k = Z / F;
     const P = (px, py) => new THREE.Vector3((px - W / 2) * k, -(py - HY) * k, -Z), a = P(x, bottom), b = P(x, top), w = pw * k;
     M.position.set(0, 0, 0); M.rotation.set(0, 0, 0); M.scale.setScalar(1);
-    r3dLimb(U.shaft, a, b, w * 0.5);
+    r3dLimb(U.shaft, a, b, w * 0.5); r3dPostBend(U.shaft, game.time);   // (v68: it bends as the ring it holds shakes)
     U.foot.position.copy(a); U.foot.scale.set(w * 3.4, w * 0.9, w * 2.4); U.cap.position.copy(b); U.cap.scale.set(w * 0.62, w * 0.5, w * 0.62);
     return r3dDraw(M, { x: x - pw * 3, y: top - pw, w: pw * 6, h: bottom - top + pw * 2 }, 1.6);
   }
