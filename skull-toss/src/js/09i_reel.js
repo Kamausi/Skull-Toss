@@ -30,11 +30,12 @@
     const next = i => {
       if (i >= L.length) { hideReelCard(); if (then) then(); return; }
       const c = L[i]; showReelCard(c);
-      cine("reel", c.kind === "title" && mode === "short" ? REEL_DUR.short : REEL_DUR[c.kind], () => next(i + 1));
+      cine("reel", c.kind === "title" ? Infinity : REEL_DUR[c.kind], () => next(i + 1));   // (v70, the owner's call: a map's title card waits for a tap)
     };
     hideStageCard(); next(0); return true;
   }
   function showReelCard(c) {
+    const skipEl = reelEl.querySelector(".rc-skip"); if (skipEl) skipEl.textContent = c.kind === "title" ? t("reel.tapToBegin") : t("ui.tap-to-skip");
     reelSt.card = c; reelSt.t0 = game.time; reelSt.rotAt = null; reelEl.style.opacity = ""; reelSt.shown.push(c.kind + (c.n ? ":" + c.n : "")); reelSt.lastN = -1;
     reelEl.dataset.kind = c.kind; reelEl.hidden = false;
     $("rcK").textContent = (game.plus && c.kind === "title" ? t("plus.kicker") + " · " : "") + (c.k || ""); $("rcReel").textContent = c.reel || ""; $("rcTitle").textContent = c.title || ""; $("rcSub").textContent = c.sub || ""; $("rcNote").textContent = c.note || "";

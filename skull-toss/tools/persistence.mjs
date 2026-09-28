@@ -151,7 +151,8 @@ for (const [label, c] of Object.entries(OLD)) {
   const r = await page.evaluate(() => {
     const T = window.SkullToss.debug; T.start(); window.__full = true;
     let makes = 0, throws = 0;
-    for (let i = 0; i < 400 && throws < 6; i++) { const st = T.state(); if (st.state === "ready" && T.throwAt(st.ring.x, st.ring.y)) throws++; T.step(0.1); }
+    for (let i = 0; i < 400 && throws < 6; i++) { const st = T.state(); if (st.state === "cine") T.skipReel();   // (v70: a map's title card waits for a tap)
+      else if (st.state === "ready" && T.throwAt(st.ring.x, st.ring.y)) throws++; T.step(0.1); }
     const mid = T.state(); makes = mid.hits;
     T.endRun(); T.step(2);
     return { throws, makes, score: mid.score, state: T.state().state, games: T.profile().games };

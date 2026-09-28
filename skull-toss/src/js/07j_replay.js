@@ -10,7 +10,7 @@
   // v47 made the maps 80 hits, so a recording from before plays out differently: those are version 1, and no longer open.
   // v60 did it again (the Drowned Theater under water, bank boards, ghost-glass urns, a bank no longer counting for every
   // throw after it): version 2 no longer opens either
-  const REPLAY_V = 9;   // (v62: the Adventure's curve, the bosses' tells and the sealed rings changed how a run plays; v63: the Drowned Theater's one bubble and the retired mischief; v64: the mini-games' new rules; v65: the targets stand round the ring, not on it; v66: the gates and secret paths; v67: the phantom coach, and no forces in a portal: older recordings are refused)
+  const REPLAY_V = 10;   // (v70: a map's title card waits for a tap, so a run starts when the player says) (v62: the Adventure's curve, the bosses' tells and the sealed rings changed how a run plays; v63: the Drowned Theater's one bubble and the retired mischief; v64: the mini-games' new rules; v65: the targets stand round the ring, not on it; v66: the gates and secret paths; v67: the phantom coach, and no forces in a portal: older recordings are refused)
   const Replay = {
     rec: null, last: null, play: null, speed: 1,
     begin(opts) {

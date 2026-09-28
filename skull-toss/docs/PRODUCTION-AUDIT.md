@@ -236,7 +236,7 @@ non-overlap, notification readability, the results layout, the title card) join 
 |---|---|---|---|
 | SYS-001 | 3D renderer foundation: one scene, one depth buffer, shared lights and shadows (see change control CC-001, §7) | `08r_r3d.js` | IN PROGRESS (step 1 done: one depth buffer per frame) |
 | SYS-002 | Camera: rostrum camera, shot director, encounter states, road-turn camera | `04c_camera.js`, `04e_director.js` | 2D camera drives the 3D camera; unchanged |
-| SYS-003 | Lighting: key, fill and rim per map; ring light; boss light; GPU light pools | `07n_environment.js`, `08j_gpu.js`, `08r_r3d.js` | per-piece today |
+| SYS-003 | Lighting: key, fill and rim per map; ring light; boss light; GPU light pools | `07n_environment.js`, `08j_gpu.js`, `08r_r3d.js` | IN PROGRESS (v70: key, fill and rim from each map's palette) |
 | SYS-004 | Material library (families in §3) | `08r_r3d.js` (`r3dToon`), `08rg_r3d_bosskit.js` | toon ramp + ink only |
 | SYS-005 | Runtime complexity manager and quality tiers | `08rf_r3d_budget.js`, `10_boot.js` | IMPLEMENTED |
 | SYS-006 | Painted-plane cache (the 2D backdrops) | `05_layers.js` | shipping |
@@ -575,9 +575,9 @@ requirement the game doesn't meet yet.
 
 | # | Brief | The game now | Proposal |
 |---|---|---|---|
-| 1 | §254: the mini-boss at a score of 25, the main boss 25 later | 80 hits a map: the mini-boss at hit 30, the ring breaks loose at 40, the end boss at 50 (approved v47 structure, `src/maps/blueprint.json`) | Keep the approved structure; the brief's numbers look like an earlier plan |
-| 2 | §36: a critically damped camera spring (ζ ≈ 1) | The rostrum camera overshoots and settles on purpose and exposes 24 times a second (the 1930s look) | Keep the overshoot (the brief's §339: art direction outranks); it is already frame-rate independent through the fixed step |
-| 3 | §387: the Adventure title card stays until the player taps | The card shows for about 2.9 s, then the countdown leader plays; a tap skips (spec: "A Story run opens on Reel One's title card…") | Change it in the UI pass so the title card holds until a tap, then the countdown plays; the spec changes with it |
+| 1 (**decided 2026-09-28: keep**) | §254: the mini-boss at a score of 25, the main boss 25 later | 80 hits a map: the mini-boss at hit 30, the ring breaks loose at 40, the end boss at 50 (approved v47 structure, `src/maps/blueprint.json`) | Keep the approved structure; the brief's numbers look like an earlier plan |
+| 2 (**decided 2026-09-28: keep**) | §36: a critically damped camera spring (ζ ≈ 1) | The rostrum camera overshoots and settles on purpose and exposes 24 times a second (the 1930s look) | Keep the overshoot (the brief's §339: art direction outranks); it is already frame-rate independent through the fixed step |
+| 3 (**decided 2026-09-28: done in v70**) | §387: the Adventure title card stays until the player taps | The card shows for about 2.9 s, then the countdown leader plays; a tap skips (spec: "A Story run opens on Reel One's title card…") | Change it in the UI pass so the title card holds until a tap, then the countdown plays; the spec changes with it |
 | 4 | §346, §358: a multi-file project, GLB models, KTX2 textures, streamed assets | One self-contained HTML file; models are built in code; art is inlined | Keep the single file: it's what the web, the Capacitor shells and the offline play already rely on, and procedural models are small. Revisit only if models need sculpted detail that code can't carry, and then as an embedded compressed buffer, not network streaming |
 | 5 | §370: "the Raven King" | The map-1 mini-boss is the Crow King (`boss.crow.name`) | Read the brief's Raven King as the Crow King |
 | 6 | §133, §140–150: ray tracing, neural upscaling, frame generation, NeRF, splats | Not available in browsers or the shells, or not justified for this art style | Not planned (class C/D in §8) |

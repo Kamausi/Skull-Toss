@@ -20,7 +20,7 @@
       uv.setXY(i, 0.5 + x / (2 * S), 0.5 + y / (2 * S));
     }
     shell.computeVertexNormals();
-    const faceMat = new THREE.MeshToonMaterial({ map: tex, gradientMap: R3D.ramp, transparent: true, alphaTest: 0.5 });
+    const faceMat = new THREE.MeshToonMaterial({ map: tex, gradientMap: R3D.ramp, transparent: true, alphaTest: 0.5 }); faceMat.onBeforeCompile = r3dRim;
     const head = new THREE.Group(), tilt = new THREE.Group(), squash = new THREE.Group(), spin = new THREE.Group();
     const craniumG = r3dInked(cranium, back); craniumG.scale.set(0.86, 0.86, 0.84); craniumG.position.y = 0.1;
     const face = new THREE.Mesh(shell, faceMat);

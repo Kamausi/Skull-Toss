@@ -1404,15 +1404,17 @@
   const skipCards = () => { for (let i = 0; i < 6 && T.reel().card; i++) { T.skipReel(); T.step(0.02); } };
   const beatBoth = stage => { fresh(); skipCards(); T.setStage(stage); toHit(C.STAGE_MINI); T.step(2.6); T.hurtBoss(99); T.endThrow(); T.step(3.2); toHit(C.STAGE_BOSS); T.step(2.9); T.hurtBoss(99); T.endThrow(); };
   step(() => T.cards(true));
-  test("A Story run opens on Reel One's title card, then the countdown leader (v49: after the card); the throw waits, and a tap skips", () => {
+  test("A Story run opens on Reel One's title card, which waits for a tap (v70, the owner's call), then the countdown leader (v49: after the card); the throw waits, and a tap skips", () => {
     T.setStats(ZERO); T.start(); T.freezeRing(0, C.RING_Y);
     let R = T.reel(); assert(R.card === "title" && R.n === 1 && R.title === T.maps()[0].name && /Reel One of Eight/.test(R.reel) && T.state().state === "cine", `the map's card first (${JSON.stringify(R)})`);
     assert(!T.throwAt(0, C.RING_Y), "no throw while a card is up");
-    T.step(2.9); R = T.reel(); assert(R.card === "leader" && !R.hidden, `then the countdown (${JSON.stringify(R)})`);
+    T.step(8); R = T.reel(); assert(R.card === "title" && T.state().state === "cine" && /Tap to begin/.test(document.querySelector("#reelCard .rc-skip").textContent), `the title card holds until a tap, and says so (${JSON.stringify(R)})`);
+    $("reelCard").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); T.step(0.05);
+    R = T.reel(); assert(R.card === "leader" && !R.hidden, `a tap: then the countdown (${JSON.stringify(R)})`);
     $("reelCard").dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); T.step(0.05);
     R = T.reel(); assert(R.hidden && T.state().state === "ready", `a tap skips to play (${JSON.stringify(R)})`);
     T.start(); R = T.reel(); assert(R.card === "title", `the next run opens on its title too (${R.card})`);
-    T.step(2.9); assert(T.reel().card === "leader", "and v50: the countdown plays every run");
+    T.skipReel(); T.step(0.05); assert(T.reel().card === "leader", "and v50: the countdown plays every run");
     T.step(2.8); assert(!T.reel().hidden && T.reel().rot > 0.2, `it corrupts and fades into the map (${T.reel().rot})`);
     T.step(0.9); assert(T.state().state === "ready" && T.reel().hidden, "then play");
     T.toTitle();
@@ -1423,7 +1425,7 @@
     skipCards(); assert(T.state().state === "ready" && T.state().stage === 2, "and map 2 plays");
     beatBoth(4); T.step(6); R = T.reel(); assert(R.card === "intermission" && /shards of the Black Ring/.test($("rcSub").textContent), `the intermission after Reel Four (${JSON.stringify(R)})`);
     T.step(3.7); R = T.reel(); assert(R.card === "title" && R.n === 5, `then Reel Five (${JSON.stringify(R)})`);
-    T.step(2.9); R = T.reel(); assert(R.card === "leader", `then the countdown into it (v50) (${JSON.stringify(R)})`);
+    T.step(3); assert(T.reel().card === "title", "it waits for a tap (v70)"); T.skipReel(); T.step(0.05); R = T.reel(); assert(R.card === "leader", `then the countdown into it (v50) (${JSON.stringify(R)})`);
     T.step(3.6); assert(T.state().state === "ready" && T.state().stage === 5, "and play");
     T.setStats(ZERO); T.toTitle();
   });
@@ -1434,10 +1436,10 @@
     T.step(1); assert(/The end/.test(document.querySelector("#over .rip").textContent), "on the stone's The end");
     T.setStats(ZERO); T.toTitle();
   });
-  test("Title cards Short: a brief card and no leader; Off: straight into play; Arcade: the map's own card", () => {
+  test("Title cards Short: the card (it waits for a tap) and no leader; Off: straight into play; Arcade: the map's own card", () => {
     T.cards(true); T.setSetting("cards", "short"); T.setStats(ZERO); T.start();
-    let R = T.reel(); assert(R.card === "title" && R.dur <= 1.5, `a short card, no leader (${JSON.stringify(R)})`);
-    T.step(1.5); assert(T.state().state === "ready", "then play");
+    let R = T.reel(); assert(R.card === "title", `the card, no leader (${JSON.stringify(R)})`);
+    T.step(3); assert(T.reel().card === "title", "it waits for a tap (v70)"); T.skipReel(); T.step(0.05); assert(T.state().state === "ready", "then play");
     T.setSetting("cards", "off"); T.start(); assert(T.reel().hidden && T.state().state === "ready", "off: no card at all");
     T.setSetting("cards", "full"); T.setStats({ ...ZERO, bestStage: 9 }); T.startArcade(2);
     R = T.reel(); assert(R.card === "title" && R.n === 3 && /no bosses/.test(R.reel), `Arcade opens on its map's card, no leader (${JSON.stringify(R)})`);
@@ -3096,7 +3098,7 @@
     T.r3dHold(0.3); T.step(0.1); P = T.r3dPerf(); assert(P.parts.portal < 89 && P.parts.portal > 0 && T.r3dState().fails === 0, `short of time, they thin (${P.parts.portal})`);
     T.portalsOn(false); T.r3dHold(null); T.r3d(null); T.step(0.1); assert(!T.r3dState().on, "and off again"); T.toTitle();
   });
-  test("v70 3D renderer, Phase 1: one depth buffer a frame, so 3D pieces hide each other by true depth; a hat on Morty still sits on him; nothing fails", () => {
+  test("v70 3D renderer, Phase 1: one depth buffer a frame, so 3D pieces hide each other by true depth; a hat on Morty still sits on him; each map lights its models (key, fill, rim) from its own palette; nothing fails", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); const on = T.r3d(true);
     if (!T.r3dState().ok) { assert(!on, "no WebGL here: it stays off"); T.r3d(null); T.toTitle(); T.setStats(ZERO); return; }
     const frame = shared => { T.r3dShared(shared); T.step(1 / 60); const a = T.r3dState(); T.step(1 / 60); const b = T.r3dState(); return { clears: b.clears - a.clears, renders: b.renders - a.renders, fails: b.fails }; };
@@ -3104,6 +3106,8 @@
     assert(S.renders > 1 && S.clears === 1 && S.fails === 0, `shared: ${S.renders} renders, the depth cleared once (${S.clears})`);
     assert(O.renders > 1 && O.clears === O.renders, `off (for comparison): cleared every render (${O.clears}/${O.renders})`);
     T.r3dShared(true); T.freezeRing(0, C.RING_Y); assert(throwAndSettle(0, C.RING_Y).lastResult.make && T.r3dState().fails === 0, "a throw through the middle still goes in, and nothing fails");
+    const L1 = T.r3dLights(); fresh(); T.setStage(6); T.calm(); T.step(1 / 30); const L6 = T.r3dLights();
+    assert(L1.map === 0 && L6.map === 5 && L1.key !== L6.key && L1.rim !== L6.rim && L6.rim === T.maps()[5].look.moonColor.toLowerCase() && T.r3dRim() > 0, `each map's light from its own palette: the key and the rim take the moon's colour (${JSON.stringify([L1, L6])})`);
     T.r3d(null); T.toTitle(); T.setStats(ZERO);
   });
   test("v69 3D bosses: all sixteen are modelled (not cut-outs), and each draws in place, idle, hurt and dead, with the shots they throw, and no errors", () => {

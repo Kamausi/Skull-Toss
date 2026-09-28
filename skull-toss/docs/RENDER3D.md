@@ -39,6 +39,11 @@ by true depth (Morty passing through the ring, the ring through a boss), while t
 painter's order. An overlay meant to sit on Morty (a hat, a frame launcher) goes down on its own, on fresh depth.
 `SkullToss.debug.r3dShared(false)` turns it off for comparison.
 
+**Light (Phase 1, v70).** Each map lights its models from its own palette (`r3dLightRig`, from `src/maps/*.json`
+look): the key light takes the moon's colour, the hemisphere fill the sky's top and bottom, and every toon material
+gets a thin rim in the moon's colour where its surface turns away from the camera (a Fresnel term, (1 − n·v)³,
+strength 0.35; `SkullToss.debug.r3dRim(k)` to try others, `r3dLights()` to read the rig).
+
 **Batching.** Hero pieces with 2D drawn over them (Morty, the ring, the slingshot, the post) render at once, into their
 own box. Everything else is queued. The queue renders as one scene in a single call (clones posed by their own
 matrices; a faded piece wears copies of its materials, in tenths) and is copied in once, at the next hero piece or

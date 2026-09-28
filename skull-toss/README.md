@@ -4,6 +4,22 @@ Lob the skull through a ring in a haunted graveyard. Play **Story** to climb thr
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
 
+## New in v70: the title card waits, and the 3D renderer's next steps
+
+- **A map's title card waits for you** (the owner's call). It stays up, saying "Tap to begin", until you tap, press
+  Space or press Enter; then the countdown leader plays as before. This holds for Full and Short title cards (Off still
+  shows none). Replays go to version 10, since a run now starts when the player taps; older replays are refused.
+- **Kept as built, on the owner's word:** the 80-hit map (the mini-boss at hit 30, the ring loose at 40, the end boss
+  at 50) and the rostrum camera's overshoot.
+- **The 3D renderer** (still off unless you add `?r3d`; see `docs/RENDER3D.md` and the production plan in
+  `docs/PRODUCTION-AUDIT.md`):
+  - the sixteen bosses and their shots are models, not cut-outs (v69);
+  - one depth buffer a frame, so 3D pieces hide each other by true depth (Morty through the ring, the ring through a
+    boss), while hats still sit on Morty;
+  - each map lights its models from its own palette (the key and a thin rim in the moon's colour, the fill from the
+    sky), so they read off the painted backdrops;
+  - `tools/perf3d.mjs` names the costliest pieces on each map.
+
 ## New in v67: the open tasks closed
 
 - **The phantom coach** (the rail-shooter study's foreground pressure event). In every map's approach a ghostly coach

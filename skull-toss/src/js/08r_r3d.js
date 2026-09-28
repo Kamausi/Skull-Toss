@@ -33,7 +33,7 @@
       scene.add(key, fill);
       const ramp = new THREE.DataTexture(new Uint8Array([90, 90, 90, 255, 175, 175, 175, 255, 255, 255, 255, 255]), 3, 1, THREE.RGBAFormat);   // shadow, half, lit
       ramp.minFilter = ramp.magFilter = THREE.NearestFilter; ramp.generateMipmaps = false; ramp.needsUpdate = true;
-      Object.assign(R3D, { gl, canvas, scene, cam, key, fill, ramp, inkU: { uInk: { value: 2 }, uRes: { value: new THREE.Vector2(1, 1) } } });
+      Object.assign(R3D, { gl, canvas, scene, cam, key, fill, ramp, inkU: { uInk: { value: 2 }, uRes: { value: new THREE.Vector2(1, 1) } }, rimU: { uRimC: { value: new THREE.Color(0xf2e7c9) }, uRimK: { value: 0.35 } } });
       R3D.ok = true; r3dResize();
     } catch (e) { Debug.warn("RENDER", e, "08r_r3d:init"); R3D.ok = false; }
     return R3D.ok;
@@ -54,7 +54,25 @@
     return Z;
   }
   // ── materials: toon, and the ink hull (pushed out along the normal in screen space, a fixed number of pixels)
-  function r3dToon(color, o = {}) { return new THREE.MeshToonMaterial({ color: new THREE.Color(color), gradientMap: R3D.ramp, ...o }); }
+  function r3dToon(color, o = {}) { const m = new THREE.MeshToonMaterial({ color: new THREE.Color(color), gradientMap: R3D.ramp, ...o }); m.onBeforeCompile = r3dRim; return m; }
+  // (Phase 1, docs/PRODUCTION-AUDIT.md §5) the rim: a thin band of the map's light round every lit model's edge, where
+  // its surface turns away from the camera (a Fresnel term, (1 − n·v)³), so a model reads off the painted backdrop
+  // the way a 1930s cel's highlight line does. One set of uniforms for every material, set per map (r3dLightRig).
+  function r3dRim(sh) {
+    Object.assign(sh.uniforms, R3D.rimU);
+    sh.fragmentShader = "uniform vec3 uRimC; uniform float uRimK;\n" + sh.fragmentShader.replace("#include <opaque_fragment>",
+      "outgoingLight += uRimC * uRimK * pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 3.0);\n#include <opaque_fragment>");
+  }
+  // each map's light, from its own palette (src/maps/*.json look): the key takes the moon's colour, the fill the sky's
+  // top and bottom, the rim the moon's colour too. Set when the map changes.
+  function r3dLightRig() {
+    if (!R3D.ok || R3D.rigMap === sceneMap) return;
+    R3D.rigMap = sceneMap; const L = MAP_DATA[sceneMap] && MAP_DATA[sceneMap].look; if (!L) return;
+    const moon = new THREE.Color(L.moonColor || "#F2E7C9"), sky = L.sky || ["#261826", "#D08A48"];
+    R3D.key.color.set(0xfff4e0).lerp(moon, 0.5);
+    R3D.fill.color.set(sky[sky.length - 1]).lerp(new THREE.Color(0xffffff), 0.55); R3D.fill.groundColor.set(sky[0]).lerp(new THREE.Color(0x3a2a20), 0.5);
+    R3D.rimU.uRimC.value.copy(moon);
+  }
   function r3dInk() {
     const m = new THREE.MeshBasicMaterial({ color: new THREE.Color(INK), side: THREE.BackSide });
     m.onBeforeCompile = sh => {
