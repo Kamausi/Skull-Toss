@@ -116,12 +116,13 @@
     if (k.kind === "digger") { drawDigger(); return; }
     const p = project(k.x, 0, k.z); if (p.x < -U * 1.2 || p.x > W + U * 1.2) return;
     const sp = spriteFor(k), sc = p.s / sp.S, t = world.t, G = propGroove(k.kind, k.ph, t), bb = G.bb, sway = G.sway;
+    const in3d = r3dOn() && !r3dReacting(k) && r3dDrawSet(r3dSetPiece("prop:" + (sp.id || (sp.id = ++R3D.ids)), sp.w, sp.h, [sp.ax, sp.ay], g => g.drawImage(sp.c, 0, 0, sp.w, sp.h)), p.x, p.y, sc, { mpu: 1 / sp.S, tilt: k.tilt, sy: 1 + bb * 0.06 });   // (v68: a 3D set piece, 08rd_r3d_sets.js)
     ctx.save(); ctx.translate(p.x, p.y); if (k.tilt) ctx.rotate(k.tilt);
     if (sway) ctx.transform(1, 0, sway, 1, 0, 0);
     reactXform(k);   // hit by a throw: it moves, bends, rotates, squeaks, shakes or falls (07n_environment.js)
     ctx.scale(sc * (1 - bb * 0.04), sc * (1 + bb * 0.06));
     const life = PROP_LIFE[k.kind]; if (life) { life(k, sp.S, t); const L = PROP_LIGHT[k.kind]; if (L) gpuLight(p.x + L[0] * p.s, p.y - L[1] * p.s * (k.size || 1), L[2] * p.s, L[3], 0.3); }   // light, drawn under the sprite so the prop stands in its own glow (and on the GPU: 08j_gpu.js)
-    ctx.drawImage(sp.c, -sp.ax, -sp.ay, sp.w, sp.h); drawCrack(k, sp);
+    if (!in3d) ctx.drawImage(sp.c, -sp.ax, -sp.ay, sp.w, sp.h); drawCrack(k, sp);
     if (k.kind === "lantern") { const sw = Math.sin(twos(t) * 2 + k.ph) * 0.08; ctx.save(); ctx.translate(0.32 * sp.S, -1.38 * sp.S); ctx.rotate(sw); ctx.strokeStyle = INK; ctx.lineWidth = 0.03 * sp.S; ctx.fillStyle = `rgba(255,${190 + ((Math.sin(t * 13) * 30) | 0)},100,1)`; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 0.08 * sp.S); ctx.stroke(); ctx.beginPath(); ctx.ellipse(0, 0.2 * sp.S, 0.09 * sp.S, 0.13 * sp.S, 0, 0, TAU); ctx.fill(); ctx.stroke(); ctx.restore(); }
     if (k.face && (k.kind === "stone" || k.kind === "slab")) drawStoneFace(k, sp, t);
     ctx.restore();

@@ -199,8 +199,9 @@
     const onFrame = ([x, y]) => ({ x: sx + (x - ax) * fx, y: sy + fy + (y - ay) * fyk }), onPouch = ([x, y]) => ({ x: sx + off.x + (x - ax) * k, y: sy + off.y + (y - ay) * k });
     const frame = layer => { c.save(); c.translate(sx, sy + fy); c.scale(fx, fyk); c.translate(-ax, -ay); drawLayer(c, "launcher", layer); c.restore(); };
     const pouch = layer => { c.save(); c.translate(sx + off.x, sy + off.y); c.scale(k, k); c.translate(-ax, -ay); drawLayer(c, "launcher", layer); c.restore(); };
-    frame("shadow"); frame("frame");
     const tl = onFrame(N.bandL), tr = onFrame(N.bandR), pl = onPouch(N.pouchL), pr = onPouch(N.pouchR), B = M.bands;
+    if (c === ctx && r3dOn() && r3dLauncher(sx, sy, r, off, fy, tl, tr, pl, pr, L.band)) return;   // (v68: the 3D slingshot, 08rc_r3d_launcher.js)
+    frame("shadow"); frame("frame");
     drawBands(c, [[tl, pl], [tr, pr]], Math.max(3.5, B.width * k), Math.max(1.8, B.core * k), B, L.band, t);
     frame("tips"); pouch("pouch");
   }
@@ -223,13 +224,14 @@
     c.setLineDash([]); c.lineCap = "butt";
   }
   function drawLauncherFront(sx, sy, r, off) {   // an optional pouch-front layer is drawn over the seated skull
-    const A = ASSETS.launcher; if (!A || !A.layers["pouch-front"]) return;
+    const A = ASSETS.launcher; if (!A || !A.layers["pouch-front"] || (r3dOn() && !LAUNCHERS[cos.launcher])) return;   // (v68: the 3D pouch cups him from behind)
     const M = A.meta, k = r / M.unit, [ax, ay] = M.anchors.seat;
     ctx.save(); ctx.translate(sx + off.x, sy + off.y); ctx.scale(k, k); ctx.translate(-ax, -ay); drawLayer(ctx, "launcher", "pouch-front"); ctx.restore();
   }
   // the ring's post, from the target asset: cap and foot drawn true, the shaft stretched from the ring to the ground
   function drawPost(c, x, top, bottom, pw) {
     const A = ASSETS.target, M = A && A.meta.post; if (!M || bottom <= top) return false;
+    if (c === ctx && r3dOn() && r3dPost(x, top, bottom, pw)) return true;   // (v68: the 3D post, 08rc_r3d_launcher.js)
     const k = pw / M.width;
     c.save(); c.translate(x, top); c.scale(k, (bottom - top) / (M.bottom - M.top)); c.translate(-M.x, -M.top); drawLayer(c, "target", "post"); c.restore();
     if (A.layers["post-foot"]) { c.save(); c.translate(x, bottom); c.scale(k, k); c.translate(-M.x, -M.bottom); drawLayer(c, "target", "post-foot"); c.restore(); }

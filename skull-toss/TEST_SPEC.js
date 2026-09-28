@@ -2864,6 +2864,18 @@
     assert(plus[0] + plus[1] + plus[2] < plain[0] + plain[1] + plain[2] && plus[2] <= plain[2], `the darker, red-cast print (${plus} vs ${plain})`);
     T.toTitle(); T.setStats(ZERO);
   });
+  // ── v68: the 3D renderer (off by default until everything is converted: the owner's "Everything, then ship") ──
+  test("v68 3D renderer: off by default; switched on, Morty, the ring, the slingshot, the post and the scenery draw as 3D models in place, with no errors, and the game plays the same", () => {
+    fresh(); T.calm(); T.step(0.5);
+    assert(!T.r3dState().on, "the deployed game still paints in 2D");
+    const on = T.r3d(true), S0 = T.r3dState(); T.step(0.2);
+    if (S0.ok) {
+      const S1 = T.r3dState(); assert(on && S1.drawn > S0.drawn + 3 && S1.fails === 0, `3D models drawn in place (${JSON.stringify(S1)})`);
+      T.freezeRing(0, C.RING_Y); assert(throwAndSettle(0, C.RING_Y).lastResult.make, "a throw through the middle still goes in");
+      assert(T.r3dState().fails === 0, "no draw failed through a throw");
+    } else assert(!on, "no WebGL here: it stays off");
+    T.r3d(null); T.step(0.1); assert(!T.r3dState().on, "and off again"); T.toTitle();
+  });
   // ── v66: moving gates, the actors that work them, and the secret paths they open ──
   test("v66 Moving gates: a real gate across the lane swings open, stands open, rattles (the tell) and swings shut; shut, it stops the skull; open, the throw goes through", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(3); T.calm(); T.setHits(10); T.obOn(); assert(!T.gates().length, "not in the first act");

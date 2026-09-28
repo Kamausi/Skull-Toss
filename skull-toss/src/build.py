@@ -574,7 +574,11 @@ if dupes: sys.exit("build refused: duplicate top-level names across parts: " + "
 # v58: the page carries the code without its // comments (tools/jsstrip.py lexes strings, templates and regexes so only
 # real comments go, and keeps every line break); the source keeps them all
 sys.path.insert(0, str(root.parent / "tools")); import jsstrip
-out = page.replace("/*__STYLE__*/", css).replace("<!--__MARKUP__-->", markup).replace("/*__SCRIPT__*/", '"use strict";\n(() => {\n' + jsstrip.strip(js) + "\n})();")
+# v68: the 3D renderer's engine (src/vendor/three.js, an IIFE that sets THREE; tools/vendor builds it) goes in a
+# script of its own ahead of the game's, untouched by the comment stripper
+VENDOR = "\n".join(p.read_text() for p in sorted((root / "vendor").glob("*.js")))
+if "</script" in VENDOR.lower(): sys.exit("build refused: a vendor file contains </script")
+out = page.replace("/*__STYLE__*/", css).replace("<!--__MARKUP__-->", markup).replace("/*__SCRIPT__*/", VENDOR + "\n</script>\n<script>\n" + '"use strict";\n(() => {\n' + jsstrip.strip(js) + "\n})();")
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 if dev and args and not embed_music: sys.exit("build refused: the published build never carries the test hooks; drop --dev")
 suffix = "-dev" if dev else ""

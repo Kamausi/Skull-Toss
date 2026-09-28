@@ -138,6 +138,7 @@
     return art ? Math.max(1, r - lw / 2) / art.A.inner * (art.A.outer || 0.96) : r + lw * 0.6;
   }
   function drawRingShape(c, x, y, r, lw, id, t, flash = 0) {
+    if (c === ctx && r3dOn() && r3dRing(x, y, r, lw, id, t, flash)) return;   // (v68: on the stage, the 3D ring when the renderer's on: 08ra_r3d_ring.js)
     const R = RINGS[id] || RINGS.hoop;
     const art = ringArt(id);
     if (art) { paintedRing(c, x, y, r, lw, art, flash); return; }

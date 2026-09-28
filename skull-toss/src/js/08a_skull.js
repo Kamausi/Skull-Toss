@@ -92,6 +92,7 @@
   function drawSkull(c, x, y, r, o = {}) {
     const alpha = o.alpha == null ? 1 : o.alpha;
     if (alpha <= 0.01 || r < 0.6) return;
+    if (c === ctx && r3dOn() && r3dSkull(x, y, r, o)) return;   // (v68: on the stage, the 3D renderer's Morty when it's on: 08rb_r3d_skull.js)
     const look = o.look || cos, S = SKINS[look.skull] || SKINS.bone, t = o.t || 0;
     const f = o.face || faceFor("idle", t), jaw = o.jaw == null ? f.jawT : o.jaw;
     const wax = look.skull === "wax" ? 1.35 : 1, along = clamp(1 + ((o.a == null ? 1 : o.a) - 1) * wax, 0.35, 1.9), perp = 1 / Math.pow(along, 0.62), dir = o.dir || 0;

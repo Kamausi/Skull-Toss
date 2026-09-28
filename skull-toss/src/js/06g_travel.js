@@ -296,6 +296,10 @@
     if (K.canvas[1] * sc < 2.5) return;
     const hw = K.canvas[0] * sc; if (p.x + hw < -U * 0.2 || p.x - hw > W + U * 0.2) return;
     const a = travelFade(k.z) * wakeAlpha(k); if (a <= 0.01) return;
+    if (!lm && !(k.sink > 0.12) && !r3dReacting(k) && r3dOn() && r3dDrawSet(r3dSetPiece("travel:" + k.kind, K.canvas[0], K.canvas[1], K.foot, g => paintTravel(g, k.kind, K)), p.x, p.y + K.canvas[1] * sc * (k.sink || 0), sc, { mul: k.mul, flip: k.flip, tilt: k.tilt, alpha: a })) {   // (v68: a 3D set piece, 08rd_r3d_sets.js)
+      if (K.lights) for (const [lx, ly, lr] of K.lights) gpuLight(p.x + (lx - K.foot[0]) * sc * k.flip, p.y + (ly - K.foot[1]) * sc, lr * sc * 2.2, "255,196,110", 0.26 * a * wakeAlpha(k));
+      return;
+    }
     const t = world.t, G = propGroove(K.family, k.ph, t), sway = FLOW_SWAY[k.kind] ? flowSway(k, t) * (K.sway || FLOW_SWAY[k.kind]) : K.sway ? (GROOVE_TREE[K.family] || GROOVE_TREE[k.kind] ? Groove.sway(k.ph) * K.sway : Math.sin(twos(t) * (K.family === "corn" ? 2 : 1.1) + k.ph * 6) * K.sway) : G.sway, bb = G.bb;   // (v54: to the music, 02f_music_clock.js)
     ctx.save(); ctx.globalAlpha *= a; ctx.translate(p.x, p.y);
     if (k.sink) { ctx.beginPath(); ctx.rect(-hw * 2, -K.canvas[1] * sc * 2, hw * 4, K.canvas[1] * sc * 2); ctx.clip(); ctx.translate(0, K.canvas[1] * sc * k.sink); }   // (v58: half buried: sunk into the floor, cut off at it)

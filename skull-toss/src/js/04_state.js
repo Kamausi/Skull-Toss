@@ -104,5 +104,5 @@
     const syS = H * 0.77, syR = H * 0.34, zs = CAM_BACK, zr = RING_Z + CAM_BACK;
     CAMY = ((syS - syR) / F + START_Y / zs - RING_Y / zr) / (1 / zs - 1 / zr);
     HY = syS - (CAMY - START_Y) * F / zs;
-    buildSky(); buildFar(); buildGround(); buildMid(); buildForeground(); buildVignette(); worldResize(); gpuResize();
+    buildSky(); buildFar(); buildGround(); buildMid(); buildForeground(); buildVignette(); worldResize(); gpuResize(); if (R3D.ok) r3dResize();
   }

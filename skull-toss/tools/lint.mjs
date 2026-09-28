@@ -17,6 +17,7 @@ const offset = html.slice(0, html.lastIndexOf("<script>") + 8).split("\n").lengt
 const browser = await chromium.launch(); const page = await browser.newPage();
 const names = await page.evaluate(() => { const s = new Set(); for (let o = window; o; o = Object.getPrototypeOf(o)) for (const k of Object.getOwnPropertyNames(o)) s.add(k); return [...s]; });
 await browser.close();
+names.push("THREE");   // (v68: the 3D engine, src/vendor/three.js, loads in a script of its own ahead of the game)
 const globals = Object.fromEntries(names.filter(n => /^[A-Za-z_$][\w$]*$/.test(n)).map(n => [n, "readonly"]));
 // what the page may find on window at run time, from a host or a shell (never defined by the game)
 for (const g of ["claude", "Capacitor", "CdvPurchase", "skullTossDesktop", "firebase", "module"]) globals[g] = "readonly";

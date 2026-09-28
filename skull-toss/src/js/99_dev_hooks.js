@@ -11,6 +11,7 @@
     shape: (f, type, dur, peak, slide, o) => soundShape(f, type, dur, peak, slide, o), motifPlan: id => motifPlan(id), sting: r => playSting(r), soundRoom: () => soundRoom(),
     claimMastery: (cat, id, i) => claimMastery(cat, id, i), masteryClaimable: () => masteryClaimable(), tierReached: (cat, id, i) => tierReached(cat, id, i),   // (the client's view only: for drawing tests)
     setInitials: ini => setInitials(ini), directorOf: w => directorOf(w), directorWith(o) { directorOverride = o; if (o !== null) startGame({ mode: "director" }); }, director: () => game.director && JSON.parse(JSON.stringify(game.director)), setFlags: v => Flags.set(v), flags: () => ({ ...Flags.values }), ensurePeriod: per => JSON.parse(JSON.stringify(ensurePeriod(per))), streakAfterRun: d => streakAfterRun(d),
+    r3d: on => { R3D.force = on == null ? null : !!on; return r3dOn(); }, r3dState: () => ({ ok: R3D.ok, on: r3dOn(), drawn: R3D.drawn, fails: R3D.fails }),   // (v68: the 3D renderer)
     watchReplay: () => Replay.watch(Replay.last), replaying: () => !!Replay.play, lastReplay: () => Replay.last && JSON.parse(JSON.stringify(Replay.last)),
     encodeReplay: R => Replay.encode(R), decodeReplay: s => Replay.decode(s), replayLink: R => Replay.link(R), offerShared(R) { sharedReplay = R; renderSharedOffer(); }, stopReplay: () => Replay.stop(true),
     serverKeys: pre => (Backend.fakeDocs ? [...Backend.fakeDocs.keys()].filter(k => k.startsWith(pre)) : []), serverSet(p, o) { if (Backend.fakeDocs) Backend.fakeDocs.set(p, JSON.parse(JSON.stringify(o))); },
