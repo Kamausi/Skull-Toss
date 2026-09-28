@@ -206,6 +206,10 @@
     ctx.restore();
   }
   function drawAquaThing(c) {
+    if (c.kind !== "school" && r3dOn()) {   // (v68: a live 3D piece, 08rd_r3d_sets.js; a school stays a painted shoal)
+      const p = project(c.x, c.y || 0, c.z), L = (c.s || 0.5) * p.s;
+      if (L >= 2 && r3dCapture(r3dKey(c, "aq"), { x: p.x - L * 1.6, y: p.y - L * 1.6, w: L * 3.2, h: L * 2.6 }, F / p.s, (c.s || 0.5) * 0.35, () => drawAquaThing(c))) return;
+    }
     switch (c.kind) {
       case "school": for (const m of c.m) aqFish(m.x, m.y, m.z, c.s, c.dir, c.ph + m.ph, c.col, c.z < 14); break;
       case "fish": aqFish(c.x, c.y, c.z, c.s, c.dir, c.ph, c.col); break;

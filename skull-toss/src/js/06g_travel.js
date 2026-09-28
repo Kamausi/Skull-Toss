@@ -291,12 +291,12 @@
   const hazeInk = () => { const h = rgbaOf(look().haze); return `rgba(${(h[0] * 0.25) | 0},${(h[1] * 0.22) | 0},${(h[2] * 0.3) | 0},.9)`; };
   // one piece of scenery on the track, in the world, at the camera's distance from it
   function drawTravelProp(k) {
-    if (k.kind === "digger") { if (k.z > TRAVEL_NEAR + 2) drawDigger(); return; }
+    if (k.kind === "digger") { if (k.z > TRAVEL_NEAR + 2) r3dWrap("digger", DIG.z, 0.25, drawDigger); return; }
     const lm = !!k.wakes, K = travelKind(k.kind), Ld = landAt(k.x, k.z), p = project(k.x + Ld.dx, Ld.y, k.z), sc = (p.s * k.mul * (lm ? landmarkScale(k.z) : 1)) / 100;
     if (K.canvas[1] * sc < 2.5) return;
     const hw = K.canvas[0] * sc; if (p.x + hw < -U * 0.2 || p.x - hw > W + U * 0.2) return;
     const a = travelFade(k.z) * wakeAlpha(k); if (a <= 0.01) return;
-    if (!lm && !(k.sink > 0.12) && !r3dReacting(k) && r3dOn() && r3dDrawSet(r3dSetPiece("travel:" + k.kind, K.canvas[0], K.canvas[1], K.foot, g => paintTravel(g, k.kind, K)), p.x, p.y + K.canvas[1] * sc * (k.sink || 0), sc, { mul: k.mul, flip: k.flip, tilt: k.tilt, alpha: a })) {   // (v68: a 3D set piece, 08rd_r3d_sets.js)
+    if (!lm && k.z < R3D_SETS.near && !(k.sink > 0.12) && !r3dReacting(k) && r3dOn() && r3dDrawSet(r3dSetPiece("travel:" + k.kind, K.canvas[0], K.canvas[1], K.foot, g => paintTravel(g, k.kind, K)), p.x, p.y + K.canvas[1] * sc * (k.sink || 0), sc, { mul: k.mul, flip: k.flip, tilt: k.tilt, alpha: a })) {   // (v68: a 3D set piece, 08rd_r3d_sets.js)
       if (K.lights) for (const [lx, ly, lr] of K.lights) gpuLight(p.x + (lx - K.foot[0]) * sc * k.flip, p.y + (ly - K.foot[1]) * sc, lr * sc * 2.2, "255,196,110", 0.26 * a * wakeAlpha(k));
       return;
     }

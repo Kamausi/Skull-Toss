@@ -244,9 +244,12 @@
   function drawTargets(front) {
     if (boss) return;
     for (const T of targets) {
+      if (R3D.only && T !== R3D.only) continue;   // (v68: capturing one target for its 3D piece)
       const P = targetPos(T); if ((P.z < ring.z) !== front) continue;
       const p = project(P.x, P.y, P.z), r = tgR(T) * p.s, pop = T.pop ? clamp(T.pop / 0.4, 0, 1) : 0;
       if (pop >= 1) continue;
+      if (r3dOn() && !(T.type === "popup" && P.up < 0.05)) { const R = tgR(T);   // (v68: a live 3D piece: the bullseye a thick disc on its post or cord)
+        if (r3dLiveAt(r3dKey(T, "tg"), p, [R * 2.4, R * 2.4 + (P.mount === "post" ? 0 : 4), R * 2.4, P.mount === "post" ? P.y + 0.1 : R * 2.4], R * 0.35, () => { R3D.only = T; try { drawTargets(front); } finally { R3D.only = null; } })) continue; }
       if (P.rope) { const q = project(P.rope.x, P.rope.y, P.rope.z); ctx.strokeStyle = "rgba(20,14,8,.8)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.lineTo(p.x, p.y - r); ctx.stroke(); }
       if (T.type === "popup" && P.up < 0.05) { if (P.tell) { const q = project(T.x, T.y, P.z); ctx.fillStyle = "rgba(242,231,201,.7)"; ctx.fillRect(q.x - r, q.y + (P.mount === "post" ? r * 1.2 : -r * 1.3), r * 2, 2); } continue; }   // (down its hole or up in the flies: a rustle where it'll come back)
       const secret = T.type === "secret" && !T.pop;
@@ -279,6 +282,8 @@
     ctx.restore(); ctx.strokeStyle = INK;
   }
   function drawHazards(front) {
+    if (r3dOn() && (HZ.list.length || HZ.kind === "pendulum") && game.state !== "title") { const q = project(0, 1.2, ring.z);   // (v68: a live 3D piece, 08rd_r3d_sets.js)
+      if (r3dCapture("hz" + (front ? "f" : "b"), { x: 0, y: 0, w: W, h: H }, F / q.s, 0.25, () => drawHazards(front))) return; }
     if (HZ.kind === "pendulum" && game.state !== "title") {
       const b = pendBob(), top = project(PEND.x, PEND.y + 2, PEND.z), p = project(b.x, b.y, b.z), r = PEND.r * p.s;
       if ((PEND.z < ring.z) === front) {

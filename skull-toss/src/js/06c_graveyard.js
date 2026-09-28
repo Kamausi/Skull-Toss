@@ -113,10 +113,10 @@
   }
   // ── drawing a prop in the world: squash on the beat, sway, and the odd wakeful headstone
   function drawProp(k) {
-    if (k.kind === "digger") { drawDigger(); return; }
+    if (k.kind === "digger") { r3dWrap("digger", DIG.z, 0.25, drawDigger); return; }   // (v68: a live 3D piece when the 3D renderer is on)
     const p = project(k.x, 0, k.z); if (p.x < -U * 1.2 || p.x > W + U * 1.2) return;
     const sp = spriteFor(k), sc = p.s / sp.S, t = world.t, G = propGroove(k.kind, k.ph, t), bb = G.bb, sway = G.sway;
-    const in3d = r3dOn() && !r3dReacting(k) && r3dDrawSet(r3dSetPiece("prop:" + (sp.id || (sp.id = ++R3D.ids)), sp.w, sp.h, [sp.ax, sp.ay], g => g.drawImage(sp.c, 0, 0, sp.w, sp.h)), p.x, p.y, sc, { mpu: 1 / sp.S, tilt: k.tilt, sy: 1 + bb * 0.06 });   // (v68: a 3D set piece, 08rd_r3d_sets.js)
+    const in3d = k.z < R3D_SETS.near && r3dOn() && !r3dReacting(k) && r3dDrawSet(r3dSetPiece("prop:" + (sp.id || (sp.id = ++R3D.ids)), sp.w, sp.h, [sp.ax, sp.ay], g => g.drawImage(sp.c, 0, 0, sp.w, sp.h)), p.x, p.y, sc, { mpu: 1 / sp.S, tilt: k.tilt, sy: 1 + bb * 0.06, now: !!(k.face || k.crack || k.kind === "lantern") });   // (v68: a 3D set piece, 08rd_r3d_sets.js)
     ctx.save(); ctx.translate(p.x, p.y); if (k.tilt) ctx.rotate(k.tilt);
     if (sway) ctx.transform(1, 0, sway, 1, 0, 0);
     reactXform(k);   // hit by a throw: it moves, bends, rotates, squeaks, shakes or falls (07n_environment.js)
@@ -288,6 +288,7 @@
   function drawCat() {
     const C = GY.cat; if (!C) return;
     const p = project(C.x, 0, C.z), s = p.s, t = C.t, walk = C.state !== "sit", run = C.state === "run", ph = twos(t) * (run ? 22 : 9);
+    if (r3dOn() && r3dCapture("cat", { x: p.x - 0.55 * s, y: p.y - 0.7 * s, w: 1.1 * s, h: 0.78 * s }, F / s, 0.22, drawCat)) return;   // (v68: a live 3D piece, 08rd_r3d_sets.js)
     ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(p.x, p.y, 0.28 * s, 0.05 * s, 0, 0, TAU); ctx.fill();
     ctx.save(); ctx.translate(p.x, p.y); ctx.scale(C.dir, 1); ctx.lineJoin = "round"; ctx.lineCap = "round";
     const O = n => Math.max(1.2, s * n), body = "#1C1A22", bob = walk ? Math.abs(Math.sin(ph)) * 0.02 * s : 0, puff = run ? 1.25 : 1;

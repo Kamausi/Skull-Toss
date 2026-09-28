@@ -72,6 +72,7 @@
   function drawCans() {
     if (!canStand) return;
     const S = canStand, a = project(S.x0, S.y, S.z), b = project(S.x1, S.y, S.z), th = 0.07 * a.s, skirt = Math.min(0.3, S.y * 0.3) * a.s;
+    if (r3dOn()) { const m = project((S.x0 + S.x1) / 2, S.y, S.z); if (r3dLiveAt("cans", m, [(S.x1 - S.x0) / 2 + 0.3, 1.6, (S.x1 - S.x0) / 2 + 0.3, S.y + 0.1], 0.2, drawCans)) return; }   // (v68: a live 3D piece)
     ctx.save(); ctx.lineJoin = "round"; ctx.strokeStyle = INK; ctx.lineWidth = Math.max(1.5, a.s * 0.015);
     for (const x of [S.x0 + 0.1, S.x1 - 0.1]) { const p = project(x, S.y, S.z), g = project(x, 0, S.z); ctx.fillStyle = "#5A3A22"; ctx.fillRect(p.x - th * 0.4, p.y, th * 0.8, g.y - p.y); ctx.strokeRect(p.x - th * 0.4, p.y, th * 0.8, g.y - p.y); }
     const n = 8, sw = (b.x - a.x) / n;   // the striped skirt under the plank

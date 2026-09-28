@@ -317,6 +317,7 @@
   function drawPickup() {
     if (!pickup) return;
     const p = project(ring.x, ring.y, ring.z), R = ring.rc * p.s * PICK_R, pk = pickup;
+    if (r3dOn() && r3dLiveAt("pickup", p, [ring.rc * PICK_R * 1.8, ring.rc * PICK_R * 1.8, ring.rc * PICK_R * 1.8, ring.rc * PICK_R * 1.8], 0.12, drawPickup)) return;   // (v68: a live 3D piece)
     let k = easeOutBack(clamp(pk.t / 0.35, 0, 1)), a = 1;
     if (pk.pop > 0) { const q = pk.pop / 0.45; k = 1 + q * 0.8; a = 1 - q; }
     if (pk.pop < 0) { const q = -pk.pop / 0.45; k = 1 - q; }

@@ -101,6 +101,7 @@
   const wHaze = z => clamp(1 - (z - 8) / 40, 0.35, 1);
   function drawWild(c) {
     const Ld = c.y < 0.3 ? landAt(c.x, c.z) : { dx: 0, y: 0 }, p = project(c.x + Ld.dx, c.y + Ld.y, c.z), s = p.s; if (p.x < -s * 3 || p.x > W + s * 3) return;
+    if (r3dOn() && r3dCapture(r3dKey(c, "wild"), { x: p.x - 2.2 * s, y: p.y - 2.2 * s, w: 4.4 * s, h: 2.6 * s }, F / s, 0.3, () => drawWild(c), 1)) return;   // (v68: a live 3D piece)
     const t = world.t, ink = `rgba(18,14,12,${clamp(1.1 - c.z / 36, 0.25, 0.95)})`;
     ctx.save(); ctx.translate(p.x, p.y); ctx.globalAlpha *= wHaze(c.z); ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = ink; ctx.lineWidth = Math.max(0.8, s * 0.018);
     switch (c.kind) {

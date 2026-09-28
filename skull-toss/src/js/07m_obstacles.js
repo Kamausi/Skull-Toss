@@ -205,6 +205,8 @@
     if (!OB.list.length || game.state === "title") return;
     for (const I of OB.list) {
       const zc = obCentre(I)[2]; if ((zc < ring.z) !== front) continue;
+      if (r3dOn()) { const c = obCentre(I), q = project(c[0], c[1], c[2]), aside = obStandsAside(I) && I.kind !== "gate";   // (v68: a live 3D piece, 08rd_r3d_sets.js)
+        if (r3dLiveAt(r3dKey(I, "ob"), q, [2.6, 3.4, 2.6, Math.max(0.6, c[1] + 0.3)], 0.28, () => { ctx.save(); ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = INK; OB_DRAW[I.kind](I); ctx.restore(); drawObEyes(I); }, aside ? 0.45 : 1)) continue; }
       ctx.save(); ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.strokeStyle = INK;
       if (obStandsAside(I) && I.kind !== "gate") ctx.globalAlpha *= 0.45;   // (standing aside: faded back; a gate just stands open)
       OB_DRAW[I.kind](I);

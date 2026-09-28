@@ -13,10 +13,12 @@
   //   - The camera is a pinhole at the eye looking down the lane, with its centre on the horizon (HY), so a model's
   //     perspective matches the 2D projection's: x = W/2 + F·X/Z, y = HY − F·Y/Z.
   //   - The look: MeshToonMaterial with a three-step ramp (lit, half, shadow) and an ink hull drawn a fixed number of
-  //     pixels outside each model's silhouette, so a far model's line is as thick as a near one's, like a cel.
+  //     pixels outside each model's silhouette, so a far model's line is as thick as a near one's, like a cel. Only faces
+  //     seen edge-on are pushed (a flat piece's back isn't slid out from behind it).
   const R3D = { force: null, ok: null, gl: null, canvas: null, scene: null, cam: null, key: null, fill: null, ramp: null, inkU: null, drawn: 0, fails: 0, ids: 0, cache: {} };
   const r3dAsked = (() => { try { return /[?&]r3d(=1|&|$)/.test(location.search); } catch (e) { return false; } })();
-  const r3dOn = () => (R3D.force == null ? r3dAsked : R3D.force) && r3dReady();
+  const r3dOn = () => !R3D.capturing && !WATER.reflecting && (R3D.force == null ? r3dAsked : R3D.force) && r3dReady();   // (while a live piece is being captured, everything inside it draws in 2D)
+  const r3dKey = (o, pre) => pre + (o.__r3d || (o.__r3d = ++R3D.ids));   // a lasting key for a thing in the world
   function r3dReady() {
     if (R3D.ok !== null) return R3D.ok;
     R3D.ok = false;
@@ -39,7 +41,7 @@
   // the camera: a pinhole at the eye, its centre moved from the middle of the screen to the horizon
   function r3dResize() {
     if (!R3D.ok || !W) return;
-    R3D.gl.setPixelRatio(DPR); R3D.gl.setSize(W, H, false);
+    R3D.gl.setPixelRatio(R3D.pr = Math.min(DPR, 1.5)); R3D.gl.setSize(W, H, false);   // (a touch softer than the 2D print on a sharp screen: the 3D is the heavier half)
     const fullH = 2 * Math.max(HY, H - HY), c = R3D.cam;
     c.fov = 2 * Math.atan(fullH / 2 / F) * 180 / Math.PI; c.aspect = W / fullH;
     c.setViewOffset(W, fullH, 0, fullH / 2 - HY, W, H); c.updateProjectionMatrix();
@@ -58,7 +60,7 @@
     m.onBeforeCompile = sh => {
       Object.assign(sh.uniforms, R3D.inkU);
       sh.vertexShader = "uniform float uInk; uniform vec2 uRes;\n" + sh.vertexShader.replace("#include <project_vertex>",
-        "#include <project_vertex>\n  vec3 nV = normalize(normalMatrix * normal); vec2 nC = (projectionMatrix * vec4(nV, 0.0)).xy; nC = nC / max(length(nC), 1e-5);\n  gl_Position.xy += nC * uInk * gl_Position.w * 2.0 / uRes;");
+        "#include <project_vertex>\n  vec3 nV = normalize(normalMatrix * normal); vec2 nC = (projectionMatrix * vec4(nV, 0.0)).xy; float nL = length(nC); nC = nC / max(nL, 1e-5) * clamp(nL * 3.0, 0.0, 1.0);\n  gl_Position.xy += nC * uInk * gl_Position.w * 2.0 / uRes;");
     };
     return m;
   }
@@ -66,21 +68,78 @@
     const g = new THREE.Group(), body = new THREE.Mesh(geo, mat), ink = new THREE.Mesh(geo, R3D.cache.ink || (R3D.cache.ink = r3dInk()));
     ink.renderOrder = -1; g.add(ink, body); g.userData.body = body; return g;
   }
-  // ── render one model into its box and copy the box into the 2D frame, under the 2D canvas's current transform
-  function r3dDraw(root, box, inkPx = 2, alpha = 1) {
-    const gl = R3D.gl, x0 = Math.max(0, Math.floor(box.x)), y0 = Math.max(0, Math.floor(box.y)), x1 = Math.min(W, Math.ceil(box.x + box.w)), y1 = Math.min(H, Math.ceil(box.y + box.h));
-    if (x1 <= x0 || y1 <= y0) return false;
-    try {
-      R3D.inkU.uInk.value = inkPx;
-      R3D.scene.add(root);
-      gl.setScissorTest(true); gl.setScissor(x0, H - y1, x1 - x0, y1 - y0); gl.clear(true, true, false);
-      gl.render(R3D.scene, R3D.cam);
-      R3D.scene.remove(root);
-      const g = ctx, a = g.globalAlpha; g.globalAlpha = a * alpha;
-      g.drawImage(R3D.canvas, x0 * DPR, y0 * DPR, (x1 - x0) * DPR, (y1 - y0) * DPR, x0, y0, x1 - x0, y1 - y0);
-      g.globalAlpha = a; R3D.drawn++;
-      return true;
-    } catch (e) { R3D.scene.remove(root); if (R3D.fails++ < 3) Debug.warn("RENDER", e, "08r_r3d:draw"); return false; }
+  // ── drawing. A hero piece with 2D drawn over it (Morty under his hat, the ring under its sparkle) is drawn at once:
+  // rendered into its box and copied into the 2D frame under the 2D canvas's current transform. Everything else (the
+  // scenery, the cast) is deferred: queued as it's met, then rendered together, depth-tested, and copied in one go
+  // at the next hero piece or flush point (r3dFlush), so a street of two hundred set pieces costs one copy, not two
+  // hundred. The queue keeps the 2D painter's order between flushes.
+  const R3D_Q = { list: [], x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 };
+  function r3dBox(box) {
+    const x0 = Math.max(0, Math.floor(box.x)), y0 = Math.max(0, Math.floor(box.y)), x1 = Math.min(W, Math.ceil(box.x + box.w)), y1 = Math.min(H, Math.ceil(box.y + box.h));
+    return x1 > x0 && y1 > y0 ? [x0, y0, x1, y1] : null;
   }
-  // the 2D canvas draws in CSS pixels under a DPR transform; r3dDraw's destination box is in those same CSS pixels,
-  // so it lands where the 2D drawing would have, and the water's mirror pass mirrors it like anything else
+  // the batch goes in as one scene: each queued model stands in as a clone (sharing its geometry and materials) posed
+  // by its own matrix, and a faded one wears copies of its materials at that opacity (in tenths), so the whole queue
+  // is a single render call
+  const R3D_POOL = new Map(), R3D_FADE = new Map();
+  function r3dFaded(mat, a) {
+    const key = mat.uuid + ":" + a; let m = R3D_FADE.get(key);
+    if (!m) { m = mat.clone(); m.transparent = true; m.opacity = a / 10; m.depthWrite = a > 6; R3D_FADE.set(key, m); if (mat.onBeforeCompile) m.onBeforeCompile = mat.onBeforeCompile; }
+    if (mat.map && m.map !== mat.map) m.map = mat.map;
+    return m;
+  }
+  function r3dStandIn(root, a, used) {
+    const key = root.uuid + ":" + a, pool = R3D_POOL.get(key) || (R3D_POOL.set(key, []), R3D_POOL.get(key)), n = used.get(key) || 0;
+    used.set(key, n + 1);
+    if (pool[n] && pool[n].userData.kids !== root.children.length) pool.length = n;   // (a live piece re-cut since: stand it in again)
+    if (!pool[n]) {
+      const c = root.clone(); c.userData.kids = root.children.length;
+      if (a < 10) c.traverse(o => { if (o.material) o.material = Array.isArray(o.material) ? o.material.map(m => r3dFaded(m, a)) : r3dFaded(o.material, a); });
+      pool[n] = c;
+    }
+    return pool[n];
+  }
+  function r3dRender(entries, x0, y0, x1, y1) {
+    const gl = R3D.gl;
+    gl.setScissorTest(true); gl.setScissor(x0, H - y1, x1 - x0, y1 - y0); gl.clear(true, true, false);
+    if (entries.length === 1 && !entries[0].m) {   // a hero piece: itself, as posed
+      const E = entries[0]; R3D.inkU.uInk.value = E.ink; R3D.scene.add(E.root);
+      try { gl.render(R3D.scene, R3D.cam); } finally { R3D.scene.remove(E.root); }
+      R3D.drawn++;
+    } else {
+      const batch = R3D.batch || (R3D.batch = new THREE.Group()), used = new Map(); batch.clear();
+      let ink = 0;
+      for (const E of entries) {
+        const a = Math.max(1, Math.min(10, Math.round(E.alpha * 10))), c = r3dStandIn(E.root, a, used);
+        c.matrixAutoUpdate = false; c.matrix.copy(E.m); c.matrixWorldNeedsUpdate = true; batch.add(c); ink += E.ink;
+      }
+      R3D.inkU.uInk.value = ink / entries.length; R3D.scene.add(batch);
+      try { gl.render(R3D.scene, R3D.cam); } finally { R3D.scene.remove(batch); batch.clear(); }
+      R3D.drawn += entries.length;
+    }
+    ctx.drawImage(R3D.canvas, x0 * R3D.pr, y0 * R3D.pr, (x1 - x0) * R3D.pr, (y1 - y0) * R3D.pr, x0, y0, x1 - x0, y1 - y0);
+  }
+  function r3dFlush() {
+    const Q = R3D_Q; if (!Q.list.length) return;
+    const list = Q.list; Q.list = [];
+    const b = [Q.x0, Q.y0, Q.x1, Q.y1]; Q.x0 = Q.y0 = 1e9; Q.x1 = Q.y1 = -1e9;
+    try { r3dRender(list, ...b); } catch (e) { if (R3D.fails++ < 3) Debug.warn("RENDER", e, "08r_r3d:flush"); }
+  }
+  function r3dDraw(root, box, inkPx = 2, alpha = 1, defer = false) {
+    const B = r3dBox(box); if (!B) return false;
+    if (defer) {
+      root.updateMatrix(); const Q = R3D_Q;
+      Q.list.push({ root, m: root.matrix.clone(), ink: inkPx, alpha });
+      Q.x0 = Math.min(Q.x0, B[0]); Q.y0 = Math.min(Q.y0, B[1]); Q.x1 = Math.max(Q.x1, B[2]); Q.y1 = Math.max(Q.y1, B[3]);
+      return true;
+    }
+    r3dFlush();   // (whatever was queued goes down first: the painter's order holds)
+    try {
+      const g = ctx, a = g.globalAlpha; g.globalAlpha = a * alpha;
+      r3dRender([{ root, m: null, ink: inkPx, alpha: 1 }], ...B);
+      g.globalAlpha = a;
+      return true;
+    } catch (e) { if (R3D.fails++ < 3) Debug.warn("RENDER", e, "08r_r3d:draw"); return false; }
+  }
+  // the 2D canvas draws in CSS pixels under a DPR transform; the copied box is in those same CSS pixels, so it lands
+  // where the 2D drawing would have

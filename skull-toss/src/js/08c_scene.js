@@ -66,7 +66,7 @@
     ctx.restore();
   }
   function drawRing() {
-    if (portalOpen()) { const q = project(ring.x, ring.y, ring.z); drawPortalRing(q, PORTAL.r * q.s); return; }   // (v54: the way on, 07t_portal.js)
+    if (portalOpen()) { const q = project(ring.x, ring.y, ring.z); r3dWrap("portal", ring.z, 0.3, () => drawPortalRing(q, PORTAL.r * q.s)); return; }   // (v54: the way on, 07t_portal.js; v68: a live 3D piece)
     if (game.ringHidden) return;   // (v54: a beaten boss's stage is empty)
     const p = project(ring.x, ring.y, ring.z), T = VENT.ring || { t: game.time, sq: 0, dir: 0 }; p.x += persShake();   // (v60: a timid ring's nerves, 07z_rings.js)
     const wob = ring.wobble > 0 ? Math.sin(T.t * 38) * 0.035 * ring.wobble : 0, morph = ring.morph || 0;
@@ -104,6 +104,7 @@
   const POLE_THIN = { column: 0.55, rocket: 0.5, barber: 0.75, candy: 0.8, skulls: 0.65, gold: 0.8, birch: 0.85, bamboo: 0.85, perch: 0.85, plunger: 0.8, neon: 0.7, bones: 0.75, tentacle: 0.8, vine: 0.8 };
   function drawPole(x, top, bottom, pw, s, id = cos.pole, c = ctx, t = game.time, ringTop = top) {
     const P = POLES[id]; pw *= POLE_THIN[id] || 0.9;
+    if (P && P.draw && c === ctx && r3dOn()) { const w = Math.max(pw * 6, s * 0.8), y0 = Math.min(top, ringTop) - s * 0.4; if (r3dCapture("pole", { x: x - w, y: y0, w: w * 2, h: bottom - y0 + s * 0.2 }, F / s, 0.12, () => drawPole(x, top, bottom, pw / (POLE_THIN[id] || 0.9), s, id, ctx, t, ringTop))) return; }   // (v68: a Vault pole as a live 3D piece)
     if (P && P.draw) { c.save(); P.draw(c, x, top, bottom, pw, s, t, ringTop); c.restore(); return; }
     if (ASSETS.target && drawPost(c, x, top, bottom, pw)) return;
     c.fillStyle = INK; c.fillRect(x - pw / 2 - 1.5, top, pw + 3, bottom - top);
@@ -193,7 +194,7 @@
   // off: where the pouch is (the pull, or the twang); fy: the frame's jump after a shot; sq: how hard the pull
   // squeezes the fork. The bands are drawn here because they stretch, tip to pouch, between the asset's anchors.
   function drawLauncher(sx, sy, r, off, fy = 0, sq = 0, c = ctx, L = cos, t = game.time) {   // (v51: any canvas, any look: the Vault draws it too)
-    if (LAUNCHERS[L.launcher]) { drawFrameLauncher(sx, sy, r, off, fy, L.launcher, c, L.band, t); return; }   // a launcher from the Vault (08i_body.js)
+    if (LAUNCHERS[L.launcher]) { if (c === ctx && r3dOn()) r3dNearMorty("launcherV", sx, sy + r * 1.2, r, 3.6, 0.16, () => drawFrameLauncher(sx, sy, r, off, fy, L.launcher, c, L.band, t)); else drawFrameLauncher(sx, sy, r, off, fy, L.launcher, c, L.band, t); return; }   // a launcher from the Vault (08i_body.js; v68: a live 3D piece)
     const A = ASSETS.launcher; if (!A) { drawSling(sx, sy, r, off, fy, c); return; }
     const M = A.meta, N = M.anchors, k = r / M.unit, [ax, ay] = N.seat, fx = k * (1 - sq), fyk = k * (1 + sq * 0.35);
     const onFrame = ([x, y]) => ({ x: sx + (x - ax) * fx, y: sy + fy + (y - ay) * fyk }), onPouch = ([x, y]) => ({ x: sx + off.x + (x - ax) * k, y: sy + off.y + (y - ay) * k });
@@ -292,7 +293,7 @@
     if (s.alpha * fade > 0.05) { drawPowerGlow(x, y, r); drawAura(ctx, x, y, r, V.t, false); drawRushWings(ctx, x, y, r, V.t, V.angle); drawPowerAura(ctx, x, y, r, V.t); }
     if (V.smear > 0 && s.alpha * fade > 0.05) drawSmear(ctx, x, y, r, V.mdir == null ? V.dir : V.mdir, V.smear, s.alpha * fade * ghostly, V.t);
     drawSkull(ctx, x, y, r, { ang: V.angle + V.tilt + (skullG(s) < 0 ? Math.PI : 0), alpha: s.alpha * fade * ghostly, a: V.a, dir: V.dir, t: V.t, look: cos, face: V.face, jaw: V.jaw });
-    if (s.alpha * fade > 0.05) { drawAura(ctx, x, y, r, V.t, true); drawHat(ctx, x, y, r, V.angle + V.tilt, V.t, hat, s.alpha * fade * ghostly, hatOf(cos), V.a, V.dir); voice.anchor = { x, y, r }; }
+    if (s.alpha * fade > 0.05) { drawAura(ctx, x, y, r, V.t, true); r3dNearMorty("hatF", x, y, r, 3.4, 0.018, () => drawHat(ctx, x, y, r, V.angle + V.tilt, V.t, hat, s.alpha * fade * ghostly, hatOf(cos), V.a, V.dir)); voice.anchor = { x, y, r }; }
     if (rig.mood === "deadpan" && rig.dots > 0) drawThought(x, y, r, rig.dots * s.alpha * fade);
     if (rig.mood === "dizzy" && s.alpha * fade > 0.1) dizzyStars(x, y - r * 1.2, r);
   }
@@ -347,7 +348,7 @@
     drawGroundPlane(ctx, groundLayer); drawWaterSheen(); drawAquaFloor();   // (v55: the water's moving highlights, 08l_water.js; v58: the caustics on the sand, the life under the marsh, 08m_aquatic.js)
     if (midLayer) L(midLayer, 30, "world");
     drawWaterReflections(); drawRipples(); baseXform(ctx);   // (v51: what stands over the water, mirrored in it, and its ripples: 08l_water.js)
-    drawGroundWorld();
+    drawGroundWorld(); r3dFlush();   // (v68: the scenery's 3D set pieces go down together)
     drawTravelTone();   // the travel zone's colour (06g_travel.js)
     drawAquaColumn();   // (v58: the water between here and there: its colour, its light, what drifts in it; 08m_aquatic.js)
     drawHeatHaze();     // (v58: the desert's air wavers over the horizon, under the ring: 08n_wildlife.js)
@@ -359,9 +360,9 @@
       g.addColorStop(0, "rgba(232,137,58,.12)"); g.addColorStop(1, "rgba(8,6,20,.38)"); ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, H + 40); ctx.restore();
     }
     drawBossLight();   // a boss fight: the scenery dims and a spot finds the ring (07n_environment.js)
-    if (!game.ringHidden) drawAnchorSupport();   // the branch, arch, signpost, batten or rail the ring hangs from
-    if (boss) boss.draw(false);
-    drawSeeds(false); drawTargets(false); drawAttraction(false); drawCans(); drawLanes(); drawObstacles(false); drawHazards(false); drawEncounter();   // (v56: the attraction's booth and props, 07u_attractions.js)
+    if (!game.ringHidden) r3dWrap("anchor", ringBaseZ(), 0.22, drawAnchorSupport);   // (v68: wrapped: a live 3D piece when the 3D renderer is on)   // the branch, arch, signpost, batten or rail the ring hangs from
+    if (boss) r3dWrap("boss0", boss.z || ring.z, 0.5, () => boss.draw(false), 560);
+    r3dWrap("seeds0", ring.z, 0.1, () => drawSeeds(false)); drawTargets(false); r3dWrap("attr0", ring.z, 0.25, () => drawAttraction(false)); drawCans(); r3dWrap("lanes", ring.z, 0.12, drawLanes); drawObstacles(false); drawHazards(false); drawEncounter();   // (v56: the attraction's booth and props, 07u_attractions.js)
     const onStage = game.state !== "title";
     if (onStage && !game.ringHidden) drawTrackAndShadow();
     drawPlayWorld();
@@ -374,10 +375,10 @@
     if (pv) drawDots(pv.back, true);
     if (flying && behind) { drawClones(); drawFlyingSkull(); }
     if (onStage) { drawDecoys(); drawDecoyRing(); drawRing(); drawPickup(); drawHomingLock(); }   // (v51: Adventure+'s decoy rings, behind the real one; v57: the Homing Bone's lock)
-    if (boss) boss.draw(true);
-    if (onStage) drawNearWorld();   // (v53: whatever walks between the ring and the camera passes in front of it and its pole)
+    if (boss) r3dWrap("boss1", boss.z || ring.z, 0.5, () => boss.draw(true), 560);
+    if (onStage) { drawNearWorld(); r3dFlush(); }   // (v53: whatever walks between the ring and the camera passes in front of it and its pole)
     drawAquaFront();   // (v58: now and then a big fish passes close, low and to one side)
-    drawAttraction(true);
+    r3dWrap("attr1", ring.z, 0.25, () => drawAttraction(true));
     if (onStage) drawVine();   // (v57: the Vine Swing's vine, over the lane, 07v_newpowers.js)
     drawSeeds(true); drawTargets(true); drawObstacles(true); drawHazards(true);
     drawImpactStars(ctx, false);   // contact stars: over the ring they hit, behind the skull that hit it
@@ -395,7 +396,7 @@
       drawSkull(ctx, sx, sy, r * k, { ang, a: V.a, dir: V.dir, t: V.t, look: cos, face: V.face, jaw: V.jaw, alpha: powerOn("ghost") ? 0.6 : 1 });
       drawLauncherFront(rest.x, rest.y, r, off);
       if (V.effort && aim.active) drawEffort(ctx, sx, sy, r * k, V.effort);
-      drawAura(ctx, sx, sy, r * k, V.t, true); drawHat(ctx, sx, sy, r * k, ang, V.t, hat, powerOn("ghost") ? 0.6 : 1, hatOf(cos), V.a, V.dir);
+      drawAura(ctx, sx, sy, r * k, V.t, true); r3dNearMorty("hatR", sx, sy, r * k, 3.4, 0.018, () => drawHat(ctx, sx, sy, r * k, ang, V.t, hat, powerOn("ghost") ? 0.6 : 1, hatOf(cos), V.a, V.dir));
       voice.anchor = { x: sx, y: sy, r };
       if (!aim.active && game.throws < 2 && skull.spawn >= 1 && game.state === "ready") drawChevrons(rest.x, rest.y, r);
     } else {
@@ -403,7 +404,7 @@
       if (flying && !behind) { drawClones(); drawFlyingSkull(); }
     }
 
-    drawContinueGhost();
+    r3dFlush(); drawContinueGhost();
     // the nearest planes: props on the ground at the frame's edges, then branches right by the lens
     drawNear(); drawRewindFx();   // (v57: the film running back, 07v_newpowers.js)
     drawWeather();

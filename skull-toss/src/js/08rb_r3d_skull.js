@@ -35,7 +35,13 @@
     const Sk = SKINS[look.skull] || SKINS.bone, pal = (Sk.flick && Sk.flick(o.t || 0)) || Sk;
     // his face, drawn upright and unsquashed (the model does the turning and the squash)
     D.g.setTransform(1, 0, 0, 1, 0, 0); D.g.clearRect(0, 0, n, n);
-    drawSkull(D.g, n / 2, n / 2, n / (2 * S), { ...o, ang: 0, a: 1, dir: 0, alpha: 1 });
+    drawSkull(D.g, n / 2, n / 2, n / (2 * S), { ...o, look: { ...look, wings: "none" }, ang: 0, a: 1, dir: 0, alpha: 1 });   // (his wings are their own piece, behind him)
+    if (WINGS[look.wings]) {   // the wings: a live piece behind the head, posed as the 2D rig poses them
+      const along0 = clamp(o.a == null ? 1 : o.a, 0.35, 1.9), perp0 = 1 / Math.pow(along0, 0.62), d0 = o.dir || 0;
+      r3dCapture("wings", { x: x - r * 3.4, y: y - r * 3.4, w: r * 6.8, h: r * 6.8, auto: true }, F * SKULL_R / Math.max(0.5, r) + SKULL_R * 0.6, 0.02, () => {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(d0); ctx.scale(along0, perp0); ctx.rotate(-d0); ctx.rotate(o.ang || 0); ctx.scale(r, r); ctx.globalAlpha *= o.alpha == null ? 1 : o.alpha; drawBodyBehind(ctx, look, o.t || 0); ctx.restore();
+      }, 1, 360);
+    }
     D.tex.needsUpdate = true;
     D.back.color.set(pal.base || "#F7F1DF");
     // the pose: the 2D squash along its direction, the spin, and a turn of the head so it reads round

@@ -134,6 +134,7 @@
   function drawEncounter() {
     const I = ENC.it; if (!I || game.state === "title") return;
     const c = encPos(), top = project(c.px, c.py, c.z), p = project(c.x, c.y, c.z), r = 0.24 * p.s, sense = I.sense, tr = Math.sin(OB.t * 40) * sense * r * 0.06, ring_ = OB.t - I.rung < 0.6;
+    if (r3dOn() && r3dLiveAt("enc", p, [0.7, Math.max(0.7, c.py - c.y + 0.1), 0.7, 0.6], 0.2, drawEncounter)) return;   // (v68: a live 3D piece)
     ctx.save(); ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = INK; ctx.lineWidth = Math.max(1, r * 0.08);
     ctx.beginPath(); ctx.moveTo(top.x, top.y); ctx.lineTo(p.x + tr, p.y - r * 0.8); ctx.stroke();
     ctx.translate(p.x + tr, p.y); ctx.rotate(I.ang);

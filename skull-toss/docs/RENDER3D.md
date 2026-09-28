@@ -26,20 +26,26 @@ by default. Add `?r3d` to the address to see it, or call `SkullToss.debug.r3d(tr
 
 | Piece | File | How |
 |---|---|---|
-| Morty | `08rb_r3d_skull.js` | A modelled head (cranium and a jaw-deep face shell). His 2D face is painted live onto the shell's front, so every expression, skin, paint and set of teeth carries over. |
+| Morty | `08rb_r3d_skull.js` | A modelled head (cranium and a jaw-deep face shell). His 2D face is painted live onto the shell's front, so every expression, skin, paint and set of teeth carries over. His wings are a live piece behind him. |
 | The ring | `08ra_r3d_ring.js` | A torus in the cosmetic's colour. The lifebuoy has white quarters and a rope; chain, bones, thorn, fire and portal rings keep their character. |
 | The slingshot, the post | `08rc_r3d_launcher.js` | Turned wood, capped tips and rubber bands, posed from the painted launcher's anchors. The post is wood on an iron foot. |
-| Scenery (all 64 travel kinds), graveyard props | `08rd_r3d_sets.js` | **Set pieces.** Each painting is cut out along its own outline (marching squares, simplified) and extruded with real depth, painted front and back, its cut edge dark and inked, like the Fleischer studio's miniature sets. |
+| Scenery, graveyard props, the walking cast | `08rd_r3d_sets.js` | **Set pieces.** Each painting (for a walker, each drawing of its walk) is cut out along its own outline (marching squares, simplified) and extruded with real depth. It's painted front and back, its cut edge is its own paint in shadow, and it's inked, like the Fleischer studio's miniature sets. Only pieces within 30 m are built (`R3D_SETS.near`); beyond that the depth can't be seen, and they stay painted. |
+| Everything drawn live | `08rd_r3d_sets.js` (`r3dCapture`, `r3dLiveAt`, `r3dWrap`) | **Live pieces**, cut out the same way on twos (12 a second). The 2D drawing is run into an offscreen copy of the stage, lifted off, traced and stood up at its depth. This covers the cat, the owls and deer, the fish, crabs and eels, targets, obstacles (with their eyes), gates, the coach, hazards, the encounter's actor, the power-up, the cans, the lanes' stakes, the overhead anchors, all 16 bosses, the attractions, the gravedigger, the portal ring, Morty's hats, and Vault launchers and poles. |
 
-Hooks are one line at the top of each 2D drawing: `drawSkull`, `drawRingShape`, `drawLauncher`, `drawPost`,
-`drawTravelProp` and `drawProp`. A prop reacting to a hit draws in 2D until it settles.
+**Batching.** Hero pieces with 2D drawn over them (Morty, the ring, the slingshot, the post) render at once, into their
+own box. Everything else is queued. The queue renders as one scene in a single call (clones posed by their own
+matrices; a faded piece wears copies of its materials, in tenths) and is copied in once, at the next hero piece or
+flush point. That keeps the painter's order at one copy per group instead of one per piece.
 
 ## Still to convert
 
-- **B.** The sky and ground (painted backdrops for now), the walkers and creatures, the water.
-- **C.** Targets, obstacles, hazards, gates, the coach, encounters and power-ups.
-- **D.** The 16 bosses, their deaths, and the portal and rift.
-- **E.** Cosmetics (hats, launchers, poles, wings, auras), the mini-games and the menu previews.
+- The sky, the far skyline and the ground stay painted backdrops (a 3D game's matte paintings). The land's slices are
+  still painted.
+- Effects stay 2D cel animation, drawn over the 3D: particles, contact stars, trails, the boss-death gags, the rift,
+  weather and auras.
+- Water reflections show the 2D pieces.
+- The menu previews (the Vault, the Cart, the mascot) are still 2D.
+- Proper models for the bosses (they're live cut-outs now), and a second look at the look against real devices.
 
 Then the default flips, and the full spec, e2e, matrix, soak and persistence suites run with 3D on. Real-device frame
 pacing is a gate before shipping, because each 3D piece costs a render and a copy.
