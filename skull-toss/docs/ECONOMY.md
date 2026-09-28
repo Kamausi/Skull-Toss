@@ -1,5 +1,10 @@
 # The economy: bones and Souls
 
+**Two currencies, by design** (the owner, 2026-09-28; Decision Ledger "Bones and Souls are two currencies by design",
+APPROVED). Bones are the soft currency, earned by playing and kept on the profile. Souls are the premium currency,
+kept only on the server. Neither replaces the other, and no look is sold for both. Both buy looks and tickets only:
+nothing either buys changes how Morty flies. The one exception is continues, which cost bones.
+
 ## Bones (the soft currency)
 
 Bones are earned by playing and live on the profile, in this browser and in the cloud save.
@@ -11,10 +16,20 @@ Bones are earned by playing and live on the profile, in this browser and in the 
 - **Challenges:** daily, weekly and monthly (claimed by hand), and achievements (paid when reached).
 - **In play:** bonus targets (3 each), the Bone Magnet power-up (+20 a make), Can Alley after an end boss (5 a can, 100 + 25 × map for the lot) and secrets (150 each, once).
 - **Challenge sets (v45):** claim all three of a period's challenges for a bonus: 150 a day, 600 a week, 2,500 a month.
+- **Targets:** 3 for a plain target, 15 for a secret one, 25 for a gold one (`07e_directors.js`).
+- **Secret paths (v66):** 20 bones a ring made down the secret path and 300 for its end boss, paid with the run's bones (`r.secretBones`, `07wa_gates.js`).
+- **The crossing between maps:** 5 a ring, 20 a gold ring, and 100 + 50 × map for making all ten (`07q_crossing.js`).
+- **Career and streak:** 25 × level for each career level gained (`04h_career.js`). The daily streak pays 20 × days, up to 7 days, and the `event.bones` flag scales it.
+- **Mastery:** each tier of shot, map and boss mastery pays once (60 up to 2,500; `09n_mastery.js`).
+- **The Director's Challenge:** 100, 200 and 400 for its three weekly notes, each paid the first time in a week (`07k_director.js`).
+- **Seasons:** bones on the Season Ticket's stubs (`07l_season.js`).
+- **One-offs:** a 300-bone welcome gift on a new profile, and promo codes (`09p_general.js`).
 
 **Sinks**
 
-- the Skull Vault's prices (300 to about 11,000).
+- the Skull Vault's prices (300 to about 11,000);
+- continues: 200, then 400, then 800 bones within a run (or an ad where one is available; `07g_continue.js`);
+- the Curio Cart's Mystery Coffin, which can be opened for 1,200 bones instead of 60 Souls (`09g_store.js`).
 
 **v45: the Curio Cart takes Souls, not bones.** Its 24 exclusives are in the shared economy (`Economy.CART`) at
 130 to 400 Souls, one of them a quarter off each UTC day (`Economy.dealOf`), and the Mystery Coffin costs 60 Souls (or, from v49, 1,200 bones)
