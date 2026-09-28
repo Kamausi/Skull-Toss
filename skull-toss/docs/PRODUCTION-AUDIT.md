@@ -518,7 +518,7 @@ marked v68–v69 in the code because it is off by default):
 - `node tools/perf3d.mjs`: the 3D frame report per map;
 - `node tools/perf.mjs`: the 2D game.
 
-The numbers are in `docs/perf/`. Real-device baselines are outstanding (brief §389: Low 30 fps, Medium 60, High
+**Not yet run for this audit.** The last recorded numbers are the v52 2D audit (`docs/PERF-AUDIT.md`, `docs/perf/`) and the v68 3D report (`docs/RENDER3D.md`). A fresh run of both tools at this head is the first step of Phase 1, so the renderer change has a baseline to compare against. Real-device baselines are outstanding (brief §389: Low 30 fps, Medium 60, High
 60–120; pass mark P99 within budget after a 15–30 minute soak).
 
 ---
