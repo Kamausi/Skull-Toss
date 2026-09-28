@@ -362,8 +362,8 @@
     }
     drawBossLight();   // a boss fight: the scenery dims and a spot finds the ring (07n_environment.js)
     if (!game.ringHidden) r3dWrap("anchor", ringBaseZ(), 0.22, drawAnchorSupport);   // (v68: wrapped: a live 3D piece when the 3D renderer is on)   // the branch, arch, signpost, batten or rail the ring hangs from
-    if (boss) r3dWrap("boss0", boss.z || ring.z, 0.5, () => boss.draw(false), 560);
-    r3dWrap("seeds0", ring.z, 0.1, () => drawSeeds(false)); drawTargets(false); r3dWrap("attr0", ring.z, 0.25, () => drawAttraction(false)); drawCans(); r3dWrap("lanes", ring.z, 0.12, drawLanes); drawObstacles(false); drawHazards(false); drawEncounter();   // (v56: the attraction's booth and props, 07u_attractions.js)
+    if (boss) { if (r3dBossModelled(boss) && r3dOn()) boss.draw(false); else r3dWrap("boss0", boss.z || ring.z, 0.5, () => boss.draw(false), 560); }   // (v69: a modelled boss draws itself: 08rh_r3d_bosses.js)
+    drawSeeds(false); drawTargets(false); r3dWrap("attr0", ring.z, 0.25, () => drawAttraction(false)); drawCans(); r3dWrap("lanes", ring.z, 0.12, drawLanes); drawObstacles(false); drawHazards(false); drawEncounter();   // (v56: the attraction's booth and props, 07u_attractions.js; v69: each shot is its own model with the 3D renderer on, 08rg_r3d_bosskit.js)
     const onStage = game.state !== "title";
     if (onStage && !game.ringHidden) drawTrackAndShadow();
     drawPlayWorld();
@@ -376,7 +376,7 @@
     if (pv) drawDots(pv.back, true);
     if (flying && behind) { drawClones(); drawFlyingSkull(); }
     if (onStage) { drawDecoys(); drawDecoyRing(); drawRing(); drawPickup(); drawHomingLock(); }   // (v51: Adventure+'s decoy rings, behind the real one; v57: the Homing Bone's lock)
-    if (boss) r3dWrap("boss1", boss.z || ring.z, 0.5, () => boss.draw(true), 560);
+    if (boss) { if (r3dBossModelled(boss) && r3dOn()) boss.draw(true); else r3dWrap("boss1", boss.z || ring.z, 0.5, () => boss.draw(true), 560); }
     if (onStage) { drawNearWorld(); r3dFlush(); }   // (v53: whatever walks between the ring and the camera passes in front of it and its pole)
     drawAquaFront();   // (v58: now and then a big fish passes close, low and to one side)
     r3dWrap("attr1", ring.z, 0.25, () => drawAttraction(true));

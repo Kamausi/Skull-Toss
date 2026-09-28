@@ -159,6 +159,14 @@
     if (front === behind) return;   // drawn with whichever side of the ring it's on
     const p = project(body.x, body.y, body.z), s = p.s, R = 0.5 * s, tt = Math.floor(t * 12) / 12;
     // (no ghost ring at his next perch any more: his crouch and his caw are the only warning he gives)
+    {   // (v69: with the 3D renderer on, his model, posed by the same numbers: 08rh_r3d_bosses.js)
+      const gust = B.dead ? 0 : clamp(windNow() / 2.2, -1, 1), sq = q.tell ? 1 - 0.12 * Math.sin(q.tell * Math.PI) : 1, hurtK = B.hurt;
+      const ringDy = !B.dead && !q.body ? project(q.x, q.y + ring.rc, q.z).y - p.y : null;
+      if (r3dCrow(B, p, { q, dying, flap: B.dead ? 1 : wingFlap(tt, q.tell) * 0.6, rot: (B.dead ? dying * 9 : 0) - gust * 0.12, sx: 1 + (1 - sq) * 0.6 + hurtK * 0.15, sy: sq - hurtK * 0.1, ringDy })) {
+        if (q.tell > 0.15 && !B.dead && B.lastCapLeg !== q.leg) { const w = project(body.x + 0.55, body.y + 0.55, body.z); caption("CAW!", w.x, w.y); B.lastCapLeg = q.leg; }
+        return;
+      }
+    }
     ctx.save(); ctx.translate(p.x, p.y); if (B.dead) ctx.rotate(dying * 9);
     const gust = B.dead ? 0 : clamp(windNow() / 2.2, -1, 1);   // (v53: he leans into the wind, and it streams his feathers: the world tells you the wind)
     if (gust) { ctx.rotate(-gust * 0.12); ctx.transform(1, 0, gust * 0.1, 1, 0, 0); }
@@ -296,6 +304,12 @@
     const m = B.dead ? B.frozen : { x: ring.x, y: ring.y, z: ring.z }, drop = (1 - rise) * 3.4 + sink * sink * 2.5;
     const c = project(m.x, m.y + PK_HEAD.dy - drop, m.z + PK_HEAD.dz), R = PK_HEAD.r * c.s;
     const hurt = B.hurt, angry = (B.phase || 0) >= 1, V = B.volley, puff = V.tell ? Math.sin(V.tell * Math.PI * 0.5) : 0, split = B.dead ? Math.min(1, (t - B.deadAt) / 0.6) : 0;
+    if (r3dOn()) {   // (v69: his model: 08rh_r3d_bosses.js. The fire in his throat and the glow of his eyes stay on the GPU layer)
+      const mo = project(m.x, m.y - drop, m.z), mr = B.rc * mo.s * (1.25 + (B.spit > 0 ? 0.1 : 0)), glow = angry ? "#FFD04A" : "#FFB84A", fl = 0.8 + 0.2 * Math.sin(t * 13) * Math.sin(t * 4.1);
+      const eyes = [0, 1].map(i => { const e = B.eyePos(i, { x: m.x, y: m.y - drop, z: m.z }), ep = project(e.x, e.y, e.z); return { i, x: ep.x, y: ep.y, s: ep.s, r: PK_EYE.r * ep.s, shut: !!(B.eyes[i] || B.dead), glare: B.phase === 2 && !B.dead }; });
+      if (!B.dead) { gpuLight(mo.x, mo.y, mr * 2.8, angry ? "255,200,70" : "255,170,70", 0.26 * fl * (B.phase === 2 ? 1.5 : 1)); for (const e of eyes) if (!e.shut || B.phase === 2) gpuLight(e.x, e.y, e.r * 4.2, "255,200,80", (e.shut ? 0.2 : 0.36) * fl); }
+      if (r3dPumpkin(B, c, { split, bounce: 1 + Math.sin(tt * 6) * 0.02 + hurt * 0.05, puff, tt, mouth: mo, mr, hole: mr * (1 + (B.blind > 0 ? 0.12 : 0)), angry, glow, fl, eyes })) return;
+    }
     ctx.save(); ctx.translate(c.x, c.y);
     const bounce = 1 + Math.sin(tt * 6) * 0.02 + hurt * 0.05;
     ctx.scale(bounce + puff * 0.08, 1 / bounce - hurt * 0.04);
@@ -345,6 +359,7 @@
       if (r < 0.5) continue;
       const g = project(sd.x, 0, sd.z);   // a shadow on the ground, so you can read how near it is
       ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(g.x, g.y, r * 1.1, r * 0.3, 0, 0, TAU); ctx.fill();
+      if (r3dShot(sd.kind || "seed", p.x, p.y, r, sd.rot)) continue;   // (v69: modelled: 08rg_r3d_bosskit.js)
       ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(sd.rot);
       ctx.fillStyle = "#F4E6BE"; ctx.strokeStyle = INK; ctx.lineWidth = Math.max(1.5, r * 0.16);
       if (sd.kind && sd.kind !== "seed") drawShot(sd.kind, r, sd.rot);

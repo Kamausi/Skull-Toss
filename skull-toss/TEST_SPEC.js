@@ -3096,6 +3096,18 @@
     T.r3dHold(0.3); T.step(0.1); P = T.r3dPerf(); assert(P.parts.portal < 89 && P.parts.portal > 0 && T.r3dState().fails === 0, `short of time, they thin (${P.parts.portal})`);
     T.portalsOn(false); T.r3dHold(null); T.r3d(null); T.step(0.1); assert(!T.r3dState().on, "and off again"); T.toTitle();
   });
+  test("v69 3D bosses: all sixteen are modelled (not cut-outs), and each draws in place, idle, hurt and dead, with the shots they throw, and no errors", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); const on = T.r3d(true);
+    if (!T.r3dState().ok) { assert(!on, "no WebGL here: it stays off"); T.r3d(null); T.toTitle(); T.setStats(ZERO); return; }
+    const ids = Object.keys(T.bossInfo()); assert(T.r3dBosses().length === ids.length && ids.every(id => T.r3dBosses().includes(id)), `every boss has a model (${T.r3dBosses().length}/${ids.length})`);
+    assert(["seed", "clod", "bat", "bone", "mud", "pin", "gear", "frame"].every(k => T.r3dShotKinds().includes(k)), "and every kind of shot");
+    for (let m = 1; m <= 8; m++) for (const tier of ["mini", "end"]) {
+      fresh(); T.setStage(m); T.calm(); T.startBoss(tier); T.step(3.2);
+      const kind = T.boss().kind, d0 = T.r3dState().drawn; T.step(1 / 60); T.hurtBoss(1); T.step(0.05); T.hurtBoss(99); T.step(0.6);
+      const S = T.r3dState(); assert(S.fails === 0 && S.drawn > d0, `${kind} (map ${m}, ${tier}) draws in 3D and nothing fails (${JSON.stringify(S)})`);
+    }
+    T.r3d(null); T.step(0.1); assert(!T.r3dState().on, "and off again"); T.toTitle(); T.setStats(ZERO);
+  });
   // ── v66: moving gates, the actors that work them, and the secret paths they open ──
   test("v66 Moving gates: a real gate across the lane swings open, stands open, rattles (the tell) and swings shut; shut, it stops the skull; open, the throw goes through", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.setStage(3); T.calm(); T.setHits(10); T.obOn(); assert(!T.gates().length, "not in the first act");

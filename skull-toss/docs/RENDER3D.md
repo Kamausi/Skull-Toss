@@ -30,7 +30,8 @@ by default. Add `?r3d` to the address to see it, or call `SkullToss.debug.r3d(tr
 | The ring | `08ra_r3d_ring.js` | A torus in the cosmetic's colour. The lifebuoy has white quarters and a rope; chain, bones, thorn, fire and portal rings keep their character. |
 | The slingshot, the post | `08rc_r3d_launcher.js` | Turned wood, capped tips and rubber bands, posed from the painted launcher's anchors. The post is wood on an iron foot. |
 | Scenery, graveyard props, the walking cast | `08rd_r3d_sets.js` | **Set pieces.** Each painting (for a walker, each drawing of its walk) is cut out along its own outline (marching squares, simplified) and extruded with real depth. It's painted front and back, its cut edge is its own paint in shadow, and it's inked, like the Fleischer studio's miniature sets. A piece is built only while its depth would show on screen (the runtime complexity manager, below); otherwise it stays painted. |
-| Everything drawn live | `08rd_r3d_sets.js` (`r3dCapture`, `r3dLiveAt`, `r3dWrap`) | **Live pieces**, cut out the same way on twos (12 a second). Wildlife, sea life, the cat and the cast are also painted and sent to the GPU only on those twos, and are cut out only while their depth shows; the protected pieces (below) are painted every frame. The 2D drawing is run into an offscreen copy of the stage, lifted off, traced and stood up at its depth. This covers the cat, the owls and deer, the fish, crabs and eels, targets, obstacles (with their eyes), gates, the coach, hazards, the encounter's actor, the power-up, the cans, the lanes' stakes, the overhead anchors, all 16 bosses, the attractions, the gravedigger, the portal ring, Morty's hats, and Vault launchers and poles. |
+| The 16 bosses and their shots | `08rg_r3d_bosskit.js`, `08rh_r3d_bosses.js` | **Models**, not cut-outs (v69). A kit of toon parts (ellipsoids, lathes, extruded slabs, tubes, gears, pie-cut eyes) written in the 2D drawing's own coordinates, so each model matches its drawing's proportions. Each frame the model is posed from the same boss state the 2D drawing reads: hurt, tell, phase, sway, hoot, the gator's waterline, the jester's spring, the count's cape, the clock king's pendulum, the pumpkin's split. The 2D clips (the waterline, the boss-death shatter) cut the model too. The shots (seed, clod, bat, bone, mud, pin, gear, film frame) are small models batched with the scene. Checked idle, hurt and dead on every map with no failures; not yet reviewed at hero distance or on a device. |
+| Everything drawn live | `08rd_r3d_sets.js` (`r3dCapture`, `r3dLiveAt`, `r3dWrap`) | **Live pieces**, cut out the same way on twos (12 a second). Wildlife, sea life, the cat and the cast are also painted and sent to the GPU only on those twos, and are cut out only while their depth shows; the protected pieces (below) are painted every frame. The 2D drawing is run into an offscreen copy of the stage, lifted off, traced and stood up at its depth. This covers the cat, the owls and deer, the fish, crabs and eels, targets, obstacles (with their eyes), gates, the coach, hazards, the encounter's actor, the power-up, the cans, the lanes' stakes, the overhead anchors, the attractions, the gravedigger, the portal ring, Morty's hats, and Vault launchers and poles. |
 
 **Batching.** Hero pieces with 2D drawn over them (Morty, the ring, the slingshot, the post) render at once, into their
 own box. Everything else is queued. The queue renders as one scene in a single call (clones posed by their own
@@ -103,7 +104,11 @@ math core (`MC.PF`, `docs/MATH-TOOLKIT.md`).
   weather and auras.
 - Water reflections show the 2D pieces.
 - The menu previews (the Vault, the Cart, the mascot) are still 2D.
-- Proper models for the bosses (they're live cut-outs now), and a second look at the look against real devices.
+- The bosses' deaths (archetypes, gags, shards, wordmark) are still 2D, and the bosses need a review at hero distance
+  and in motion.
+- A second look at the look against real devices.
+- The production plan for the rest (one scene instead of in-place compositing, then Morty, the ring, the bosses,
+  gameplay objects, the maps, effects, cosmetics and UI, in that order) is in `docs/PRODUCTION-AUDIT.md`.
 
 Then the default flips, and the full spec, e2e, matrix, soak and persistence suites run with 3D on. Real-device frame
 pacing is a gate before shipping, because each 3D piece costs a render and a copy.

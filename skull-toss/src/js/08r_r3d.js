@@ -102,9 +102,9 @@
   function r3dRender(entries, x0, y0, x1, y1) {
     const gl = R3D.gl, t0 = performance.now();
     gl.setScissorTest(true); gl.setScissor(x0, H - y1, x1 - x0, y1 - y0); gl.clear(true, true, false);
-    if (entries.length === 1 && !entries[0].m) {   // a hero piece: itself, as posed
-      const E = entries[0]; R3D.inkU.uInk.value = E.ink; R3D.scene.add(E.root);
-      try { gl.render(R3D.scene, R3D.cam); } finally { R3D.scene.remove(E.root); }
+    if (entries.length === 1 && !entries[0].m) {   // a hero piece: itself, as posed (cut by clipping planes if it has any)
+      const E = entries[0]; R3D.inkU.uInk.value = E.ink; R3D.scene.add(E.root); gl.clippingPlanes = E.clip || R3D_NOCLIP;
+      try { gl.render(R3D.scene, R3D.cam); } finally { R3D.scene.remove(E.root); gl.clippingPlanes = R3D_NOCLIP; }
       R3D.drawn++;
     } else {
       const batch = R3D.batch || (R3D.batch = new THREE.Group()), used = new Map(); batch.clear();
@@ -126,7 +126,8 @@
     const b = [Q.x0, Q.y0, Q.x1, Q.y1]; Q.x0 = Q.y0 = 1e9; Q.x1 = Q.y1 = -1e9;
     try { r3dRender(list, ...b); } catch (e) { if (R3D.fails++ < 3) Debug.warn("RENDER", e, "08r_r3d:flush"); }
   }
-  function r3dDraw(root, box, inkPx = 2, alpha = 1, defer = false) {
+  const R3D_NOCLIP = [];
+  function r3dDraw(root, box, inkPx = 2, alpha = 1, defer = false, clip = null) {
     const B = r3dBox(box); if (!B) return false;
     if (defer) {
       root.updateMatrix(); const Q = R3D_Q;
@@ -137,7 +138,7 @@
     r3dFlush();   // (whatever was queued goes down first: the painter's order holds)
     try {
       const g = ctx, a = g.globalAlpha; g.globalAlpha = a * alpha;
-      r3dRender([{ root, m: null, ink: inkPx, alpha: 1 }], ...B);
+      r3dRender([{ root, m: null, ink: inkPx, alpha: 1, clip }], ...B);
       g.globalAlpha = a;
       return true;
     } catch (e) { if (R3D.fails++ < 3) Debug.warn("RENDER", e, "08r_r3d:draw"); return false; }

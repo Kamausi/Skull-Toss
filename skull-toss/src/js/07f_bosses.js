@@ -190,8 +190,9 @@
     if (B.dead) { const f = D.fall; if (f === "sink") y -= dying * dying * 3; else if (f === "topple") { rot = Math.min(1.35, dying * 2.4) * (b.x > 0 ? 1 : -1); y -= Math.max(0, dying - 0.6) * 2; } else if (f === "burst") { sc = 1 + dying * 0.8; alpha = Math.max(0, 1 - dying * 1.4); } else { rot = dying * 8; y += dying * 3 - dying * dying * 6; } }
     return { x: b.x, y, z: b.z, rot, sc, alpha };
   }
-  function withBody(B, P, paint) {   // P: { x, y, z, rot, sc, alpha } in the world; paint(ctx) in metres, y up negative
+  function withBody(B, P, paint, part = "body", pose = {}) {   // P: { x, y, z, rot, sc, alpha } in the world; paint(ctx) in metres, y up negative
     const p = project(P.x, P.y, P.z); if (P.alpha <= 0.01) return p;
+    if (r3dBoss(B, P, p, part, pose)) return p;   // (v69: with the 3D renderer on, the boss's model stands there instead: 08rh_r3d_bosses.js)
     ctx.save(); ctx.translate(p.x, p.y); ctx.globalAlpha *= P.alpha; if (P.rot) ctx.rotate(P.rot);
     const hurt = B.hurt, bounce = 1 + Math.sin(bt(B) * 6) * 0.015;
     ctx.scale(p.s * (P.sc || 1) * (bounce + hurt * 0.06), p.s * (P.sc || 1) * (1 / bounce - hurt * 0.05));
@@ -233,7 +234,7 @@
       c.lineWidth = 0.05; c.beginPath(); c.moveTo(-0.1, 0.12); c.quadraticCurveTo(0, 0.18 + tell * 0.1, 0.1, 0.12); c.stroke();
       c.fillStyle = CREAM; for (const sd of [-1, 1]) { c.beginPath(); c.moveTo(sd * 0.06, 0.13); c.lineTo(sd * 0.04, 0.22); c.lineTo(sd * 0.02, 0.14); c.fill(); }
       c.beginPath(); c.rect(-0.12, -0.62, 0.24, 0.24); inkF(c, "#1A1A1E"); c.beginPath(); c.ellipse(0, -0.38, 0.22, 0.05, 0, 0, TAU); inkF(c, "#1A1A1E");
-    });
+    }, "body", { tell });
   }
   function drawOwl(B, front) {
     const q = B.pathAt(B.t), dying = B.dead ? B.t - B.deadAt : 0, hang = B.def.hang;
@@ -249,7 +250,7 @@
       for (const sd of [-1, 1]) { c.beginPath(); c.moveTo(sd * 0.18, -0.2); c.lineTo(sd * 0.3, -0.42); c.lineTo(sd * 0.3, -0.16); c.closePath(); inkF(c, "#E4DAC4"); }
       for (const sd of [-1, 1]) { c.beginPath(); c.arc(sd * 0.14, 0, 0.12, 0, TAU); inkF(c, "#1A1A10"); if (!B.dead && B.hurt < 0.3) { c.fillStyle = "#E8D84A"; c.beginPath(); c.arc(sd * 0.14, 0, 0.06, 0, TAU); c.fill(); } else pie(c, sd * 0.14, 0, 0.1, 0.1, 0, !B.dead, B.dead); }
       c.beginPath(); c.moveTo(-0.05, 0.08); c.lineTo(0.05, 0.08); c.lineTo(0, 0.18 + hoot * 0.04); c.closePath(); inkF(c, "#C49A42"); c.restore();
-    });
+    }, "body", { hoot });
   }
   function drawGator(B, front) {
     const q = B.pathAt(B.t), dying = B.dead ? B.t - B.deadAt : 0;
@@ -270,7 +271,7 @@
       pie(c, -0.16, -0.24, 0.08, 0.09, 0.5, B.hurt > 0.3, B.dead); pie(c, 0.16, -0.24, 0.08, 0.09, -0.5, B.hurt > 0.3, B.dead);
       c.beginPath(); c.ellipse(0, -0.38, 0.3, 0.05, 0, 0, TAU); inkF(c, "#D8B87A"); c.beginPath(); c.rect(-0.18, -0.52, 0.36, 0.14); inkF(c, "#D8B87A"); c.fillStyle = RED; c.fillRect(-0.18, -0.43, 0.36, 0.04);
       c.restore();
-    });
+    }, "body", { topY });   // (the waterline clip above cuts the model too: it's copied in under it)
     ctx.restore();
   }
   function drawJester(B, front) {
@@ -287,7 +288,7 @@
       c.fillStyle = RED; c.beginPath(); c.arc(0, -0.15, 0.05, 0, TAU); c.fill(); c.beginPath(); c.arc(0, -0.08, 0.14, 0.2, Math.PI - 0.2); c.stroke();
       for (const [sd, col] of [[-1, "#356B68"], [1, "#C49A42"]]) { c.beginPath(); c.moveTo(0, -0.42); c.quadraticCurveTo(sd * 0.3, -0.62, sd * 0.42, -0.36); c.lineTo(sd * 0.1, -0.4); c.closePath(); inkF(c, col); c.beginPath(); c.arc(sd * 0.42, -0.34, 0.05, 0, TAU); inkF(c, GOLD); }
       c.restore();
-    });
+    }, "body", { top: -(headY - 0.12), tell: q.tell });
   }
   function drawScarecrowBoss(B, front) {
     if (front) return;
@@ -306,7 +307,7 @@
       c.lineWidth = 0.04; c.beginPath(); c.moveTo(-0.18, 0.15); for (let i = 0; i <= 6; i++) c.lineTo(-0.18 + i * 0.06, 0.15 + (i % 2) * 0.05 + (q.tell ? 0.05 : 0)); c.stroke(); c.lineWidth = 0.05;
       c.beginPath(); c.ellipse(0, -0.32, 0.55, 0.09, -0.1, 0, TAU); inkF(c, "#3A2A1E"); c.beginPath(); c.moveTo(-0.26, -0.35); c.lineTo(-0.18, -0.75); c.lineTo(0.2, -0.75); c.lineTo(0.28, -0.35); c.closePath(); inkF(c, "#3A2A1E");
       c.restore(); c.restore();
-    });
+    }, "body", { sway, tell: q.tell });
   }
   function drawCuckoo(B, front) {
     const q = B.pathAt(B.t), C = B.def.carrier, P = { ...bossBody(B), y: 0 }, center = { x: C.cx, y: C.cy, z: B.def.body.z };
@@ -315,7 +316,7 @@
       c.beginPath(); c.arc(0, 0.9, 1.15, 0, TAU); inkF(c, "#F2E2B8"); c.fillStyle = INK; for (let i = 0; i < 12; i++) { const a = (i / 12) * TAU; c.beginPath(); c.arc(Math.sin(a) * 1.0, 0.9 - Math.cos(a) * 1.0, 0.04, 0, TAU); c.fill(); }
       c.beginPath(); c.rect(-0.25, -0.95, 0.5, 0.4); inkF(c, "#2A1A10");
       c.fillStyle = "#8A5A30"; for (const sd of [-1, 1]) { c.beginPath(); c.ellipse(sd * 0.9, -0.95, 0.35, 0.12, sd * 0.5, 0, TAU); c.fill(); c.stroke(); }
-    });
+    }, "house");
     if (B.dead) return;
     const hub = project(center.x, center.y, center.z), bird = project(q.x, q.y + ring.rc + 0.25, q.z);
     if (!front) { ctx.strokeStyle = INK; ctx.lineWidth = Math.max(3, 0.08 * bird.s); ctx.beginPath(); ctx.moveTo(hub.x, hub.y); ctx.lineTo(bird.x, bird.y); ctx.stroke(); ctx.strokeStyle = "#C49A42"; ctx.lineWidth = Math.max(1.5, 0.04 * bird.s); ctx.stroke(); return; }
@@ -323,7 +324,7 @@
       c.beginPath(); c.ellipse(0, 0, 0.26, 0.2, 0, 0, TAU); inkF(c, "#E3B64B"); c.beginPath(); c.arc(0.18, -0.16, 0.15, 0, TAU); inkF(c, "#E3B64B");
       c.beginPath(); c.moveTo(0.3, -0.18); c.lineTo(0.48 + (q.tell ? 0.1 : 0), -0.12); c.lineTo(0.3, -0.08); c.closePath(); inkF(c, "#E8893A");
       pie(c, 0.2, -0.2, 0.05, 0.06, 1, B.hurt > 0.3); c.beginPath(); c.moveTo(-0.24, -0.02); c.lineTo(-0.42, -0.12); c.lineTo(-0.36, 0.04); c.closePath(); inkF(c, "#C49A42");
-    });
+    }, "bird", { tell: q.tell });
   }
   function drawProjectionist(B, front) {
     if (front) return;
@@ -342,7 +343,7 @@
       c.beginPath(); c.arc(0.42, -3.2, 0.14, 0, TAU); inkF(c, "#1A1A1E"); c.fillStyle = "rgba(255,244,214,.9)"; c.beginPath(); c.arc(0.44, -3.2, 0.07, 0, TAU); c.fill();
       for (const sd of [-1, 1]) { c.save(); c.translate(sd * 0.25, -3.78); c.rotate(B.t * (q.tell ? 12 : 3) * sd); c.beginPath(); c.arc(0, 0, 0.24, 0, TAU); inkF(c, "#8A8E96"); c.fillStyle = "#3A3E46"; for (let i = 0; i < 4; i++) { const a = i * TAU / 4; c.beginPath(); c.arc(Math.cos(a) * 0.12, Math.sin(a) * 0.12, 0.06, 0, TAU); c.fill(); } c.restore(); }
       pie(c, -0.18, -3.25, 0.08, 0.1, 1, B.hurt > 0.3, B.dead);
-    });
+    }, "body", { tell: q.tell });
   }
 
   // ── the end bosses (each wearing, holding or guarding one of Morty's pieces)
@@ -362,7 +363,7 @@
       c.beginPath(); c.moveTo(0, -0.02); c.lineTo(0.12, 0.12); c.lineTo(0, 0.12); inkF(c, "#B8B8A8"); c.beginPath(); c.moveTo(-0.12, 0.24); c.quadraticCurveTo(0, 0.18 - heave * 0.1, 0.12, 0.24); c.stroke();
       c.beginPath(); c.ellipse(0, -0.36, 0.42, 0.07, 0, 0, TAU); inkF(c, "#141418"); c.beginPath(); c.rect(-0.28, -0.98, 0.56, 0.64); inkF(c, "#141418"); c.fillStyle = "#A94332"; c.fillRect(-0.28, -0.52, 0.56, 0.09);   // Morty's top hat
       c.restore();
-    });
+    }, "body", { heave });
   }
   function drawCount(B, front) {
     if (front) return;
@@ -381,7 +382,7 @@
       pie(c, -0.12, 0.0, 0.08, 0.09, 0, B.hurt > 0.3, B.dead); pie(c, 0.12, 0.0, 0.08, 0.09, 0, B.hurt > 0.3, B.dead);
       c.beginPath(); c.moveTo(-0.14, 0.2); c.quadraticCurveTo(0, 0.28, 0.14, 0.2); c.stroke(); c.fillStyle = CREAM; for (const sd of [-1, 1]) { c.beginPath(); c.moveTo(sd * 0.08, 0.22); c.lineTo(sd * 0.06, 0.34); c.lineTo(sd * 0.03, 0.23); c.fill(); }
       c.restore();
-    });
+    }, "body", { spread: 1.2 + flare * 0.9 + (q.tell ? 0.3 : 0) });
     if (!B.dead) { const a = project(P.x, P.y + 3.0, P.z - 0.4), b = project(q.x, q.y, q.z); ctx.save(); ctx.strokeStyle = "rgba(160,110,200,.35)"; ctx.setLineDash([4, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.restore(); }   // his spell holds the ring
   }
   function drawMarrowroot(B, front) {
@@ -396,7 +397,7 @@
       c.lineWidth = 0.08; c.beginPath(); c.moveTo(-0.9, -2.4); c.lineTo(-1.6, -1.3); c.stroke(); c.beginPath(); c.arc(-1.62, -1.25, 0.12, Math.PI, 0); c.stroke(); c.lineWidth = 0.05;   // Morty's cane, grafted on
       for (const sd of [-1, 1]) { c.beginPath(); c.ellipse(sd * 0.3, -3.1, 0.17, 0.22, 0, 0, TAU); inkF(c, "#1A1A10"); if (!B.dead && B.hurt < 0.3) { c.fillStyle = "#AAF060"; c.beginPath(); c.arc(sd * 0.3, -3.08, 0.07, 0, TAU); c.fill(); } }
       c.beginPath(); c.moveTo(-0.4, -2.4); for (let i = 0; i <= 8; i++) c.lineTo(-0.4 + i * 0.1, -2.4 + (i % 2 ? 0.12 : 0) + (V && V.tell ? 0.1 : 0)); c.lineTo(0.4, -2.2); c.quadraticCurveTo(0, -1.9, -0.4, -2.2); c.closePath(); inkF(c, "#1A1A10");
-    });
+    }, "body", { tell: V && V.tell });
   }
   function drawMadame(B, front) {
     if (front) return;
@@ -409,7 +410,7 @@
       c.lineWidth = 0.035; for (const sd of [-1, 1]) for (let k = 0; k < 3; k++) { c.beginPath(); c.moveTo(sd * (0.25 + k * 0.1), -2.18); c.lineTo(sd * (0.25 + k * 0.12), -2.32); c.stroke(); } c.lineWidth = 0.05;
       c.beginPath(); c.ellipse(0, -1.45, 0.3 + gargle * 0.05, 0.14 + (B.spit > 0 ? 0.12 : 0) + gargle * 0.05, 0, 0, TAU); inkF(c, "#8A2A3A");
       for (const sd of [-1, 1]) { c.beginPath(); c.rect(sd * 1.2 - 0.12, -1.9, 0.24, 0.3); inkF(c, "#F2E7C9"); c.fillStyle = INK; c.fillRect(sd * 1.2 - 0.12, -1.66, 0.24, 0.06); }   // Morty's spats, worn as earrings
-    });
+    }, "body", { gargle, spit: B.spit > 0 });
     const wp = project(P.x, 0, P.z); ctx.strokeStyle = "rgba(200,240,220,.35)"; ctx.lineWidth = 1.5; for (let i = 0; i < 2; i++) { const k = ((B.t * 0.5 + i / 2) % 1); ctx.beginPath(); ctx.ellipse(wp.x, wp.y, (1.7 + k) * wp.s, (0.2 + k * 0.2) * wp.s, 0, 0, TAU); ctx.stroke(); }
   }
   function drawRingmaster(B, front) {
@@ -427,7 +428,7 @@
       c.beginPath(); c.ellipse(0, -0.3, 0.46, 0.08, 0, 0, TAU); inkF(c, "#141418"); c.beginPath(); c.rect(-0.3, -0.95, 0.6, 0.65); inkF(c, "#141418"); c.fillStyle = GOLD; c.fillRect(-0.3, -0.45, 0.6, 0.08);
       c.restore();
       c.lineWidth = 0.02; c.beginPath(); c.moveTo(-0.2, -3.05); c.quadraticCurveTo(0, -2.6, 0.2, -3.05); c.stroke(); c.beginPath(); c.rect(-0.06, -2.72, 0.12, 0.2); inkF(c, "#C8CCD4");   // Morty's whistle, on a cord
-    });
+    }, "body", { twirl });
     if (!B.dead) { const a = project(P.x + 1.0, P.y + 3.4, P.z), b = project(q.x, q.y + ring.rc, q.z); ctx.save(); ctx.strokeStyle = "rgba(242,231,201,.3)"; ctx.setLineDash([2, 5]); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.restore(); }
   }
   function drawClockKing(B, front) {
@@ -442,7 +443,7 @@
       for (let i = 0; i < 5; i++) { const x = -0.6 + i * 0.3; c.save(); c.translate(x, -4.85); c.rotate(B.t * (i % 2 ? 1 : -1)); c.beginPath(); for (let k = 0; k < 12; k++) { const a = (k / 12) * TAU, r = k % 2 ? 0.11 : 0.15; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); inkF(c, GOLD); c.restore(); }   // a crown of gears
       c.beginPath(); c.arc(-1.1, -2.2, 0.22, 0, TAU); inkF(c, "#C8CCD4"); c.beginPath(); c.moveTo(-1.1, -2.2); c.lineTo(-1.1, -2.36); c.moveTo(-1.1, -2.2); c.lineTo(-0.98, -2.2); c.stroke(); c.beginPath(); c.moveTo(-1.1, -2.42); c.lineTo(-1.1, -2.52); c.stroke();   // Morty's pocket watch
       c.beginPath(); c.moveTo(-0.9, -2.9); c.quadraticCurveTo(-1.3, -2.6, -1.1, -2.4); c.lineWidth = 0.16; c.stroke(); c.lineWidth = 0.05;
-    });
+    }, "body", { tell: V && V.tell });
     if (!B.dead) { const hub = project(C.cx, C.cy, C.cz + 0.3), tip = project(q.x, q.y, q.z); ctx.strokeStyle = INK; ctx.lineWidth = Math.max(3, 0.09 * tip.s); ctx.beginPath(); ctx.moveTo(hub.x, hub.y); ctx.lineTo(tip.x, tip.y); ctx.stroke(); ctx.strokeStyle = GOLD; ctx.lineWidth = Math.max(1.5, 0.045 * tip.s); ctx.stroke();
       ctx.fillStyle = GOLD; ctx.strokeStyle = INK; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(hub.x, hub.y, Math.max(4, 0.1 * hub.s), 0, TAU); ctx.fill(); ctx.stroke(); }
   }
@@ -458,5 +459,5 @@
       c.lineWidth = 0.08; c.beginPath(); c.moveTo(0.95, -0.2); c.lineTo(0.75, -4.4); c.stroke(); c.lineWidth = 0.05;
       c.beginPath(); c.moveTo(0.75, -4.4); c.quadraticCurveTo(0.0, -4.9, -0.7, -4.2); c.quadraticCurveTo(-0.1, -4.5, 0.72, -4.2); c.closePath(); inkF(c, glint > 0.2 ? "#FFFFFF" : "#C8CCD4");
       c.globalAlpha *= 0.55; c.beginPath(); c.arc(-1.5, -2.2, 0.36, 0, TAU); c.fillStyle = "#0A0A12"; c.fill(); c.beginPath(); rr(c, -1.72, -1.9, 0.44, 0.22, 0.08); c.fill(); c.globalAlpha /= 0.55;   // Morty's shadow, held captive at his side
-    });
+    }, "body", { glint });
   }
