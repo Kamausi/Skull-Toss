@@ -14,6 +14,8 @@
     mathCore: () => MC,   // (v68: the math core, 01d_mathcore.js)
     portalNow() { portalTo(Math.min(8, (game.stage || 1) + 1), () => {}); },   // (v68: open a portal where the ring is, for a look at it)
     r3d: on => { R3D.force = on == null ? null : !!on; return r3dOn(); }, r3dState: () => ({ ok: R3D.ok, on: r3dOn(), drawn: R3D.drawn, fails: R3D.fails }),   // (v68: the 3D renderer)
+    r3dPerf: () => r3dPerf(), r3dHold: q => { R3D_RCM.hold = q == null ? null : clamp(q, 0, 1); if (q == null) R3D_RCM.pid = MC.PF.pid(); return R3D_RCM.hold; },   // (v68: the runtime complexity manager; hold pins its quality)
+    r3dWorth: (x, y, cw, ch, sc, k) => r3dWorth(k || { probe: 1 }, x, y, cw, ch, [cw / 2, ch], sc), r3dClock: t => { R3D_RCM.now = t; },
     watchReplay: () => Replay.watch(Replay.last), replaying: () => !!Replay.play, lastReplay: () => Replay.last && JSON.parse(JSON.stringify(Replay.last)),
     encodeReplay: R => Replay.encode(R), decodeReplay: s => Replay.decode(s), replayLink: R => Replay.link(R), offerShared(R) { sharedReplay = R; renderSharedOffer(); }, stopReplay: () => Replay.stop(true),
     serverKeys: pre => (Backend.fakeDocs ? [...Backend.fakeDocs.keys()].filter(k => k.startsWith(pre)) : []), serverSet(p, o) { if (Backend.fakeDocs) Backend.fakeDocs.set(p, JSON.parse(JSON.stringify(o))); },

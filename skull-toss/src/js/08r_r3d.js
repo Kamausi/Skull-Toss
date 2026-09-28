@@ -41,7 +41,7 @@
   // the camera: a pinhole at the eye, its centre moved from the middle of the screen to the horizon
   function r3dResize() {
     if (!R3D.ok || !W) return;
-    R3D.gl.setPixelRatio(R3D.pr = Math.min(DPR, 1.5)); R3D.gl.setSize(W, H, false);   // (a touch softer than the 2D print on a sharp screen: the 3D is the heavier half)
+    R3D.gl.setPixelRatio(R3D.pr = Math.min(DPR, 1.5) * R3D_RCM.scale); R3D.gl.setSize(W, H, false);   // (a touch softer than the 2D print on a sharp screen: the 3D is the heavier half; and lower still if the frame can't afford it: 08rf_r3d_budget.js)
     const fullH = 2 * Math.max(HY, H - HY), c = R3D.cam;
     c.fov = 2 * Math.atan(fullH / 2 / F) * 180 / Math.PI; c.aspect = W / fullH;
     c.setViewOffset(W, fullH, 0, fullH / 2 - HY, W, H); c.updateProjectionMatrix();
@@ -100,7 +100,7 @@
     return pool[n];
   }
   function r3dRender(entries, x0, y0, x1, y1) {
-    const gl = R3D.gl;
+    const gl = R3D.gl, t0 = performance.now();
     gl.setScissorTest(true); gl.setScissor(x0, H - y1, x1 - x0, y1 - y0); gl.clear(true, true, false);
     if (entries.length === 1 && !entries[0].m) {   // a hero piece: itself, as posed
       const E = entries[0]; R3D.inkU.uInk.value = E.ink; R3D.scene.add(E.root);
@@ -118,6 +118,7 @@
       R3D.drawn += entries.length;
     }
     ctx.drawImage(R3D.canvas, x0 * R3D.pr, y0 * R3D.pr, (x1 - x0) * R3D.pr, (y1 - y0) * R3D.pr, x0, y0, x1 - x0, y1 - y0);
+    R3D_RCM.t3d += performance.now() - t0;   // (the 3D's share of the frame: 08rf_r3d_budget.js)
   }
   function r3dFlush() {
     const Q = R3D_Q; if (!Q.list.length) return;

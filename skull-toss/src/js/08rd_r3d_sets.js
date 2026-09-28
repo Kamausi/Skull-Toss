@@ -6,7 +6,7 @@
   // light and inked. As the road bends and Morty travels, the pieces turn and their sides show, like a set.
   // The outline is traced once per piece from the painting's alpha (marching squares, then simplified), so every piece
   // of art the game has, and any added later, becomes a set piece with no hand modelling.
-  const R3D_SETS = { res: 200, depth: 0.12, step: 2, near: 30 };   // (near: beyond this many metres a piece's depth can't be seen, so it stays painted)
+  const R3D_SETS = { res: 200, depth: 0.12, step: 2 };   // (whether a piece's depth can be seen at all is the runtime complexity manager's call: r3dWorth, 08rf_r3d_budget.js)
   // the outline of the opaque part of an image: the longest boundary loop, in pixels (marching squares on a grid)
   function r3dTrace(g, w, h, step) {
     const d = g.getImageData(0, 0, w, h).data, cols = Math.floor(w / step) + 2, rows = Math.floor(h / step) + 2;
@@ -49,9 +49,11 @@
     return pts.filter((_, i) => keep[i]);
   }
   // a set piece from any painting: paint(g) draws it in canvas units into a cw × ch box with its foot at foot
-  function r3dSetPiece(key, cw, ch, foot, paint, edge = "#2A2018") {
+  // (null if this frame's build budget is spent: it's cut later, the most visible first, and stays painted till then)
+  function r3dSetPiece(key, cw, ch, foot, paint, edge = "#2A2018", prio = R3D_RCM.E) {
     if (R3D.cache["set:" + key]) return R3D.cache["set:" + key];
-    const q = R3D_SETS.res / Math.max(cw, ch), w = Math.max(8, Math.ceil(cw * q)), h = Math.max(8, Math.ceil(ch * q));
+    if (!r3dMayBuild(key, prio, () => r3dSetPiece(key, cw, ch, foot, paint, edge, Infinity))) return null;
+    const t0 = performance.now(), q = R3D_SETS.res / Math.max(cw, ch), w = Math.max(8, Math.ceil(cw * q)), h = Math.max(8, Math.ceil(ch * q));
     const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
     const g = cv.getContext("2d", { willReadFrequently: true }); g.scale(q, q); paint(g); g.setTransform(1, 0, 0, 1, 0, 0);
     const loops = r3dTrace(g, w, h, R3D_SETS.step);
@@ -73,12 +75,13 @@
       const mesh = new THREE.Mesh(geo, [face, side]), ink = new THREE.Mesh(geo, R3D.cache.ink || (R3D.cache.ink = r3dInk()));
       ink.renderOrder = -1; grp.add(ink, mesh);
     }
-    grp.userData = { cw, ch, foot, depth };
+    grp.userData = { cw, ch, foot, depth }; r3dBuilt(t0);
     return (R3D.cache["set:" + key] = grp);
   }
   // draw one: its foot at screen (x, y), sc pixels per canvas unit at the foot's depth; turn (radians about the
   // vertical) sets how it stands to the lane; alpha fades it
   function r3dDrawSet(M, x, y, sc, o = {}) {
+    if (!M) return false;
     const U = M.userData, metresPerUnit = o.mpu || 0.01 * (o.mul || 1), Z = F * metresPerUnit / Math.max(1e-4, sc);
     M.position.set((x - W / 2) * Z / F, -(y - HY) * Z / F, -Z);
     M.rotation.set(0, o.turn || 0, o.tilt ? -o.tilt : 0);
@@ -99,6 +102,19 @@
     if (!R3D_LIVE.cv) { R3D_LIVE.cv = document.createElement("canvas"); R3D_LIVE.g = R3D_LIVE.cv.getContext("2d", { willReadFrequently: true }); }
     const C = R3D_LIVE.cv; let x0 = Math.max(0, Math.floor(box.x)), y0 = Math.max(0, Math.floor(box.y)), x1 = Math.min(W, Math.ceil(box.x + box.w)), y1 = Math.min(H, Math.ceil(box.y + box.h));
     if (x1 - x0 < 3 || y1 - y0 < 3) return false;
+    // (the runtime complexity manager, 08rf_r3d_budget.js) a piece that isn't protected is 3D only while its depth shows,
+    // and is painted and cut again only as often as it's worth (on twos while there's room); in between it keeps its
+    // last painting and moves with its box, so its texture isn't sent to the GPU every frame
+    let w3 = 1;
+    if (!box.auto && !R3D_KEEP.test(key)) {
+      w3 = r3dLiveWorth(key, thick * F / Math.max(0.1, zc)); if (w3 <= 0) return false;
+      const P0 = R3D.cache["live:" + key], bw0 = x1 - x0, bh0 = y1 - y0;
+      if (P0 && P0.frame === Math.floor(performance.now() / 1000 * r3dTraceHz(key, bw0 * bh0 / (W * H))) && Math.abs(bw0 - P0.bw) <= Math.max(2, P0.bw * 0.06) && Math.abs(bh0 - P0.bh) <= Math.max(2, P0.bh * 0.06)) {
+        const k = zc / F; P0.grp.position.set((x0 - W / 2) * k, -(y0 - HY) * k, -zc); P0.grp.scale.set(k, k, k);
+        return r3dDraw(P0.grp, { x: x0 - 6, y: y0 - 6, w: P0.bw + 12, h: P0.bh + 12 }, 1.4, alpha * w3, true) && w3 >= 1;
+      }
+    }
+    const tc = performance.now();
     if (C.width !== Math.round(W * DPR) || C.height !== Math.round(H * DPR)) { C.width = Math.round(W * DPR); C.height = Math.round(H * DPR); }
     const g = R3D_LIVE.g, main = ctx;
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(x0 * DPR - 2, y0 * DPR - 2, (x1 - x0) * DPR + 4, (y1 - y0) * DPR + 4);
@@ -122,7 +138,7 @@
     if (!P) { const cv = document.createElement("canvas"), tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; P = R3D.cache["live:" + key] = { cv, pg: cv.getContext("2d", { willReadFrequently: true }), tex, grp: new THREE.Group(), frame: -1, face: new THREE.MeshToonMaterial({ map: tex, gradientMap: R3D.ramp, transparent: true, alphaTest: 0.42 }), side: r3dToon("#231A14"), bw: 0, bh: 0 }; }
     if (P.cv.width !== tw || P.cv.height !== th) { P.cv.width = tw; P.cv.height = th; P.tex.dispose(); P.tex = new THREE.CanvasTexture(P.cv); P.tex.colorSpace = THREE.SRGBColorSpace; P.face.map = P.tex; P.frame = -1; }
     P.pg.setTransform(1, 0, 0, 1, 0, 0); P.pg.clearRect(0, 0, tw, th); P.pg.drawImage(C, x0 * DPR, y0 * DPR, bw * DPR, bh * DPR, 0, 0, tw, th); P.tex.needsUpdate = true;
-    const frame = Math.floor(performance.now() / 1000 * R3D_LIVE.fps);
+    const frame = Math.floor(performance.now() / 1000 * r3dTraceHz(key, bw * bh / (W * H)));   // (on twos while there's room: 08rf_r3d_budget.js)
     if (frame !== P.frame || Math.abs(bw - P.bw) > 2 || Math.abs(bh - P.bh) > 2) {
       P.frame = frame; P.bw = bw; P.bh = bh;
       for (const ch of P.grp.children.slice()) { if (ch.geometry && ch.userData.own) ch.geometry.dispose(); P.grp.remove(ch); }
@@ -139,7 +155,8 @@
     }
     // stand it up: its box's top-left corner at (x0, y0) on screen, one pixel = zc / F metres at its depth
     const k = zc / F; P.grp.position.set((x0 - W / 2) * k, -(y0 - HY) * k, -zc); P.grp.scale.set(k, k, k); P.grp.rotation.set(0, 0, 0);
-    return r3dDraw(P.grp, { x: x0 - 6, y: y0 - 6, w: bw + 12, h: bh + 12 }, 1.4, alpha, true);
+    R3D_RCM.t3d += performance.now() - tc;
+    return r3dDraw(P.grp, { x: x0 - 6, y: y0 - 6, w: bw + 12, h: bh + 12 }, 1.4, alpha * w3, true) && w3 >= 1;
   }
   // a live piece round a point in the world: p its projection, ext [left, up, right, down] in metres about it
   function r3dLiveAt(key, p, ext, thick, draw, alpha = 1) {

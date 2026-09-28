@@ -116,7 +116,9 @@
     if (k.kind === "digger") { r3dWrap("digger", DIG.z, 0.25, drawDigger); return; }   // (v68: a live 3D piece when the 3D renderer is on)
     const p = project(k.x, 0, k.z); if (p.x < -U * 1.2 || p.x > W + U * 1.2) return;
     const sp = spriteFor(k), sc = p.s / sp.S, t = world.t, G = propGroove(k.kind, k.ph, t), bb = G.bb, sway = G.sway;
-    const in3d = k.z < R3D_SETS.near && r3dOn() && !r3dReacting(k) && r3dDrawSet(r3dSetPiece("prop:" + (sp.id || (sp.id = ++R3D.ids)), sp.w, sp.h, [sp.ax, sp.ay], g => g.drawImage(sp.c, 0, 0, sp.w, sp.h)), p.x, p.y, sc, { mpu: 1 / sp.S, tilt: k.tilt, sy: 1 + bb * 0.06, now: !!(k.face || k.crack || k.kind === "lantern") });   // (v68: a 3D set piece, 08rd_r3d_sets.js)
+    const w3 = r3dOn() && !r3dReacting(k) ? r3dWorth(k, p.x, p.y, sp.w, sp.h, [sp.ax, sp.ay], sc) : 0;   // (v68: how much of it shows in 3D; −1 out of view: 08rf_r3d_budget.js)
+    if (w3 < 0) return;
+    const in3d = w3 > 0 && r3dDrawSet(r3dSetPiece("prop:" + (sp.id || (sp.id = ++R3D.ids)), sp.w, sp.h, [sp.ax, sp.ay], g => g.drawImage(sp.c, 0, 0, sp.w, sp.h)), p.x, p.y, sc, { mpu: 1 / sp.S, tilt: k.tilt, sy: 1 + bb * 0.06, now: !!(k.face || k.crack || k.kind === "lantern"), alpha: w3 }) && w3 >= 1;   // (v68: a 3D set piece, 08rd_r3d_sets.js)
     ctx.save(); ctx.translate(p.x, p.y); if (k.tilt) ctx.rotate(k.tilt);
     if (sway) ctx.transform(1, 0, sway, 1, 0, 0);
     reactXform(k);   // hit by a throw: it moves, bends, rotates, squeaks, shakes or falls (07n_environment.js)

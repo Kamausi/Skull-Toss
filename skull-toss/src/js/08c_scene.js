@@ -336,6 +336,7 @@
   }
 
   function draw() {
+    r3dFrameBegin();   // (v68: the 3D's timing and budgets, 08rf_r3d_budget.js)
     const wv = gateWeave(); camBase = { x: wv.x || 0, y: wv.y || 0 };   // the projector's weave moves the whole print
     // the planes, back to front: each one sits at its own depth, so the camera slides them by different amounts
     const L = (P, zc, plane) => { planeXform(ctx, zc, plane); ctx.drawImage(P.c, P.x0, P.y0, P.w, P.h); };
@@ -430,4 +431,5 @@
     drawRift();   // (v54: through the portal, the camera goes with him: 07t_portal.js)
     if (visualsOn()) drawVisualDebug();
     drawCollisionDebug();   // (v51: ?collisions, 08l_water.js)
+    r3dFrameEnd();
   }

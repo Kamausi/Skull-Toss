@@ -2924,11 +2924,148 @@
     const X = [1, 0, 0], Y = [0, 1, 0], Z = [0, 0, 1]; assert(near(M.sphExcess(X, Y, Z), Math.PI / 2) && near(M.sphArea(X, Y, Z, 2), 2 * Math.PI), "the octant: excess π/2, area R²E");
     const mid = M.greatCircle(X, Y, 0.5); assert(near(mid[0], Math.SQRT1_2) && near(mid[1], Math.SQRT1_2) && near(Math.hypot(...mid), 1), "a great circle stays on the sphere");
   });
+  // ── v68: the math core, part two (the engine's mathematics: 01e_mathcore_engine.js) ──
+  test("v68 Math core (engine): vectors, rotation matrices and quaternions (RᵀR = I, det 1; Euler, quaternion and matrix agree; SLERP; orientation derived from a direction), planes and normals (signed distance, ray–plane, BONK or SKID, portal frames), and collision (the discriminant, a swept sphere that can't tunnel, the closest point, SAT and GJK agreeing)", () => {
+    const M = T.mathCore(), { V, M3, Q, PL, CO } = M, near = (a, b, e = 1e-9) => Math.abs(a - b) <= e, rnd = (s => () => { s = (s * 16807) % 2147483647; return s / 2147483647; })(5);
+    assert(near(V.len([3, 4]), 5) && near(V.dot([1, 2, 3], [4, 5, 6]), 32) && near(V.angle([1, 0, 0], [0, 1, 0]), Math.PI / 2), "Pythagoras, the dot product, the angle between");
+    const a = [2, 3, -1], b = [0.5, -2, 4]; assert(near(V.dot(V.reject(a, b), b), 0, 1e-12) && V.add(V.proj(a, b), V.reject(a, b)).every((x, i) => near(x, a[i])), "a vector is its part along b plus its part across b");
+    const r = V.reflect([1, -1, 0], [0, 1, 0]); assert(near(r[0], 1) && near(r[1], 1), "r = v − 2(v·n)n");
+    const aim = V.aim([0, 0], [3, 4], 2, 8); assert(near(aim.dir[0], 0.6) && near(aim.speed, 8), "drag to aim: a direction, and a strength k|d| (capped)");
+    for (let k = 0; k < 12; k++) {
+      const e = [rnd() * 6 - 3, rnd() * 6 - 3, rnd() * 6 - 3], R = M3.euler(...e), q = Q.euler(...e), Rq = Q.matrix(q), v = [rnd() - 0.5, rnd() - 0.5, rnd() - 0.5];
+      assert(M3.isRotation(R) && M3.isRotation(Rq), "RᵀR = I and det R = 1");
+      assert(R.every((row, i) => row.every((x, j) => near(x, Rq[i][j], 1e-9))), "Euler → matrix and Euler → quaternion → matrix are the same rotation");
+      assert(near(Q.angle(q, Q.fromMatrix(R)), 0, 1e-6), "and back from the matrix to the quaternion");
+      const v1 = M3.apply(R, v), v2 = Q.rotate(q, v); assert(v1.every((x, i) => near(x, v2[i])) && near(V.len(v1), V.len(v)), "the same turn either way, and no stretch");
+    }
+    const P0 = [0.7, 0.2, -0.5], tw = M.D.twist(1.3)(P0), rx = M3.apply(M3.rx(1.3 * P0[0]), P0); assert(tw.every((x, i) => near(x, rx[i], 1e-12)), "the twist is a rotation matrix whose angle grows along x");
+    const q0 = Q.axis([0, 0, 1], 0), q1 = Q.axis([0, 0, 1], 2); for (const t of [0.25, 0.5, 0.75]) assert(near(Q.angle(q0, Q.slerp(q0, q1, t)), 2 * t), "SLERP turns at a steady rate");
+    const fwd = [0.3, -0.8, 0.5], z = Q.rotate(Q.between([0, 0, 1], fwd), [0, 0, 1]), L = M3.look(fwd); assert(z.every((x, i) => near(x, V.norm(fwd)[i])) && M3.isRotation(L) && near(L[0][2], V.norm(fwd)[0]), "an orientation derived from a direction, never faked");
+    const Mx = M.trs([1, 2, 3], Q.axis([0, 1, 0], Math.PI / 2), [2, 2, 2]), tv = M.applyM4(Mx, [1, 0, 0]); assert(near(tv[0], 1) && near(tv[2], 1), "a transform: T·R·S");
+    const P = PL.make([0, 2, 0], [0, 1, 0]); assert(near(PL.dist(P, [5, 4, 1]), 3) && near(PL.distABCD(0, 1, 0, 1, [5, 4, 1]), 3), "the signed distance to a plane, both forms");
+    assert(near(PL.ray([0, 5, 0], [0, -1, 0], P), 4) && PL.ray([0, 5, 0], [0, 1, 0], P) === null, "ray–plane: t = ((p₀ − o)·n) / (d·n); none going away");
+    assert(PL.impact([0, -5, 0.5], [0, 1, 0]).kind === "bonk" && PL.impact([4, -1, 0], [0, 1, 0]).kind === "skid", "head-on is a BONK, glancing is a SKID (the normal and tangential parts)");
+    assert(near(PL.between([0, 1, 0], [1, 0, 0]), Math.PI / 2) && near(PL.between([0, 1, 0], [0, -1, 0]), 0), "the angle between two surfaces");
+    const A = PL.frame([0, 0, 0], [0, 0, 1]), B = PL.frame([10, 0, 0], [1, 0, 0]), s = PL.portal(A, B, [0.2, 0.1, 0.05], [0.1, 0, -2]);
+    assert(PL.entering([0.1, 0, -2], A.n) && V.dot(s.v, B.n) > 0 && near(V.len(s.v), Math.hypot(0.1, 2), 1e-12), "in through portal A's face, out of portal B's at the same speed (a change of frame, not a teleport)");
+    assert(CO.quadratic(1, 0, 1).kind === "miss" && CO.quadratic(1, -2, 1).kind === "graze" && CO.quadratic(1, -3, 2).roots.join() === "1,2", "Δ < 0 misses, Δ = 0 grazes, Δ > 0 crosses");
+    assert(near(CO.quadratic(1, 1e8, 1).roots[1] * 1e8, -1, 1e-6), "the stable form keeps the small root");
+    const t = CO.sweep([-0.6, 0, 0], [1.2, 0, 0], [0, 0.05, 0], 0.1); assert(t > 0.3 && t < 0.5 && CO.sweep([-0.6, 0.5, 0], [1.2, 0, 0], [0, 0, 0], 0.1) === null, "a skull crossing a 10 cm target in one frame is caught between the frames (no tunnelling)");
+    const c = CO.closest([0.5, 1, 0], [0, 0, 0], [1, 0, 0]); assert(near(c.t, 0.5) && near(c.d, 1) && near(CO.closest([3, 1], [0, 0], [1, 0]).t, 1), "the closest point on a segment, clamped to its ends");
+    const reg = (cx, cy, rr, n, rot) => Array.from({ length: n }, (_, i) => [cx + rr * Math.cos(rot + i * 2 * Math.PI / n), cy + rr * Math.sin(rot + i * 2 * Math.PI / n)]);
+    let tested = 0, hits = 0;
+    for (let k = 0; k < 300; k++) {
+      const X = reg(rnd() * 4, rnd() * 4, 0.3 + rnd(), 3 + Math.floor(rnd() * 5), rnd() * 6), Y = reg(rnd() * 4, rnd() * 4, 0.3 + rnd(), 3 + Math.floor(rnd() * 5), rnd() * 6), S = CO.sat(X, Y);
+      if ((S.hit && S.depth < 1e-3) || (!S.hit && S.gap < 1e-3)) continue;
+      tested++; if (S.hit) hits++; assert(CO.gjk(X, Y) === S.hit, "GJK (the Minkowski difference holds the origin) agrees with SAT (no separating axis)");
+    }
+    assert(tested > 200 && hits > 40, `enough of both (${hits} of ${tested} overlapping)`);
+    const sq4 = reg(0, 0, 1, 4, 0), S2 = CO.sat(sq4, reg(1.5, 0, 1, 4, 0)); assert(S2.hit && S2.axis[0] > 0 && CO.minkowski(sq4, sq4).length === 16, "SAT's push apart points from A to B");
+  });
+  test("v68 Math core (engine): motion (the power rule, easing, smoothstep, the damped oscillator's three kinds, impulses with friction, springs, a fixed step), curves (Bézier, Catmull–Rom, curvature), SDFs, Poisson disk, fBm, constraints (the pseudoinverse, the null space, rank + nullity, Lagrange, the camera's null direction) and the golden geometry (Binet, the Fibonacci squares, the spiral)", () => {
+    const M = T.mathCore(), { V, MO, CU, SDF, LA, GG } = M, near = (a, b, e = 1e-9) => Math.abs(a - b) <= e, d = (f, t, h = 1e-5) => (f(t + h) - f(t - h)) / (2 * h), dd = (f, t, h = 1e-4) => (f(t + h) - 2 * f(t) + f(t - h)) / (h * h);
+    const pc = [5, 2, -4.9]; assert(MO.polyD(pc).join() === "2,-9.8" && near(MO.poly(MO.polyD(MO.polyD(pc)), 3), -9.8), "the power rule: position → velocity → acceleration");
+    for (const n of [2, 3, 0.5]) assert(near(MO.easeD(n)(0.6), d(MO.ease(n), 0.6), 1e-5), `tⁿ easing and its rate (n = ${n})`);
+    const S = MO.smoothstep, S5 = MO.smootherstep; assert(near(S(0), 0) && near(S(1), 1) && near(S(0.5), 0.5) && near(d(S, 1e-4), 0, 1e-3) && near(d(S, 1 - 1e-4), 0, 1e-3), "smoothstep starts and ends at rest");
+    assert(Math.abs(dd(S5, 0.001)) < 0.1 && Math.abs(dd(S, 0.001)) > 5, "smootherstep's acceleration is zero at the ends too");
+    assert(near(MO.invLerp(2, 6, MO.lerp(2, 6, 0.3)), 0.3) && near(MO.remap(0, 1, 10, 20, 0.25), 12.5), "lerp and its inverse");
+    for (const z of [0.3, 1, 2.5]) { const x = t => MO.damped(z, 4, 1, 0.5, t); for (const t of [0.1, 0.5, 1.3]) assert(Math.abs(dd(x, t) + 2 * z * 4 * d(x, t) + 16 * x(t)) < 1e-3, `x″ + 2ζωx′ + ω²x = 0 (ζ = ${z})`); assert(near(x(0), 1) && near(d(x, 1e-6), 0.5, 1e-3), "from its start"); }
+    let under = false, crit = false; for (let t = 0; t < 3; t += 0.01) { if (MO.damped(0.2, 4, 1, 0, t) < 0) under = true; if (MO.damped(1, 4, 1, 0, t) < 0) crit = true; }
+    assert(under && !crit, "underdamped bounces through zero; critically damped settles without overshooting");
+    const E1 = MO.collide([2, 0, 0], [-1, 0, 0], [1, 0, 0], 1, 1, 1); assert(near(E1.v1[0], -1) && near(E1.v2[0], 2), "an elastic hit between equal masses swaps their velocities");
+    assert(near(MO.collide([0, -3, 0], [0, 0, 0], [0, 1, 0], 0.5, 1, Infinity).v1[1], 1.5), "off a wall with e = 0.5, half the speed comes back");
+    const Fr = MO.collide([2, -3, 0], [0, 0, 0], [0, 1, 0], 0.5, 1, Infinity, 0.2).v1; assert(Fr[0] < 2 && Fr[0] > 0, "friction slows the skid (at most μ·j)");
+    const sp = { x: 1, v: 0 }; for (let i = 0; i < 600; i++) MO.springStep(sp, 0, 40, 2 * Math.sqrt(40), 1 / 240); assert(Math.abs(sp.x) < 0.02, "a critically damped spring (F = −kx − cv) settles");
+    const st = MO.fixedStep(1 / 240); assert(st.advance(1 / 60, () => {}) === 4 && near(st.alpha(), 0, 1e-6), "a fixed step: a 60 Hz frame is four 240 Hz steps");
+    const B0 = [0, 0], B1 = [1, 2], B2 = [3, 2], B3 = [4, 0], bt = 0.37, h = 1e-6;
+    assert(CU.bezier(B0, B1, B2, B3, 0).join() === "0,0" && CU.bezier(B0, B1, B2, B3, 1).join() === "4,0", "Bézier: from P₀ to P₃");
+    assert(CU.bezierD(B0, B1, B2, B3, bt).every((x, i) => near(x, (CU.bezier(B0, B1, B2, B3, bt + h)[i] - CU.bezier(B0, B1, B2, B3, bt - h)[i]) / (2 * h), 1e-5)), "and its derivative");
+    assert(CU.catmull(B0, B1, B2, B3, 0).join() === B1.join() && CU.catmull(B0, B1, B2, B3, 1).every((x, i) => near(x, B2[i])), "Catmull–Rom goes through its points");
+    assert(near(CU.curvatureOf(t => [2.5 * Math.cos(t), 2.5 * Math.sin(t)], 0.7), 0.4, 1e-5) && near(CU.curvature([1, 0, 0], [0, 1, 0]), 1), "κ = |r′ × r″| / |r′|³: a circle's is 1/R");
+    const s1 = SDF.sphere([0, 0, 0], 1), s2 = SDF.sphere([1.5, 0, 0], 1), U = SDF.union(s1, s2), I = SDF.intersect(s1, s2), D = SDF.subtract(s1, s2);
+    assert(near(s1([2, 0, 0]), 1) && near(s1([0, 0, 0]), -1), "a sphere's distance: < 0 inside, > 0 out");
+    assert(U([0.75, 0, 0]) < 0 && I([0.75, 0, 0]) < 0 && I([-0.5, 0, 0]) > 0 && D([-0.5, 0, 0]) < 0 && D([0.75, 0, 0]) > 0, "union = min, intersection = max, subtraction = max(d₁, −d₂)");
+    assert(near(SDF.normal(s1, [0, 2, 0])[1], 1, 1e-6) && near(SDF.box([0, 0, 0], [1, 1, 1])([2, 2, 0]), Math.SQRT2) && near(SDF.capsule([0, 0, 0], [1, 0, 0], 0.5)([0.5, 1, 0]), 0.5), "the normal is the gradient; a box; a capsule");
+    const pts = M.poissonDisk(10, 10, 1, 3); let mind = 1e9; for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) mind = Math.min(mind, V.dist(pts[i], pts[j]));
+    assert(mind >= 1 - 1e-9 && pts.length > 40 && M.poissonDisk(10, 10, 1, 3)[5][0] === pts[5][0], `Poisson disk: ${pts.length} points, none nearer than r, the same for the same seed`);
+    let fm = 0; for (let i = 0; i < 300; i++) fm = Math.max(fm, Math.abs(M.fbm(i * 0.37, i * 0.61))); assert(M.fbm(0.3, 0.7, { octaves: 1, seed: 4 }) === M.noise(0.3, 0.7, 4) && fm <= 1.9375, "fBm: one octave is the noise; five stay within Σ aⁱ");
+    const eq = (X, Y) => X.every((row, i) => row.every((x, j) => near(x, Y[i][j], 1e-9)));
+    for (const A of [[[1, 2, 3], [4, 5, 6]], [[1, 2], [2, 4], [3, 6]], [[2, 0, 1], [0, 1, 1], [2, 1, 2]], [[1, 0, 0, 1], [0, 1, 1, 0], [1, 1, 1, 1]]]) {
+      const P = LA.pinv(A), AP = LA.mul(A, P), PA = LA.mul(P, A), N = LA.nullProjector(A);
+      assert(eq(LA.mul(AP, A), A) && eq(LA.mul(PA, P), P) && eq(AP, LA.T(AP)) && eq(PA, LA.T(PA)), `the four Penrose conditions (${JSON.stringify(A)})`);
+      assert(LA.mul(A, N).every(row => row.every(x => near(x, 0))) && LA.rank(A) + LA.nullity(A) === A[0].length && LA.rank(N) === LA.nullity(A), "N = I − A⁺A: A·N = 0; rank + nullity = n");
+    }
+    const A = [[1, 1, 0], [0, 1, 1]], bb = [1, 2], x = LA.lagrange([3, -1, 2], A, bb); assert(LA.vec(A, x).every((v, i) => near(v, bb[i])) && LA.vec(LA.nullProjector(A), V.sub(x, [3, -1, 2])).every(v => near(v, 0)), "Lagrange: the nearest point on the constraint, reached across it (∇f = λ∇g)");
+    assert(LA.vec(A, LA.nullStep(x, [0.3, -0.2, 0.9], A)).every((v, i) => near(v, bb[i])), "a step in the null space moves without disturbing the constraint");
+    const Pt = [0.4, -0.3, 2], J = LA.jacobian(([X, Y, Z]) => [X / Z, Y / Z], Pt), nd = V.norm(LA.vec(LA.nullProjector(J), [0.1, 0.7, 0.3]));
+    assert(LA.rank(J, 1e-6) === 2 && near(Math.abs(V.dot(nd, V.norm(Pt))), 1, 1e-6), "the camera's Jacobian throws away one direction: along the ray from the eye (depth)");
+    const ls = LA.leastSquares([[1, 0], [1, 1], [1, 2]], [1, 2, 2]); assert(near(ls[0], 7 / 6) && near(ls[1], 0.5), "least squares by the pseudoinverse");
+    for (let n = 0; n <= 70; n++) assert(GG.nearest(n) === GG.fib(n), `round(φⁿ/√5) = F_${n}`);
+    for (let n = 0; n <= 30; n++) assert(near(GG.binet(n), GG.fib(n), 1e-6), `Binet: F_${n} = (φⁿ − ψⁿ)/√5`);
+    assert(Math.floor(GG.PHI / Math.sqrt(5)) !== GG.fib(1), "the floor form fails (at n = 1: 0, not 1)");
+    const sqs = GG.squares(10); assert(sqs.w === GG.fib(11) && sqs.h === GG.fib(10) && sqs.squares.reduce((s, q) => s + q.s * q.s, 0) === GG.fib(10) * GG.fib(11), "the Fibonacci squares make an F₁₀ × F₁₁ rectangle (Σ Fᵢ² = F_n F_n₊₁)");
+    assert(near(V.len(GG.spiral(0.3 + Math.PI / 2)) / V.len(GG.spiral(0.3)), GG.PHI, 1e-12) && near(GG.split(10)[0] / GG.split(10)[1], GG.PHI, 1e-12), "the golden spiral grows by φ a quarter turn; a golden cut");
+    assert([0, 1, 2, 3, 4, 5].map(i => GG.scaffold(i, 1, 0.1).toFixed(1)).join() === "1.0,1.1,1.2,1.4,1.7,2.2", "a Fibonacci growth scaffold");
+  });
+  test("v68 Math core (engine): light, Fourier (FFT = DFT, Parseval, a 3:4 polyrhythm's spectrum), the ∇ field language (curl grad = 0, div curl = 0, sources and vortices, the portal as sink + vortex, a boss death's four phases, a = g + F), stable fluids (∇·u ≈ 0), tiling motifs (area kept, exactly one tile over every point) and the performance equations", () => {
+    const M = T.mathCore(), { V, LI, FO, FL, TILE, PF, CO } = M, near = (a, b, e = 1e-9) => Math.abs(a - b) <= e, rnd = (s => () => { s = (s * 16807) % 2147483647; return s / 2147483647; })(11), sq = x => x * x;
+    assert(near(LI.inverseSquare(8, 2), 2) && near(LI.beer(1, 0.3, 1) * LI.beer(1, 0.3, 2), LI.beer(1, 0.3, 3), 1e-12), "inverse square; Beer–Lambert multiplies through layers");
+    assert(near(LI.schlick(0.04, 1), 0.04) && near(LI.schlick(0.04, 0), 1) && near(LI.r0(1, 1.5), 0.04) && near(LI.lambert([0, 1, 0], [1, 1, 0]), Math.SQRT1_2) && LI.lambert([0, 1, 0], [0, -1, 0]) === 0, "Fresnel–Schlick; Lambert");
+    const x = Array.from({ length: 64 }, () => rnd() - 0.5), D = FO.dft(x), Fq = FO.fft(x);
+    assert(D.re.every((v, k) => near(v, Fq.re[k]) && near(D.im[k], Fq.im[k])) && FO.idft(D).every((v, i) => near(v, x[i])), "the FFT is the DFT; the inverse gives it back");
+    assert(near(x.reduce((s, v) => s + v * v, 0), FO.amplitude(D).reduce((s, v) => s + v * v, 0) / 64), "Parseval: the energy is the same in both");
+    const pulse = Array.from({ length: 48 }, (_, i) => (i % 16 === 0 ? 1 : 0) + (i % 12 === 0 ? 1 : 0)), peaks = FO.amplitude(FO.dft(pulse)).map((v, k) => [v, k]).filter(([v, k]) => k > 0 && k < 24 && v > 0.9).map(([, k]) => k);
+    assert(peaks.includes(3) && peaks.includes(4) && peaks.every(k => k % 3 === 0 || k % 4 === 0), `a 3-against-4 polyrhythm's spectrum is its two pulses' harmonics (${peaks})`);
+    const phi = ([a, b, c]) => Math.sin(a) * b * b + Math.exp(0.3 * c) * a, Fv = ([a, b, c]) => [b * c * c, Math.sin(a * c), a * a + b], p = [0.3, -0.7, 0.5];
+    assert(V.len(FL.curl3(q => FL.grad3(phi, q), p)) < 1e-6 && Math.abs(FL.div3(q => FL.curl3(Fv, q), p)) < 1e-6, "∇×(∇φ) = 0 and ∇·(∇×F) = 0");
+    const a1 = FL.probe(FL.source([0, 0], 2), [0.1, 0.05]), a2 = FL.probe(FL.vortex([0, 0], 3), [0.1, 0.05]);
+    assert(a1.div > 0 && Math.abs(a1.curl) < 1e-3 * a1.div && a2.curl > 0 && Math.abs(a2.div) < 1e-3 * a2.curl, "a source spreads (∇·F > 0) without turning; a vortex turns (∇×F ≠ 0) without spreading");
+    const PF0 = M.portalField(0.5, 1.6, 0.12), sum = FL.sum(FL.source([0, 0], -Math.PI, 0.12), FL.vortex([0, 0], 3.2 * Math.PI, 0.12)); assert([[0.3, 0.2], [-0.5, 0.1]].every(q => PF0(q).every((v, i) => near(v, sum(q)[i], 1e-12))), "the portal's field is a sink plus a vortex");
+    assert(Math.abs(M.curl2(FL.potential(([a, b]) => a * a + 2 * b * b), [0.4, 0.3])) < 1e-5 && Math.abs(M.div(FL.stream(([a, b]) => Math.sin(a) * b), [0.4, 0.3])) < 1e-5, "F = −∇φ never swirls; a stream function's flow never bunches up");
+    let md = 0; for (let i = 0; i < 12; i++) md = Math.max(md, Math.abs(M.div(FL.turbulence(2, 1, 5), [rnd() * 3, rnd() * 3]))); assert(md < 1e-3, "curl-noise turbulence is divergence-free");
+    const Dth = FL.death([0, 0]), at = t => FL.probe(q => Dth.F(q, t), [0.02, 0.01]), e = at(0.1), v = at(0.6), c = at(1.2);
+    assert(Dth.phase(0.1) === "expand" && e.div > 0 && Math.abs(e.curl) < 1e-3 * e.div, "a boss's death: first it blasts out");
+    assert(Dth.phase(0.6) === "vortex" && Math.abs(v.curl) > 3 * Math.abs(v.div), "then it turns");
+    assert(Dth.phase(1.2) === "converge" && c.div < 0 && c.curl > 0, "then it spirals in (the portal)");
+    assert(Dth.phase(2.5) === "closed" && at(2.5).speed === 0, "and closes (F → 0)");
+    const g = [0, -9.8], plain = FL.path([0, 0], [3, 4], g, () => [0, 0], 0.01, 100), windy = FL.path([0, 0], [3, 4], g, FL.uniform([1, 0]), 0.01, 100);
+    assert(near(plain[100][0], 3) && near(plain[100][1], 4 - 4.9) && near(windy[100][0], 3.5), "a = g + F: with no field a parabola; wind bends it");
+    const blob = FL.potential(([a, b]) => -0.05 * Math.exp(-(sq(a - 0.5) + sq(b - 0.5)) / 0.02)), G = FL.Grid(32); G.fill(blob);
+    const d0 = G.divergence(), s0 = V.len(G.sample(0.6, 0.5)); G.project(); assert(G.divergence() < d0 * 0.1 && V.len(G.sample(0.6, 0.5)) < s0 * 0.1, `stable fluids: projecting takes out the divergence (${d0.toFixed(3)} → ${G.divergence().toFixed(3)})`);
+    const G2 = FL.Grid(32); G2.fill(FL.vortex([0.5, 0.5], 0.5, 0.15)); const w0 = G2.sample(0.7, 0.5); G2.project(); assert(V.dist(w0, G2.sample(0.7, 0.5)) < 0.05 * V.len(w0), "and leaves a vortex (already divergence-free) as it was");
+    G2.force(0.3, 0.5, 2, 0); const dF = G2.divergence(); for (let i = 0; i < 5; i++) G2.step(1 / 60); assert(G2.divergence() < 0.15 * dF, "a push, then steps: the flow stays divergence-free");
+    const edgeD = (q, P) => { let m = 1e9; for (let i = 0; i < P.length; i++) m = Math.min(m, CO.closest(q, P[i], P[(i + 1) % P.length]).d); return m; };
+    for (const name of TILE.SIGNATURE) {
+      const Mo = TILE.MOTIFS[name], Ts = TILE.tiles(name, -4, 4, -4, 4); assert(near(TILE.polyArea(Mo.poly), Mo.area), `${name}: the area cut away is the area added`);
+      let bad = 0; for (let k = 0; k < 800; k++) { const q = [rnd() * 3 - 1, rnd() * 3 - 1], n = Ts.filter(t => TILE.inPoly(q, t.poly)).length; if (n !== 1 && !Ts.some(t => edgeD(q, t.poly) < 1e-6)) bad++; }
+      assert(bad === 0, `${name} tiles the plane: exactly one tile over every point (${bad} not)`);
+    }
+    const Ly = TILE.layers(TILE.tiles("hueso", 0, 3, 0, 3), 9); assert(Ly.length === 16 && Ly.every(l => l.tone >= 0.85 && l.tone <= 1.15), "variation and breakup layers, per tile");
+    const Hh = 820, fov = 0.9; assert(near(PF.sse(0.1, Hh, 10, fov), PF.ssePx(0.1, Hh / (2 * Math.tan(fov / 2)), 10)) && near(PF.sse(0.1, Hh, 20, fov) * 2, PF.sse(0.1, Hh, 10, fov)), "screen-space error: E = eH / (2d tan(fov/2)) = e·F/d");
+    assert(PF.level(50, [30, 10, 3]) === 0 && PF.level(5, [30, 10, 3]) === 2 && PF.level(1, [30, 10, 3]) === 3, "LOD from the error thresholds");
+    let on = false, flips = 0; for (const E of [9.9, 10.1, 9.8, 10.2, 10.4, 9.7, 10.6, 9.2]) { const n2 = PF.hysteresis(on, E, 10, 0.5); if (n2 !== on) flips++; on = n2; } assert(flips === 2, "hysteresis: no flicker inside the dead zone");
+    assert(near(PF.dynRes(1, 16.67, 22), 0.87, 0.005) && near(PF.amdahl(0.05, 10), 1.047, 0.001) && PF.little(200, 4) === 800, "dynamic resolution (0.87 at 22 ms), Amdahl (1.047), Little's law (800)");
+    const planes = PF.frustum(400, 820, 380, 700); let wrong = 0; for (let k = 0; k < 300; k++) { const z = 1 + rnd() * 50, px = rnd() * 400, py = rnd() * 820; if (PF.outside(planes, [(px - 200) * z / 700, -(py - 380) * z / 700, -z], 0.01)) wrong++; }
+    assert(wrong === 0 && PF.outside(planes, [-100, 0, -10], 1) && PF.outside(planes, [0, 0, 5], 1), "frustum culling: n·c + d < −r is outside; nothing on screen is culled");
+    assert(PF.cull({ c: [0, 0, -10], r: 5, kids: [{ c: [-2, 0, -10], r: 1 }, { c: [2, 0, -10], r: 1 }] }, planes).length === 2 && PF.cull({ c: [0, 0, 20], r: 1, kids: [{ c: [0, 0, 20], r: 0.5 }] }, planes).length === 0, "hierarchical: a parent out of view takes its children");
+    const depth = new Float32Array(64 * 64).fill(100); for (let y = 10; y < 40; y++) for (let xx = 10; xx < 40; xx++) depth[y * 64 + xx] = 5; const Z = PF.hiZ(depth, 64, 64);
+    assert(PF.occluded(Z, [15, 15, 30, 30], 8) && !PF.occluded(Z, [15, 15, 30, 30], 3) && !PF.occluded(Z, [5, 5, 20, 20], 8), "Hi-Z: behind the wall is hidden; in front of it, or round its edge, isn't");
+    const cone = PF.normalCone([[0, 0, 1], [0.1, 0, 1], [-0.1, 0.05, 1]].map(V.norm)); assert(PF.coneAway(cone, [0, 0, 10], 1, [0, 0, 0]) && !PF.coneAway(cone, [0, 0, -10], 1, [0, 0, 0]) && PF.backface([0, 0, 1], [0, 0, 1]), "normal-cone and backface culling");
+    assert(PF.refine({ E: 40, kids: [{ E: 20, kids: [{ E: 5 }, { E: 4 }] }, { E: 8, kids: [{ E: 2 }, { E: 1 }] }] }, n => n.E, 10).map(n => n.E).join() === "5,4,8", "a cluster hierarchy is refined only where its error shows");
+    const al = PF.particles([{ want: 4000, importance: 1 }, { want: 1500, importance: 0.5 }, { want: 800, importance: 0.2 }], 3000), al2 = PF.particles([{ want: 100, importance: 1 }, { want: 5000, importance: 0.1 }], 3000);
+    assert(al.reduce((s, n) => s + n, 0) <= 3000 && al[0] > al[1] && al[1] >= al[2] && al2[0] === 100 && al2[1] > 2800, "a particle budget shared by importance, and what one doesn't need passed on");
+    assert(PF.resident([{ mem: 10, value: 5 }, { mem: 50, value: 10 }, { mem: 5, value: 4 }], 20).length === 2, "memory: the most value per byte stays resident");
+    const pid = PF.pid(); for (let i = 0; i < 200; i++) pid.update(16.67 - 30); const low = pid.Q; for (let i = 0; i < 600; i++) pid.update(16.67 - 8); assert(low === 0 && pid.Q === 1, "the governor gives up quality under load, and takes it back with headroom");
+    const hitchy = [16.7, 16.7, 16.7, 16.7, 43.5, 16.7, 16.7], steady = [20, 20, 20, 20, 20, 20, 20], fps = a => a.reduce((s, t) => s + 1000 / t, 0) / a.length;
+    assert(fps(hitchy) > fps(steady) && PF.stats(hitchy, 16.67).p99 > PF.stats(steady, 16.67).p99, "jank: a hitch shows in P99 though the average FPS is higher");
+    assert(PF.sacrifice([{ name: "morty", savings: 9, damage: 1 }, { name: "particles", savings: 3, damage: 1 }, { name: "distant", savings: 6, damage: 1 }, { name: "reflections", savings: 1, damage: 2 }]).map(o => o.name).join() === "distant,particles,reflections", "the most saving for the least harm goes first; Morty never");
+    assert(near(PF.rcm({ sse: 3, T: 6, A: 0, Aref: 1 }), 0.5) && PF.rcm({ sse: 12, T: 6, A: 0, Aref: 1, O: 1 }) === 0, "Q_i = f(SSE, A, V, O, G, C, B)");
+  });
   // ── v68: the 3D renderer (off by default until everything is converted: the owner's "Everything, then ship") ──
   test("v68 3D renderer: off by default; switched on, Morty, the ring, the slingshot, the post and the scenery draw as 3D models in place, with no errors, and the game plays the same", () => {
     fresh(); T.calm(); T.step(0.5);
     assert(!T.r3dState().on, "the deployed game still paints in 2D");
-    const on = T.r3d(true), S0 = T.r3dState(); T.step(0.2);
+    const on = T.r3d(true), S0 = T.r3dState(); for (let i = 0; i < 8; i++) T.step(1 / 60);   // (new scenery is cut a few milliseconds' worth a frame: 08rf_r3d_budget.js)
     if (S0.ok) {
       const S1 = T.r3dState(); assert(on && S1.drawn > S0.drawn + 3 && S1.fails === 0, `3D models drawn in place (${JSON.stringify(S1)})`);
       T.freezeRing(0, C.RING_Y); assert(throwAndSettle(0, C.RING_Y).lastResult.make, "a throw through the middle still goes in");
@@ -2938,6 +3075,26 @@
       T.portalsOn(false); T.toTitle(); fresh(); T.calm(); T.step(0.3);
     } else assert(!on, "no WebGL here: it stays off");
     T.r3d(null); T.step(0.1); assert(!T.r3dState().on, "and off again"); T.toTitle();
+  });
+  test("v68 3D renderer's runtime complexity manager: a set piece is 3D while its screen-space error shows (a dead zone and a crossfade), nothing outside the view is drawn, quality is given up in order (the far scenery first, the resolution last; Morty, the ring and the bosses never), frame pacing is measured, and the portal's motes live on a particle budget", () => {
+    fresh(); T.calm(); const on = T.r3d(true);
+    if (!T.r3dState().ok) { assert(!on, "no WebGL here: it stays off"); T.r3d(null); return; }
+    T.r3dHold(1); for (let i = 0; i < 20; i++) T.step(1 / 60);
+    let P = T.r3dPerf();
+    assert(P.frames > 5 && P.n > 3 && P.p95 >= P.median && P.worst >= P.p99 && P.in3d + P.painted + P.morph > 10 && T.r3dState().fails === 0, `measured: frame gaps, P95, P99, and every set piece placed (${JSON.stringify({ n: P.n, in3d: P.in3d, painted: P.painted, culled: P.culled })})`);
+    assert(P.give.join() === "distant,particles,animation,resolution", `given up in order of saving over harm (${P.give})`);
+    T.r3dHold(0.8); T.step(0.05); P = T.r3dPerf(); assert(P.ch.distant < 1 && P.ch.particles === 1 && P.ch.animation === 1 && P.ch.resolution === 1 && P.T > 4, "a little short: only the far scenery goes back to paint (its threshold rises)");
+    T.r3dHold(0.1); T.step(0.05); P = T.r3dPerf(); assert(P.ch.distant === 0 && P.ch.particles === 0 && P.ch.animation === 0 && P.ch.resolution > 0 && P.ch.resolution < 1, "very short: the resolution goes last");
+    T.r3dHold(1); T.step(0.7); P = T.r3dPerf(); assert(P.scale === 1 && T.r3dState().fails === 0, "with room again, everything comes back");
+    const k = {}, w = (sc, t, x = 200) => { T.r3dClock(t); return T.r3dWorth(x, 500, 100, 100, sc, k); };   // (a 100 × 100 painting 12 units deep: E = 12·sc pixels; T = 4 ± 0.8)
+    assert(w(0.2, 1000) === 0, "first seen too small for its depth to show: painted");
+    assert(w(1, 2000) === 0 && w(1, 2125) > 0.4 && w(1, 2125) < 0.6 && w(1, 2300) === 1, "nearer, its depth shows: it fades into 3D over a quarter second");
+    assert(w(0.36, 3000) === 1, "inside the dead zone it stays as it is (no flicker)");
+    assert(w(0.25, 4000) === 1 && w(0.25, 4125) < 0.6 && w(0.25, 4300) === 0, "below it, it fades back to paint");
+    assert(w(1, 5000, -5000) === -1, "outside the view it isn't drawn at all (its bounding sphere is behind a side of the frustum)");
+    T.portalsOn(true); T.portalNow(); T.step(0.8); P = T.r3dPerf(); assert(T.portal().phase === "open" && P.parts.portal === 89, `the portal gets the motes it asks for (${JSON.stringify(P.parts)})`);
+    T.r3dHold(0.3); T.step(0.1); P = T.r3dPerf(); assert(P.parts.portal < 89 && P.parts.portal > 0 && T.r3dState().fails === 0, `short of time, they thin (${P.parts.portal})`);
+    T.portalsOn(false); T.r3dHold(null); T.r3d(null); T.step(0.1); assert(!T.r3dState().on, "and off again"); T.toTitle();
   });
   // ── v66: moving gates, the actors that work them, and the secret paths they open ──
   test("v66 Moving gates: a real gate across the lane swings open, stands open, rattles (the tell) and swings shut; shut, it stops the skull; open, the throw goes through", () => {

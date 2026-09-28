@@ -32,3 +32,13 @@ Battery: the loop idles at the title (no physics), the film overlay stays at 12 
   - in Full, the bloom: one quarter-size copy of the frame every other frame, plus two blur passes.
 
   The adaptive quality loop thins its particles, and switches the bloom off below full quality. A touch screen starts on Lite (no bloom).
+
+## v68: the 3D renderer's runtime complexity manager
+
+The 3D renderer (off until everything is converted, `docs/RENDER3D.md`) has its own governor, built on the owner's
+performance equations (`src/js/08rf_r3d_budget.js`, with the maths in `MC.PF`). It isn't a Low, Medium or High
+setting. Each set piece is 3D only while its depth would show on screen (its screen-space error). A PID loop on the
+frame's work gives quality up in order: distant detail, then particles, then the live pieces' re-cut rate, and the
+3D's resolution last. Morty, the ring, collision and the bosses are never given up. It measures frame pacing as P95,
+P99, the worst frame and jank, not average FPS. `tools/perf3d.mjs` reports it per map. The 2D game's adaptive quality
+above is unchanged.

@@ -202,7 +202,11 @@
     const need = hp / celS, mult = need <= 1 ? 1 : need <= 2 ? 2 : need <= 4 ? 4 : 8;
     const cel = walkerCel(k.type, celIndex(k), k.type === "werewolf" && k.state === "howl", mult), sc = hp / celS;
     const echo = k.type === "skeleton" && castVariant("skeleton") === "echo", fl = echo ? 0.4 + 0.25 * Math.sin(world.t * 7 + k.ph * 3) * Math.sin(world.t * 2.3) : 1;   // (v58: an echo in the Abyss flickers, and trails a fainter self)
-    if (!echo && k.z < R3D_SETS.near && r3dOn() && r3dDrawSet(r3dSetPiece(r3dKey(cel, "cel:"), cel.w, cel.h, [cel.ax, cel.ay], g => g.drawImage(cel.c, 0, 0, cel.w, cel.h), "#1E1A16"), p.x, p.y, sc, { mpu: sc / p.s, flip: k.dir, alpha: a })) return;   // (v68: each drawing of the walk a 3D cut-out, 08rd_r3d_sets.js)
+    if (!echo && r3dOn()) {   // (v68: each drawing of the walk a 3D cut-out, 08rd_r3d_sets.js, while its depth shows: 08rf_r3d_budget.js)
+      const w3 = r3dWorth(k, p.x, p.y, cel.w, cel.h, [cel.ax, cel.ay], sc);
+      if (w3 < 0) return;
+      if (w3 > 0 && r3dDrawSet(r3dSetPiece(r3dKey(cel, "cel:"), cel.w, cel.h, [cel.ax, cel.ay], g => g.drawImage(cel.c, 0, 0, cel.w, cel.h), "#1E1A16"), p.x, p.y, sc, { mpu: sc / p.s, flip: k.dir, alpha: a * w3 }) && w3 >= 1) return;
+    }
     ctx.save(); ctx.globalAlpha = a * fl; ctx.translate(p.x, p.y); ctx.scale(k.dir * sc, sc);
     ctx.drawImage(cel.c, -cel.ax, -cel.ay, cel.w, cel.h);
     if (echo) { ctx.globalAlpha = a * fl * 0.35; ctx.drawImage(cel.c, -cel.ax - 0.06, -cel.ay - 0.01, cel.w, cel.h); }

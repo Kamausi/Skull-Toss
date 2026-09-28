@@ -296,7 +296,9 @@
     if (K.canvas[1] * sc < 2.5) return;
     const hw = K.canvas[0] * sc; if (p.x + hw < -U * 0.2 || p.x - hw > W + U * 0.2) return;
     const a = travelFade(k.z) * wakeAlpha(k); if (a <= 0.01) return;
-    if (!lm && k.z < R3D_SETS.near && !(k.sink > 0.12) && !r3dReacting(k) && r3dOn() && r3dDrawSet(r3dSetPiece("travel:" + k.kind, K.canvas[0], K.canvas[1], K.foot, g => paintTravel(g, k.kind, K)), p.x, p.y + K.canvas[1] * sc * (k.sink || 0), sc, { mul: k.mul, flip: k.flip, tilt: k.tilt, alpha: a })) {   // (v68: a 3D set piece, 08rd_r3d_sets.js)
+    const w3 = !lm && !(k.sink > 0.12) && !r3dReacting(k) && r3dOn() ? r3dWorth(k, p.x, p.y, K.canvas[0], K.canvas[1], K.foot, sc) : 0;   // (v68: how much of it shows in 3D; −1 out of view: 08rf_r3d_budget.js)
+    if (w3 < 0) return;
+    if (w3 > 0 && r3dDrawSet(r3dSetPiece("travel:" + k.kind, K.canvas[0], K.canvas[1], K.foot, g => paintTravel(g, k.kind, K)), p.x, p.y + K.canvas[1] * sc * (k.sink || 0), sc, { mul: k.mul, flip: k.flip, tilt: k.tilt, alpha: a * w3 }) && w3 >= 1) {   // (v68: a 3D set piece, 08rd_r3d_sets.js)
       if (K.lights) for (const [lx, ly, lr] of K.lights) gpuLight(p.x + (lx - K.foot[0]) * sc * k.flip, p.y + (ly - K.foot[1]) * sc, lr * sc * 2.2, "255,196,110", 0.26 * a * wakeAlpha(k));
       return;
     }

@@ -74,7 +74,7 @@
       const [sx, sy] = U.seeds[i], a0 = Math.atan2(sy, sx), rr = (1 - U.age[i]) * 0.95 + 0.05, v = F([rr, 0]), ang = a0 + U.age[i] * 6 + Math.atan2(v[1], -v[0]) * 0.2;
       pos.setXYZ(i, rr * Math.cos(ang), rr * Math.sin(ang), 0.05 * Math.sin(i + t));
     }
-    pos.needsUpdate = true;
+    pos.needsUpdate = true; U.motes.geometry.setDrawRange(0, r3dParticles("portal", n, 0.6));   // (as many as the particle budget gives it: 08rf_r3d_budget.js)
     U.petals.rotation.z = -t * U.spin * TAU; U.motes.rotation.z = -t * U.spin * TAU * 0.5;
     U.petals.material.opacity = (0.15 + 0.35 * k) * clamp(U.energy / 4, 0.4, 1);
     M.rotation.set(0, 0, 0); M.scale.set(k, k, k * 0.6);
