@@ -346,7 +346,8 @@
     if (sceneFX.wheel || sceneFX.clock) { planeXform(ctx, 70, "far"); drawFarFX(world.t); baseXform(ctx); }
     drawAquaFar();   // (v58: under water, where the sky would be, big shapes passing: 08m_aquatic.js)
     drawSkyLife();
-    drawGroundPlane(ctx, groundLayer); drawWaterSheen(); drawAquaFloor();   // (v55: the water's moving highlights, 08l_water.js; v58: the caustics on the sand, the life under the marsh, 08m_aquatic.js)
+    if (!r3dWorldDraw()) drawGroundPlane(ctx, groundLayer);   // (v71: with the 3D renderer on, the ground is the world's terrain: 08ri_r3d_world.js)
+    drawWaterSheen(); drawAquaFloor();   // (v55: the water's moving highlights, 08l_water.js; v58: the caustics on the sand, the life under the marsh, 08m_aquatic.js)
     if (midLayer) L(midLayer, 30, "world");
     drawWaterReflections(); drawRipples(); baseXform(ctx);   // (v51: what stands over the water, mirrored in it, and its ripples: 08l_water.js)
     drawGroundWorld(); r3dFlush();   // (v68: the scenery's 3D set pieces go down together)

@@ -4,6 +4,22 @@ Lob the skull through a ring in a haunted graveyard. Play **Story** to climb thr
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
 
+## New in v71: the Wilds of Aether engine, under the 3D renderer
+
+The owner's call: upgrade Skull Toss with the Wilds of Aether engine before the visual overhaul. Its engine layers are
+in (the 3D renderer is still off unless you add `?r3d`; `docs/RENDER3D.md`, "The engine"):
+- **Three.js r186** and Wilds' renderer standards (sRGB, ACES filmic, a PCF shadow map), still bundled in the page.
+- **The world:** the ground is one lit 3D scene drawn once a frame, its hills, bends and road the 2D land's own, on the
+  very pixels the 2D camera puts them, with fog, shadows and the Marsh's water. Flat ground keeps its painted colour.
+- **The scatter:** grass, rocks, rail ties and rails, boardwalk planks and posts, flagstones, as instanced geometry
+  that stays put as the road goes by.
+- **The character pipeline** (levels of detail with budgets, a rig, the face as geometry with blinks, gaze and every
+  expression in the game) and **the authored-asset bridge** (a Blender model can replace a procedural one; nothing
+  ships without a licence), ready for the overhaul.
+- **The spec no longer depends on the calendar:** Season One (October to November 2026) put a seventh chip on the
+  title and failed four checks from 1 October; the spec now pins its calendar outside the season, and the season's
+  own checks move it in and out.
+
 ## New in v70: the title card waits, and the 3D renderer's next steps
 
 - **A map's title card waits for you** (the owner's call). It stays up, saying "Tap to begin", until you tap, press

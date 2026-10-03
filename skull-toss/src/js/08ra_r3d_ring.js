@@ -24,7 +24,7 @@
         const sp = new THREE.ConeGeometry(tubeK * 0.7, tubeK * 3, 6);
         for (let i = 0; i < 16; i++) { const a = i / 16 * TAU + 0.2, S = r3dInked(sp, body), out = i % 2 ? 1 : 0; S.position.set(Math.cos(a) * (1 + tubeK * (out ? 1.6 : 0)), Math.sin(a) * (1 + tubeK * (out ? 1.6 : 0)), out ? 0 : tubeK * 1.6); S.rotation.z = a - Math.PI / 2; if (!out) S.rotation.x = Math.PI / 2; g.add(S); }
       } else if (style === "portal") {   // a swirl of light inside the hole
-        const disc = new THREE.Mesh(new THREE.RingGeometry(0.55, 1 - tubeK, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(R.color), transparent: true, opacity: 0.28, side: THREE.DoubleSide }));
+        const disc = new THREE.Mesh(new THREE.RingGeometry(0.55, 1 - tubeK, 48), new THREE.MeshBasicMaterial({ toneMapped: false, color: new THREE.Color(R.color), transparent: true, opacity: 0.28, side: THREE.DoubleSide }));
         g.add(disc);
       }
     }

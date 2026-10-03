@@ -92,6 +92,7 @@
   }
   // ── drawing a slice: the ground's curtain, lit a little on the rise, its skyline rimmed; then the road over it
   function drawLandSlice(S, next, prev) {
+    if (R3D_WORLD.drawn) return;   // (v71: the world's terrain and road are this frame's land: 08ri_r3d_world.js)
     const L = look();
     if (!S.skip && S.pts.length) {
       const B = bleed(), n = S.pts.length;

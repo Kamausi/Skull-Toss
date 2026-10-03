@@ -15,7 +15,8 @@
   //   - The look: MeshToonMaterial with a three-step ramp (lit, half, shadow) and an ink hull drawn a fixed number of
   //     pixels outside each model's silhouette, so a far model's line is as thick as a near one's, like a cel. Only faces
   //     seen edge-on are pushed (a flat piece's back isn't slid out from behind it).
-  const R3D = { clears: 0, renders: 0, shared: true, fresh: true, over: false, force: null, ok: null, gl: null, canvas: null, scene: null, cam: null, key: null, fill: null, ramp: null, inkU: null, drawn: 0, fails: 0, ids: 0, cache: {} };
+  const R3D_REVISION = "186";
+  const R3D = { runtime: null, clears: 0, renders: 0, shared: true, fresh: true, over: false, force: null, ok: null, gl: null, canvas: null, scene: null, cam: null, key: null, fill: null, ramp: null, inkU: null, drawn: 0, fails: 0, ids: 0, cache: {} };
   const r3dAsked = (() => { try { return /[?&]r3d(=1|&|$)/.test(location.search); } catch (e) { return false; } })();
   const r3dOn = () => !R3D.capturing && !WATER.reflecting && (R3D.force == null ? r3dAsked : R3D.force) && r3dReady();   // (while a live piece is being captured, everything inside it draws in 2D)
   const r3dKey = (o, pre) => pre + (o.__r3d || (o.__r3d = ++R3D.ids));   // a lasting key for a thing in the world
@@ -23,10 +24,20 @@
     if (R3D.ok !== null) return R3D.ok;
     R3D.ok = false;
     if (typeof THREE === "undefined") return false;
+    // (the engine upgrade, v71) the runtime is the owner's Wilds of Aether engine's: Three.js r186, sRGB out, ACES filmic
+    // tone mapping, a PCF shadow map. It's bundled in the page (tools/vendor), not fetched, so the game still runs
+    // offline and in the app shells. A bundle of another revision is refused, and the game stays 2D.
+    if (THREE.REVISION !== R3D_REVISION) { Debug.warn("RENDER", "Three.js r" + THREE.REVISION + " bundled; the 3D renderer is built for r" + R3D_REVISION, "08r_r3d:init"); return false; }
     try {
       const canvas = document.createElement("canvas");
-      const gl = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true, premultipliedAlpha: true });
+      const gl = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true, premultipliedAlpha: true, powerPreference: "high-performance" });
       gl.setClearColor(0x000000, 0); gl.autoClear = false; gl.outputColorSpace = THREE.SRGBColorSpace;
+      // tone mapping is per material: the cel family (toon, ink, flat colour) is toneMapped: false, so the cartoon
+      // palette comes out exactly as painted, the way Wilds keeps its faces' line work out of the curve; the world's
+      // land, water and scatter are too by default, and go through ACES with R3D_WORLD.filmic (08ri_r3d_world.js)
+      gl.toneMapping = THREE.ACESFilmicToneMapping; gl.toneMappingExposure = 1.03;
+      gl.shadowMap.enabled = true; gl.shadowMap.type = THREE.PCFShadowMap; gl.shadowMap.autoUpdate = false;   // (rendered once a frame, by the world pass, not by every boxed render)
+      R3D.runtime = { revision: THREE.REVISION, colorSpace: "sRGB", toneMapping: "ACESFilmic", exposure: gl.toneMappingExposure, shadows: "PCF", renderer: "WebGLRenderer", maxTexture: gl.capabilities.maxTextureSize, webgl2: gl.capabilities.isWebGL2 !== false };
       const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(40, 1, 0.05, 400);
       const key = new THREE.DirectionalLight(0xfff4e0, 2.3); key.position.set(-1.1, 1.6, 1.4);   // the map's key light, up and to the left, from behind the camera
       const fill = new THREE.HemisphereLight(0xcfd8ff, 0x3a2a20, 0.9);
@@ -54,7 +65,7 @@
     return Z;
   }
   // ── materials: toon, and the ink hull (pushed out along the normal in screen space, a fixed number of pixels)
-  function r3dToon(color, o = {}) { const m = new THREE.MeshToonMaterial({ color: new THREE.Color(color), gradientMap: R3D.ramp, ...o }); m.onBeforeCompile = r3dRim; return m; }
+  function r3dToon(color, o = {}) { const m = new THREE.MeshToonMaterial({ toneMapped: false, color: new THREE.Color(color), gradientMap: R3D.ramp, ...o }); m.onBeforeCompile = r3dRim; return m; }
   // (Phase 1, docs/PRODUCTION-AUDIT.md §5) the rim: a thin band of the map's light round every lit model's edge, where
   // its surface turns away from the camera (a Fresnel term, (1 − n·v)³), so a model reads off the painted backdrop
   // the way a 1930s cel's highlight line does. One set of uniforms for every material, set per map (r3dLightRig).
@@ -74,7 +85,7 @@
     R3D.rimU.uRimC.value.copy(moon);
   }
   function r3dInk() {
-    const m = new THREE.MeshBasicMaterial({ color: new THREE.Color(INK), side: THREE.BackSide });
+    const m = new THREE.MeshBasicMaterial({ toneMapped: false, color: new THREE.Color(INK), side: THREE.BackSide });
     m.onBeforeCompile = sh => {
       Object.assign(sh.uniforms, R3D.inkU);
       sh.vertexShader = "uniform float uInk; uniform vec2 uRes;\n" + sh.vertexShader.replace("#include <project_vertex>",

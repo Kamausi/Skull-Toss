@@ -7,7 +7,7 @@
   // hurt, anger, phase, death) and drawn where the drawing was: the same place, turn, squash and fade.
   const RB = { mats: new Map(), flat: new Map() };
   const rbMat = col => { let m = RB.mats.get(col); if (!m) RB.mats.set(col, (m = r3dToon(col))); return m; };
-  const rbFlat = (col, o = {}) => { const k = col + JSON.stringify(o); let m = RB.flat.get(k); if (!m) RB.flat.set(k, (m = new THREE.MeshBasicMaterial({ color: new THREE.Color(col), ...o }))); return m; };
+  const rbFlat = (col, o = {}) => { const k = col + JSON.stringify(o); let m = RB.flat.get(k); if (!m) RB.flat.set(k, (m = new THREE.MeshBasicMaterial({ toneMapped: false, color: new THREE.Color(col), ...o }))); return m; };
   const RBG = {};   // shared unit shapes
   const rbGeo = () => RBG.sph || Object.assign(RBG, {
     sph: new THREE.SphereGeometry(1, 26, 18), cyl: new THREE.CylinderGeometry(1, 1, 1, 18), cone: new THREE.CylinderGeometry(0, 1, 1, 18),

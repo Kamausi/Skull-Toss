@@ -350,14 +350,14 @@
       build(M, U) {
         U.hole = new THREE.Mesh(new THREE.ShapeGeometry(rbShape(s => s.poly(Array.from({ length: 16 }, (_, k) => { const a = (k / 16) * TAU, r = k % 2 ? 1.08 : 1.28; return [Math.cos(a) * r * 1.25, Math.sin(a) * r]; })))), rbFlat("#1A0A04", { side: THREE.DoubleSide }));
         M.add(U.hole); const rim = rbAdd(M, RBG.torus, "#C0561E"); rim.scale.set(1.62, 1.3, 2.2); rim.position.z = -0.02;
-        U.fire = new THREE.Mesh(RBG.circ, new THREE.MeshBasicMaterial({ color: new THREE.Color("#FFB84A"), transparent: true, opacity: 0.35, depthWrite: false })); U.fire.position.set(0, -0.6, 0.01); U.fire.scale.set(0.8, 0.25, 1); M.add(U.fire);
+        U.fire = new THREE.Mesh(RBG.circ, new THREE.MeshBasicMaterial({ toneMapped: false, color: new THREE.Color("#FFB84A"), transparent: true, opacity: 0.35, depthWrite: false })); U.fire.position.set(0, -0.6, 0.01); U.fire.scale.set(0.8, 0.25, 1); M.add(U.fire);
       },
       pose(U, B, x) { U.fire.material.color.set(x.angry ? "#FFD04A" : "#FFB84A"); U.fire.material.opacity = 0.35 * x.fl; }
     },
     eyeOpen: {   // a glowing bull's-eye under an angry dark brow
       build(M, U) {
         U.brow = new THREE.Mesh(new THREE.BufferGeometry(), rbFlat(INK, { side: THREE.DoubleSide })); U.brow.position.z = -0.01; M.add(U.brow);
-        U.rings = [[0.85, "#FFB84A"], [0.55, "#1A0A04"], [0.28, "#FFB84A"]].map(([k, c], i) => { const m = new THREE.Mesh(RBG.circ, new THREE.MeshBasicMaterial({ color: new THREE.Color(c), transparent: true })); m.scale.setScalar(k); m.position.z = 0.01 + i * 0.01; m.position.y = 0.05; M.add(m); return m; });
+        U.rings = [[0.85, "#FFB84A"], [0.55, "#1A0A04"], [0.28, "#FFB84A"]].map(([k, c], i) => { const m = new THREE.Mesh(RBG.circ, new THREE.MeshBasicMaterial({ toneMapped: false, color: new THREE.Color(c), transparent: true })); m.scale.setScalar(k); m.position.z = 0.01 + i * 0.01; m.position.y = 0.05; M.add(m); return m; });
         U.reachMin = 1.4;
       },
       pose(U, B, x) {
@@ -368,7 +368,7 @@
     eyeShut: {   // screwed shut: a curved lid and three lashes (and in the last phase a glowing glare)
       build(M, U) {
         rbQTube(M, [-1, 0], [0, 0.5], [1, 0], 0.17, INK); for (let k = -1; k <= 1; k++) rbCyl(M, [k * 0.5, 0.1], [k * 0.6, 0.5], 0.06, INK);
-        U.glare = new THREE.Mesh(RBG.box, new THREE.MeshBasicMaterial({ color: new THREE.Color("#FFD04A"), transparent: true })); U.glare.scale.set(2.2, 0.6, 0.01); M.add(U.glare);
+        U.glare = new THREE.Mesh(RBG.box, new THREE.MeshBasicMaterial({ toneMapped: false, color: new THREE.Color("#FFD04A"), transparent: true })); U.glare.scale.set(2.2, 0.6, 0.01); M.add(U.glare);
       },
       pose(U, B, x) { U.glare.visible = !!x.glare; if (x.glare) { U.glare.material.color.set(x.glow); U.glare.material.opacity = x.fl; U.glare.position.set(0, 0.125, -0.02); U.glare.rotation.z = x.side ? -0.2 : 0.2; } }
     }

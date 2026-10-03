@@ -6,8 +6,11 @@ by default. Add `?r3d` to the address to see it, or call `SkullToss.debug.r3d(tr
 
 ## How it works
 
-- **Engine.** Three.js, bundled into the page as `src/vendor/three.js`: an IIFE that sets `THREE`, in its own
-  `<script>` ahead of the game's. To rebuild it (pinned versions): `cd tools/vendor && npm install && npm run build`.
+- **Engine.** Three.js **r186** (v71, the Wilds of Aether engine's revision; it was 0.180), bundled into the page as
+  `src/vendor/three.js`: an IIFE that sets `THREE`, in its own `<script>` ahead of the game's, with `GLTFLoader` for
+  authored models. Nothing is fetched from a CDN, so the game still runs offline and in the app shells. A bundle of
+  another revision is refused and the game stays 2D. To rebuild it (pinned versions):
+  `cd tools/vendor && npm install && npm run build`.
 - **Drawing in place.** Each converted piece is drawn exactly where its 2D drawing was.
   - The model is posed in camera space at the same screen spot and size.
   - It's rendered into an offscreen WebGL canvas inside a scissor box round it.
@@ -21,6 +24,43 @@ by default. Add `?r3d` to the address to see it, or call `SkullToss.debug.r3d(tr
   - `MeshToonMaterial` with a three-step ramp (shadow, half, lit), under the map's key light and a hemisphere fill.
   - An ink hull on every model: its back faces, pushed out along the normals in screen space, so the line is the same
     few pixels wide near or far, like a cel.
+
+## The engine (v71): the owner's Wilds of Aether engine, brought over
+
+The owner's call (2026-10-03): *"Use this engine to upgrade skull toss before we do the visual overhaul."* The engine
+is the owner's Wilds of Aether prototype (one HTML file, Three.js r186). Its engine layers came over; its game (an
+OSRS-style grid RPG: tile pathfinding, inventory, quests, the minimap, chat, pinch-zoom and drag-look cameras) didn't,
+because Skull Toss keeps its own game, camera and controls. Each layer, and how it fits Skull Toss:
+
+| Wilds layer | In Skull Toss | File |
+|---|---|---|
+| **Runtime**: Three.js r186, `WebGLRenderer`, sRGB out, ACES filmic tone mapping (exposure 1.03), a PCF shadow map, pixel ratio capped at 1.5, the high-performance GPU | The same, bundled instead of fetched. Tone mapping is per material: the cel family (toon, ink, flat colour) is `toneMapped: false`, as Wilds keeps its faces' line work out of the curve, so the cartoon palette is exact; the world is too by default (below), with `R3D_WORLD.filmic` to send it through ACES. The shadow map renders once a frame, in the world pass. | `tools/vendor`, `08r_r3d.js` |
+| **Terrain foundation**: a seeded height field, vertex-coloured by masks (meadow, forest, wet band, rock on slopes), lit by a hemisphere and a shadow-casting sun, with fog | **The world** (`r3dWorldDraw`): the frame's first 3D render, replacing the painted ground plate and the land's painted slices. The heights are the 2D land's own (`landH`, the road's bend `landCx`, flat within 9 m; the plate's painted hills on a flat map). Each vertex goes on the very pixel the 2D camera (`project`) draws that point, at the depth `r3dPlace` gives a model there, so the multiplane parallax, the rostrum camera, the road's yaw and the gate weave all carry over (measured: within 0.0001 px, still and mid-throw). Colour: the plate's gradient, the map's hill colour where the land rises, rock on steep slopes, the stage light at the ring, a low value-noise mottle fixed to the land. The road is its own ribbon so it keeps its width far off. The key light is the moon, where it hangs in the painted sky; the land writes the frame's depth beyond 8 m, so 3D pieces go behind a crest. | `08ri_r3d_world.js` |
+| **Water**: a translucent physical plane with a clear coat | On the Marsh, an opaque matte plane in the painted water's own colours, under the boardwalk; the 2D sheens and the moon's path still play over it. Its own shader is the overhaul's (below). | `08ri_r3d_world.js` |
+| **Environment pass**: instanced sets (one draw call per kind), placed by a seeded hash under ecological rules (density by distance band, no steep ground, no water, clear of paths), each copy its own scale, turn, lean and colour | **The scatter.** Laid out in cells along the track, seeded by the cell alone, so a copy stays where it was put as the road goes by. Grass (Wilds' blade tufts, in the map's grass colours: what the plate's inked ticks were), rocks on slopes, and each lane's dressing as geometry: rail ties and rails, boardwalk planks and posts (with the gap in open water at the ring), flagstones. | `08rj_r3d_scatter.js` |
+| **Character pipeline**: LOD0/1/2 from one recipe with triangle budgets, two material classes, faceted per-triangle shading, a procedural surface atlas, an articulated rig, the face as geometry with a face controller (blink, gaze, expressions), contact shadows | The same, for the models to come (Morty's face, the cast, the wildlife): the surface class is the cel family, the metal class a toon with a narrow bright band. The level is picked by height on the screen with a 15% dead zone (this renderer's distances are the 2D camera's). The expressions are Wilds' three plus every face in the game's pose library. | `08rk_r3d_actor.js` |
+| **Hybrid authored-asset bridge**: a Blender-made GLB replaces a procedural actor's look once loaded; a failed load keeps the procedural one | The same: fitted to the procedural model's bounds, materials brought into the house look, clips found through aliases and crossfaded, `Slot_*` nodes as attachment points. Embedded (data URI, ArrayBuffer or glTF JSON), since the game is one file. Wilds' own rule is enforced: an asset can't be marked for shipping without a licence in its manifest. | `08rl_r3d_assets.js` |
+
+**What was not brought over, and why.**
+- The embedded rock and grass GLBs. Wilds' own note says their provenance and licence must be confirmed before
+  shipping, and they're woodland-RPG assets; the scatter draws its own.
+- The game, the HUD and the camera controls (above).
+- The "character-only" studio light rig on layer 2. In Three.js a light on a layer lights everything a camera on that
+  layer sees (`WebGLRenderer.projectObject` tests the light's layers against the camera's, not the mesh's), so in Wilds
+  that rig also lights the land. Here the characters render in the cel scene and the land in the world's, so each keeps
+  its own light.
+
+**Two things the port found** (worth knowing in Wilds too).
+- Under a low key light ahead of the camera, seen at grazing angles, even Wilds' rough land (`MeshStandardMaterial`,
+  roughness 0.96) floods grey with Fresnel sheen; its water does too. The land here is a Lambert (the matte surface
+  Wilds meant), and the calibration assumes one.
+- The light calibration: Three's lights are physical (a Lambert surface under irradiance E returns albedo·E/π), so the
+  hemisphere gives 55% of a flat surface's light and the key the rest, both scaled by π and the key by 1 / its
+  height. Flat open ground comes out its painted colour: measured within 0–2 levels of 255 on Crow Hollow and the
+  Abyss, and 6 on the desert, whose moon and sky are warm.
+
+**Dev hooks:** `r3dWorld(on)`, `r3dWorldState()`, `r3dWorldProbe()` (the pixel check), `r3dWorldCalib()` (the colour
+check), `r3dFilmic(on)`, `r3dScatter()`, `r3dScatterOn(on)`, `r3dKit()` (the pipeline and the bridge, for tests).
 
 ## What's converted
 
@@ -118,8 +158,9 @@ math core (`MC.PF`, `docs/MATH-TOOLKIT.md`).
 
 ## Still to convert
 
-- The sky, the far skyline and the ground stay painted backdrops (a 3D game's matte paintings). The land's slices are
-  still painted.
+- The sky and the far skyline stay painted backdrops (a 3D game's matte paintings). The ground is 3D now (the world,
+  v71), but the travel decals and the secret path's old road are still painted over it, and the overhaul still has to
+  give each map's land its own look (the world takes the painted palette for now).
 - Effects stay 2D cel animation, drawn over the 3D: particles, contact stars, trails, the boss-death gags, the rift,
   weather and auras.
 - Water reflections show the 2D pieces.

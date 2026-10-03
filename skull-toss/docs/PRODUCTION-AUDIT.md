@@ -16,6 +16,15 @@ It is a working document: each asset's status changes here as it moves through t
 - Every performance number below is a *relative* baseline for comparing before and after a change. Real-device numbers
   are listed as outstanding.
 
+**The owner's directives since this audit was written** (both 2026-10-03):
+- *"When you continue I want every asset regenerated as well, not just rendering 2D assets into 3D."* So a cut-out
+  (a painting traced and extruded) and a projected painting (Morty's face today) are **not end states**: every asset
+  in §2 is to be rebuilt as a model, with its own geometry and materials, before it can be COMPLETE.
+- *"Use this engine to upgrade Skull Toss before we do the visual overhaul."* The engine is the owner's Wilds of
+  Aether prototype. Its engine layers came over first, in v71: the r186 runtime and renderer standards, a world scene
+  (its terrain foundation), its instanced scatter, its character pipeline and its authored-asset bridge
+  (`docs/RENDER3D.md`, "The engine"). The asset-by-asset overhaul builds on them.
+
 **Statuses** (the brief's scale):
 `NOT STARTED` · `IN PROGRESS` · `IMPLEMENTED` · `VERIFICATION` · `OPTIMIZED` · `COMPLETE`
 
@@ -32,7 +41,7 @@ They describe the **3D production pass**, not the 2D game. Every asset listed al
 | Multiplane camera | A rostrum camera: springs that overshoot and settle, exposed 24 times a second. It leans with the aim, follows the throw, anticipates and jolts. | `04c_camera.js`, `04e_director.js` | This is authored 1930s camera behaviour, not a modern smoothed camera. |
 | GPU effects | **WebGL** on its own canvas (`#gpuFx`): one instanced draw for 4,096 particle slots, up to 96 light pools, and a quarter-size bloom (Full quality only). | `08j_gpu.js` | Composited over the 2D canvas by CSS. |
 | Film | Canvas 2D at 12 fps: grain, dust, scratches, gate weave, iris. | `09e_film.js` | |
-| **3D renderer (off by default)** | **Three.js 0.180.0** (`src/vendor/three.js`, built by `tools/vendor`), `WebGLRenderer`, `MeshToonMaterial` with a three-step ramp, plus an ink hull (back faces pushed out in screen space by `onBeforeCompile`). | `08r_r3d.js` to `08rh_r3d_bosses.js` | Switched on with `?r3d` or `SkullToss.debug.r3d(true)`. |
+| **3D renderer (off by default)** | **Three.js r186** since v71 (the Wilds of Aether engine's revision; 0.180.0 before), bundled (`src/vendor/three.js`, built by `tools/vendor`), `WebGLRenderer` with the Wilds standards (sRGB, ACES filmic, PCF shadows), `MeshToonMaterial` with a three-step ramp, plus an ink hull (back faces pushed out in screen space by `onBeforeCompile`). | `08r_r3d.js` to `08rh_r3d_bosses.js` | Switched on with `?r3d` or `SkullToss.debug.r3d(true)`. |
 | How 3D reaches the screen | **In place.** Each model is posed in camera space at its 2D drawing's spot and rendered into an offscreen WebGL canvas inside a scissor box. The box is then copied into the 2D frame under the 2D canvas's transform and clip. Hero pieces (Morty, the ring, the launcher) render at once; the rest are batched into one render per flush point. | `08r_r3d.js` (`r3dDraw`, `r3dRender`, `r3dFlush`) | This keeps the painter's order, physics and tests unchanged. It also means there is **no shared depth buffer, no cast shadows and no common lighting pass between pieces**, and each flush costs a render and a copy (see §9). |
 | 3D runtime complexity manager | Screen-space-error LOD with a dead zone and a 250 ms crossfade, frustum culling, an EMA and PID governor, dynamic resolution (0.7–1), and a particle budget. | `08rf_r3d_budget.js`, `MC.PF` | Gives up in order: distant, particles, animation, resolution. Morty, the ring and the bosses are never given up. |
 | Math core | Vectors, matrices, quaternions, planes, collision (SAT/GJK), curves, SDFs, noise, flow fields, a stable-fluids grid, Fresnel, Beer–Lambert, and the performance equations. | `01d_mathcore.js`, `01e_mathcore_engine.js` | Documented in `docs/MATH-TOOLKIT.md`. |
@@ -42,7 +51,7 @@ They describe the **3D production pass**, not the 2D game. Every asset listed al
 | Shells | Capacitor (iOS/Android) and Electron. | `platforms/`, `03e_platform.js` | WebGPU in the packaged WebViews is **unverified** (§9). |
 
 **Renderer decision (brief §345).**
-- **Keep `WebGLRenderer` (Three.js 0.180.0) for now.**
+- **Keep `WebGLRenderer` for now** (Three.js r186 since v71, the Wilds of Aether engine's revision).
 - The look depends on `onBeforeCompile` (the ink hull) and `MeshToonMaterial` ramps. Under `WebGPURenderer` both need
   TSL rewrites.
 - WebGPU availability in the Capacitor WebViews is not established.
@@ -62,6 +71,7 @@ They describe the **3D production pass**, not the 2D game. Every asset listed al
     flat.
   - *model*: real geometry.
   - *2D*: not converted.
+  - Per the owner (above), *cut-out* is a stage, not an end state: every cut-out row is to become a *model*.
 - **G** and **V**: gameplay and visual importance, 1 (low) to 3 (critical).
 
 **Per-asset requirements** (materials, lighting, animation, VFX, optimisation) are set per family in §2.10.
@@ -372,6 +382,7 @@ direction:
 |---|---|---|
 | 0 | This audit, the baseline measurements, the equation matrix | — |
 | 1 | **Renderer foundation (CC-001):** one Three.js scene rendered once a frame. The painted backdrops become textured planes at their depths (a real multiplane); the remaining 2D art is layered in until converted. Capability detection; WebGL2 as the baseline. | SYS-001, SYS-006 |
+| 1b | **Engine upgrade (v71, the owner's call):** the Wilds of Aether engine's layers: r186 and its renderer standards; the world (terrain foundation drawn once a frame on the 2D camera's pixels, road ribbon, water, fog, a 1024 shadow map); the instanced scatter; the character pipeline (LOD budgets, two material classes, faceted shading, rig, face controller); the authored-asset bridge | SYS-001, SYS-002, SYS-003, ASSET-110…122 (foundation) |
 | 2 | Camera and lighting foundation: the 3D camera stays locked to the 2D projection. Per-map key, fill and rim lights; shadow map; contact shadows; height fog; the material library. | SYS-002, SYS-003, SYS-004 |
 | 3 | **Morty vertical slice:** sculpted skull, modelled face with morph targets, bone material, volume-preserving squash, shadow, trail and impact hooks. Every expression and a representative set of skins. | ASSET-001…006, COS-SKULL (sample) |
 | 4 | Ring, launcher and aim: the ring's opening matched to collision; launcher materials; the aim guide restyled | ASSET-007…014 |
@@ -428,6 +439,12 @@ This is the one major architectural change the overhaul needs (brief §23).
 6. **Fallback.**
    - The 2D renderer stays as the default until the full regression suite and real-device pacing pass with 3D on.
    - If WebGL2 is missing, the game stays 2D.
+7. **Progress.**
+   - v70: one depth buffer a frame; each map's light rig with a rim; contact shadows under the bosses.
+   - v71 (the engine upgrade): the land, the road, the water and the scatter are one lit scene rendered once a frame,
+     first, with the shadow map, and they write the frame's depth, so every 3D piece after them is depth-tested
+     against the land. The remaining pieces still render in place on top (Morty, the ring, the bosses, the cut-outs);
+     moving them into the same scene is the next step, as each is regenerated.
 
 ---
 
@@ -585,6 +602,70 @@ requirement the game doesn't meet yet.
 ---
 
 ## 13. Pass reports
+
+### SYS: the engine upgrade (v71), the owner's Wilds of Aether engine
+
+**Status: IMPLEMENTED** (off by default with the rest of the 3D renderer; not COMPLETE: no device check yet).
+
+**Files.** New: `src/js/08ri_r3d_world.js`, `08rj_r3d_scatter.js`, `08rk_r3d_actor.js`, `08rl_r3d_assets.js`.
+Changed: `tools/vendor` (r186, `GLTFLoader`), `src/vendor/three.js`, `08r_r3d.js` (revision guard, renderer standards,
+the cel family out of tone mapping), `08rb`, `08ra`, `08rd`, `08rg`, `08rh` (`toneMapped: false`), `08c_scene.js` and
+`06h_land.js` (the world replaces the painted ground and the land's slices when it's drawn), `08rf_r3d_budget.js`
+(authored animations tick), `99_dev_hooks.js`.
+
+**Implemented.** Every engine layer of the Wilds file, adapted (the table in `docs/RENDER3D.md`, "The engine"): the
+runtime and renderer standards, the world (terrain foundation, road ribbon, water, fog, shadow map), the instanced
+scatter, the character pipeline and the authored-asset bridge. Not ported, with reasons: the RPG game, HUD and camera
+controls; the embedded rock and grass GLBs (licence unconfirmed, as the Wilds file itself notes); the layer-2 studio
+rig (in Three.js it lights the land too).
+
+**Mathematics applied.**
+- Camera match: a world point (x, y, z) goes to camera space as ((sx − W/2)/s, −(sy − HY)/s, −F/s), where (sx, sy, s)
+  is the 2D camera's `project(x, y, z)`. A pinhole camera at the eye with focal length F and principal point (W/2, HY)
+  then draws it on (sx, sy). So the 2D camera's per-depth parallax, which no single 3D camera has, holds vertex by
+  vertex.
+- Rows: the play's flat ground gets 14 rows evenly spaced on the screen (1/z linear); the land beyond 8 m gets 42,
+  each ×1.09 further (geometric), out to 300 m.
+- Light: flat ground's irradiance is E = π(0.55·hemi + 0.45·key·n·L / L_y); a Lambert surface returns albedo·E/π, so
+  flat open ground returns its albedo. Colours mix in sRGB (as the 2D canvas does), then go to the GPU linear.
+- Scatter: a copy's place is a pure function of (set, cell, index) through an integer hash (Wilds' `envRand`); what
+  depends on the camera (the density band by distance, the lane's width near the camera, the boardwalk's gap) is
+  applied when it's drawn, never when it's placed.
+- LOD: level by height on screen h, thresholds (180, 70) px, up at ×1.15 and down at ×0.85 (a dead zone).
+- Face controller (Wilds'): blink openness max(0.08, 1 − sin πp) over 0.135 s at intervals 2–6.2 s; gaze
+  clamp(dx / max(0.35, dz)) × travel, only while dz > 0.04 (the target is in front of the face).
+
+**Verification** (headless SwiftShader; the spec's five new tests):
+- Runtime: r186, sRGB, ACES, PCF; toon and ink untouched by tone mapping; the GLB loader bundled; no CDN.
+- All 16 bosses, idle, hurt and dead, on r186: 0 fails, no console errors or deprecation warnings.
+- World: on maps 1, 5, 6, 7 and 8 the land is on the 2D camera's pixels within 0.0001 px (55 vertices each), still and
+  mid-throw; flat ground within 0–2 levels of its painted colour (6 on the desert); water only on the Marsh; each map
+  its own fog; a throw still goes in.
+- Scatter: grass and rocks on Crow Hollow, the Marsh's boardwalk (no grass in the water), the Caves' ties and rails, the
+  Gilded Quarter's flagstones; down the road and back, every copy where it was.
+- Character pipeline: three levels with fewer triangles each, two material classes, faceted, the LOD dead zone, pose
+  and rest, the walk, the face's proportions, expressions (all 17 of the pose library's), gaze only forward, a blink.
+- Bridge: an embedded glTF replaces a procedural actor, fitted to its height and ground; Slot_Hat; "hurt" finds the
+  Flinch clip; a bad file leaves the procedural model; shipping without a licence is refused.
+- Contact sheets of all eight maps, 2D against the world, checked by eye (and three defects found and fixed: the land
+  washed grey by Fresnel sheen, the lane dressing painted over by the land, the Marsh's water over its boardwalk).
+
+**Gameplay regression.** None: render only, off by default, physics and replays untouched; full spec, soak and
+persistence (see the commit).
+
+**Performance** (software rendering: relative only). The world costs about 3–10 ms a frame headless after its first
+frame (130–180 ms, building and compiling). About 6,300 land triangles, 450 road, 1,300 water (Marsh), and a few
+thousand in the scatter, in one draw call per kind; one 1024² shadow map. The vendored engine grew from 711 to 800 KB.
+
+**Remaining.**
+- Real-device pacing (as for the whole renderer).
+- Each map's land given its own look in the overhaul (the world takes the painted palette for now), and water its own
+  shader (Fresnel and Beer–Lambert: §5).
+- The travel decals and the secret path's old road are still painted over the land.
+- Moving Morty, the ring and the bosses into the world's scene (CC-001, next), as each is regenerated.
+
+**Next dependency.** The asset-by-asset overhaul, on these layers: Morty's face as geometry through `r3dFace` and its
+controller (ASSET-001 passes 2 and 3), then the cast and wildlife through the character pipeline.
 
 ### ASSET-001 Morty, pass 1 (v70)
 

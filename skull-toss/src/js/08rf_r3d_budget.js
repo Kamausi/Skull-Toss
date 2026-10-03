@@ -46,7 +46,7 @@
     const R = R3D_RCM; R.now = performance.now();
     if (!r3dOn()) { R.last = R.t0 = 0; return; }
     if (R.last) { const gap = R.now - R.last; if (gap < 1000) {   // (a longer gap is a pause, not a frame)
-      R.hist[R.i] = gap; R.i = (R.i + 1) % R.hist.length; R.n = Math.min(R.n + 1, R.hist.length); R.gap = MC.PF.ema(R.gap, gap, R.a); } }
+      R.hist[R.i] = gap; R.i = (R.i + 1) % R.hist.length; R.n = Math.min(R.n + 1, R.hist.length); R.gap = MC.PF.ema(R.gap, gap, R.a); r3dAssetsUpdate(Math.min(0.05, gap / 1000)); } }   // (v71: authored models' animations, 08rl_r3d_assets.js)
     R.last = R.t0 = R.now; R.t3d = 0; R.build.spent = 0; R.stats = r3dZero(); R3D.fresh = true; r3dLightRig();   // (the frame's depth starts clear: 08r_r3d.js)
   }
   function r3dFrameEnd() {

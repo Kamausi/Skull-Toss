@@ -9,6 +9,10 @@
   const T = window.SkullToss && window.SkullToss.debug;
   if (!T) { console.error("SkullToss debug API not found — load this after index.html's script."); return; }
   const C = T.constants;
+  // the calendar is pinned outside any season (Season One runs from October to November 2026: 07l_season.js), so a
+  // test that reads the title, the Play sheet or the Vault gets the same answer on any day; the season's own tests
+  // move it into the season and back out to here
+  const OFF_SEASON = "2026-09-20T12:00:00Z"; T.seasonAt(OFF_SEASON);
   const results = [];
   // tests queue up and run in order once they're all registered; a test may be async (the stand-in server's calls
   // are, v30). step() queues a setting change between tests so it happens in order with them.
@@ -2230,7 +2234,7 @@
     T.setFlags({ "season.id": "s1" }); T.seasonAt("2026-09-20T12:00:00Z"); assert(T.season() && T.season().id === "s1", "on early, when the live config says so");
     T.setFlags({ "season.id": "off" }); T.seasonAt(IN_SEASON); assert(T.season() === null && T.seasonClaimable() === null, "and off when it says off");
     T.setFlags({}); T.seasonAt(IN_SEASON); T.toTitle(); assert(!$("seasonChip").hidden, "the title shows the Season chip");
-    T.seasonAt(null); T.toTitle();
+    T.seasonAt(OFF_SEASON); T.toTitle();
   });
   test("Runs tear stubs off the Season Ticket; the Feature counts double; a note pays its experience once", () => {
     T.setFlags({}); T.seasonAt(IN_SEASON); T.setStats({ ...ZERO, bestStage: 3 }); T.setSeasonRec(null);
@@ -2245,7 +2249,7 @@
     assert(T.runStats().season.xp === T.runStats().xp, "and only once");
     T.setPractice({ ring: "full" }); T.startMode("practice", 0); const before = T.seasonRec().xp; T.calm(); T.freezeRing(0, C.RING_Y); throwAndSettle(0, C.RING_Y); T.endRun(); T.step(1); T.toTitle();
     assert(T.seasonRec().xp === before, "Practice earns none");
-    T.setSeasonRec(null); T.setStats(ZERO); T.seasonAt(null); T.toTitle();
+    T.setSeasonRec(null); T.setStats(ZERO); T.seasonAt(OFF_SEASON); T.toTitle();
   });
   test("Claiming stubs: once each, reached ones only; the premium reward needs the Premium Ticket; season looks are the Ticket's alone", async () => {
     T.setFlags({}); T.seasonAt(IN_SEASON); T.setStats({ ...ZERO, bones: 0 }); T.setSeasonRec({ id: "s1", xp: 600, free: [], prem: [], notes: {}, done: [] });
@@ -2260,7 +2264,7 @@
     T.toTitle(); T.openSheet("season");
     assert(document.querySelectorAll("#seasonBody .season-track li").length === 20 && document.querySelectorAll("#seasonBody .reward.claimed").length === 3, "the Ticket on the Season sheet");
     assert(!document.querySelector("#soulsGrid [data-key='pass:s1']"), "the Premium Ticket isn't a look in the Soul Shop");
-    T.closeSheet(); T.noServer(); T.setSeasonRec(null); T.setStats(ZERO); T.seasonAt(null); T.toTitle();
+    T.closeSheet(); T.noServer(); T.setSeasonRec(null); T.setStats(ZERO); T.seasonAt(OFF_SEASON); T.toTitle();
   });
   test("After the season: a week to claim what's earned, then it expires; season looks nobody earned leave the Vault", () => {
     T.setFlags({}); T.setStats({ ...ZERO, bones: 0 }); T.setSeasonRec({ id: "s1", xp: 1000, free: [], prem: [], notes: {}, done: [] });
@@ -2272,7 +2276,7 @@
     assert(!document.querySelector('#shopGrid [data-id="harvestmoon"]'), "the Harvest Moon skull, never earned, is gone from the Vault");
     T.setStats({ ...ZERO, unlocked: ["skull:harvestmoon"] }); T.shopCat("skull"); assert(document.querySelector('#shopGrid [data-id="harvestmoon"]'), "but stays for whoever earned it");
     T.seasonAt(IN_SEASON); T.setStats(ZERO); T.shopCat("ring"); assert(document.querySelector('#shopGrid [data-id="candycorn"]'), "and while the season's on, it's there to earn");
-    T.shopCat("skull"); T.closeSheet(); T.setSeasonRec(null); T.setStats(ZERO); T.seasonAt(null); T.toTitle();
+    T.shopCat("skull"); T.closeSheet(); T.setSeasonRec(null); T.setStats(ZERO); T.seasonAt(OFF_SEASON); T.toTitle();
   });
   test("The Feature: the season's map after dark with twice the targets, and its replay keeps the season's rules after it ends", () => {
     T.setFlags({}); T.seasonAt(IN_SEASON); T.setStats({ ...ZERO, bestStage: 1 });
@@ -2283,7 +2287,7 @@
     const R = T.lastReplay(); assert(R.feat && R.feat.twists.join() === "fog,bonanza", "the replay carries the Feature");
     T.seasonAt(AFTER(30 * 864e5)); assert(T.watchReplay() && T.state().stage === 3 && T.twists().join() === "fog,bonanza", "and plays it after the season's gone");
     T.stopReplay(); T.startMode("feature"); assert(T.modeState().mode === "story", "the Feature itself has gone with the season");
-    T.setStats(ZERO); T.seasonAt(null); T.toTitle();
+    T.setStats(ZERO); T.seasonAt(OFF_SEASON); T.toTitle();
   });
   test("Two devices' Season Tickets merge: the best of each; a newer season's record wins", () => {
     const P = T.profile(), a = { id: "s1", xp: 900, free: [0, 1], prem: [], notes: { hits: 40 }, done: [] }, b = { id: "s1", xp: 700, free: [2], prem: [0], notes: { hits: 90, targets: 3 }, done: ["shots"] };
@@ -3110,6 +3114,108 @@
     assert(L1.map === 0 && L6.map === 5 && L1.key !== L6.key && L1.rim !== L6.rim && L6.rim === T.maps()[5].look.moonColor.toLowerCase() && T.r3dRim() > 0, `each map's light from its own palette: the key and the rim take the moon's colour (${JSON.stringify([L1, L6])})`);
     T.r3d(null); T.toTitle(); T.setStats(ZERO);
   });
+  // ── v71: the engine upgrade (the owner's Wilds of Aether engine, in Skull Toss: docs/RENDER3D.md "The engine") ──
+  const r3dOrSkip = () => { const on = T.r3d(true); if (T.r3dState().ok) return true; assert(!on, "no WebGL here: it stays off"); T.r3d(null); T.toTitle(); T.setStats(ZERO); return false; };
+  test("v71 engine: Three.js r186 bundled in the page (not fetched), sRGB out, ACES filmic tone mapping, a PCF shadow map; the cel family stays out of the curve, so the cartoon palette holds; GLTFLoader is in", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); if (!r3dOrSkip()) return;
+    const R = T.r3dState().runtime, K = T.r3dKit();
+    assert(R && R.revision === "186" && K.THREE.REVISION === "186", `r186 (${R && R.revision})`);
+    assert(R.colorSpace === "sRGB" && R.toneMapping === "ACESFilmic" && R.shadows === "PCF", `the Wilds renderer's standards (${JSON.stringify(R)})`);
+    assert(K.r3dToon(0xffffff).toneMapped === false && K.r3dInk().toneMapped === false, "toon and ink aren't tone mapped");
+    assert(typeof K.THREE.GLTFLoader === "function" && ![...document.scripts].some(sc => /cdn\.jsdelivr|unpkg|three@/.test(sc.src || "")), "the GLB loader is bundled, and nothing is fetched from a CDN");
+    T.r3d(null); T.toTitle(); T.setStats(ZERO);
+  });
+  test("v71 world: the land is one lit 3D scene drawn once a frame (Wilds' terrain foundation), on the very pixels the 2D camera puts it, flat ground its painted colour; a road ribbon, water where the map has it, fog and a 1024 shadow map; nothing fails", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); if (!r3dOrSkip()) return;
+    const fogs = new Set();
+    for (const m of [1, 5, 6, 7, 8]) {
+      fresh(); T.setStage(m); T.calm(); T.step(3.2); T.travelTo(260); T.step(1 / 60); T.step(1 / 60);
+      const S = T.r3dWorldState(), P = T.r3dWorldProbe();
+      assert(S.drawn && S.verts === 57 * 57 && S.tris === 56 * 56 * 2 && S.shadow === 1024 && S.road, `map ${m}: the land drawn, its grid and its shadow map (${JSON.stringify(S)})`);
+      assert(S.water === (m === 5), `map ${m}: water only where the map has open water (${S.water})`);
+      assert(P && P.n > 40 && P.worst < 0.5, `map ${m}: each land vertex on the 2D camera's pixel (worst ${P && P.worst} px)`);
+      if (m !== 5) { const Cb = T.r3dWorldCalib(); assert(Cb.err <= (m === 6 ? 10 : 4), `map ${m}: flat open ground is the painted plate's colour (${JSON.stringify(Cb)})`); }
+      fogs.add(S.fog); assert(T.r3dState().fails === 0, `map ${m}: nothing fails`);
+    }
+    assert(fogs.size === 5, `each map's own fog (${[...fogs]})`);
+    fresh(); T.setStage(1); T.calm(); T.step(1); T.freezeRing(0, C.RING_Y); const a = T.aimFor(0.3, C.RING_Y); T.throwAt(a.AX, a.AY); T.step(0.25);
+    const Pf = T.r3dWorldProbe(); assert(Pf.worst < 0.5, `with the camera following a throw, still on the 2D camera's pixels (${Pf.worst})`);
+    T.step(2); assert(T.state().lastResult.make, "and the throw still goes in");
+    T.r3dWorld(false); T.step(1 / 60); assert(!T.r3dWorldState().drawn, "the world can be switched off (the painted plate comes back)"); T.r3dWorld(true);
+    T.r3d(null); T.step(0.1); assert(!T.r3dWorldState().drawn, "and with the 3D renderer off, it's the painted ground"); T.toTitle(); T.setStats(ZERO);
+  });
+  test("v71 scatter: Wilds' instanced, seeded dressing on the track: grass, rocks, and each lane's own geometry (rail ties and rails, boardwalk planks and posts, flagstones); a copy stays where it was put", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); if (!r3dOrSkip()) return;
+    const at = (m, D) => { fresh(); T.setStage(m); T.calm(); T.step(1); T.travelTo(D); T.step(1 / 60); return T.r3dScatter(); };
+    const s1 = at(1, 260); assert(s1.counts.grass > 100 && s1.counts.rocks >= 1 && !s1.counts.planks, `Crow Hollow: grass and rocks (${JSON.stringify(s1.counts)})`);
+    const s5 = at(5, 260); assert(s5.counts.planks > 50 && s5.counts.posts > 10 && !s5.counts.grass, `the Marsh: a boardwalk, and no grass in the water (${JSON.stringify(s5.counts)})`);
+    const s7 = at(7, 260); assert(s7.counts.ties > 20 && s7.counts.rails > 40, `the Caves: ties and rails (${JSON.stringify(s7.counts)})`);
+    const s2 = at(2, 260); assert(s2.counts.slabs > 50, `the Gilded Quarter: flagstones (${JSON.stringify(s2.counts)})`);
+    const a = at(1, 260), b = (T.travelTo(330), T.step(1 / 60), T.travelTo(260), T.step(1 / 60), T.r3dScatter());
+    assert(JSON.stringify(a.sample) === JSON.stringify(b.sample) && JSON.stringify(a.counts) === JSON.stringify(b.counts), "down the road and back: every copy where it was (seeded by its cell)");
+    assert(T.r3dState().fails === 0, "nothing fails"); T.r3d(null); T.toTitle(); T.setStats(ZERO);
+  });
+  test("v71 character pipeline (Wilds'): one recipe at three levels, each counted; two material classes; faceted shading; an articulated rig with a walk; LOD by height on screen with a dead zone; a face built of geometry that blinks, looks only forward, and takes the game's expressions", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); if (!r3dOrSkip()) return;
+    const K = T.r3dKit(), THREE = K.THREE;
+    const build = l => {
+      const rig = K.r3dRig(K.ACTOR_BIPED, "Hero" + l), seg = [32, 16, 8][l];
+      K.r3dActorPart(rig.joints.pelvis, K.r3dLathe([[0.22, -0.18], [0.27, -0.1], [0.28, 0.08], [0.24, 0.18]], seg), 0x49362e, "cloth");
+      K.r3dActorPart(rig.joints.spine, K.r3dTaper(0.6, 0.5, 0.6, 0.35, 0.3, [0.62, 0.36, 0.5]), 0x50683f, "cloth");
+      const head = K.r3dActorPart(rig.joints.head, new THREE.SphereGeometry(0.225, seg * 2, seg), 0xe7ad84, "bone");
+      K.r3dActorPart(rig.joints.rightHand, new THREE.BoxGeometry(0.1, 0.6, 0.02), 0xb9c0c5, "metal");
+      return { mesh: rig.root, rig, face: K.r3dFace(head, K.r3dFaceLayout(head), { seg: [28, 18, 10][l], rnd: () => 0.5 }) };
+    };
+    const A = K.r3dActorLOD(build, { name: "Test" }), tris = A.levels.map(L => L.tris);
+    assert(tris[0] > tris[1] && tris[1] > tris[2] && A.levels.every(L => typeof L.inBudget === "boolean"), `three levels, fewer triangles each (${tris})`);
+    const mats = new Set(); let faceted = true;
+    A.levels[0].mesh.traverse(o => { if (o.isMesh && o.material.isMeshToonMaterial) { mats.add(o.material.uuid); if (o.geometry.index || !o.geometry.attributes.color) faceted = false; } });
+    assert(mats.size === 2 && faceted, `two material classes (${mats.size}), every part faceted and shaded per triangle`);
+    const pk = h => A.pick(h), seq = [pk(300), pk(160), pk(150), pk(190), pk(210), pk(50), pk(75), pk(85)];
+    assert(seq.join() === "0,0,1,1,0,2,2,1", `level by height on screen, with a dead zone either side (${seq})`);
+    const R0 = A.levels[0].rig; R0.pose({ leftArm: [0.5, 0, 0] }); assert(Math.abs(R0.joints.leftArm.rotation.x - 0.5) < 1e-9, "posed by angles"); R0.rest(); assert(R0.joints.leftArm.rotation.x === 0, "and back to rest");
+    K.r3dRigWalk(R0, 0.1, true); assert(R0.joints.leftLeg.rotation.x > 0.3 && R0.joints.rightLeg.rotation.x < -0.3, "Wilds' walk: the legs swing opposite");
+    const F0 = A.levels[0].face, Cn = F0.controller, L = Cn.layout, brow = () => F0.features.brows[0].position.y;
+    assert(L.mouthY < L.noseY && L.noseY < L.eyeY && L.eyeY < L.browY, "the features stacked by the head's own proportions");
+    Cn.update(0.016, null); const b0 = brow(); Cn.setExpression("fear"); Cn.update(0.016, null); assert(brow() > b0 && Cn.expression === "fear", "an expression from the game's pose library (fear: the brows go up)");
+    assert(Object.keys(K.ACTOR_EXPR).length >= 17 && ["mood", "aim", "strain", "happy", "gleeful", "excited", "triumph", "perfect", "fear", "ouch", "ko", "dizzy", "deadpan", "confused"].every(k => K.ACTOR_EXPR[k]), "every face the game asks for");
+    Cn.setExpression("nope"); assert(Cn.expression === "neutral", "an unknown one is neutral");
+    const g = F0.group; g.updateWorldMatrix(true, true);
+    Cn.update(0.016, g.localToWorld(new THREE.Vector3(0.3, L.eyeY, L.frontZ + 1))); assert(Cn.gaze[0] > 0, "the eyes follow a target in front");
+    Cn.update(0.016, g.localToWorld(new THREE.Vector3(0.3, L.eyeY, L.frontZ - 1))); assert(Cn.gaze[0] === 0 && Cn.gaze[1] === 0, "and never look through the skull at one behind");
+    const white = F0.features.whites[0], base = white.userData.baseScaleY; let n = 0; while (!Cn.blinking && n++ < 200) Cn.update(0.05, null);
+    assert(Cn.blinking && n > 20 && Cn.blinks === 0, `a blink comes after a few seconds (${n * 0.05} s)`);
+    Cn.update(0.05, null); assert(white.scale.y < base * 0.5, "the lids close"); Cn.update(0.1, null); assert(!Cn.blinking && Cn.blinks === 1 && Math.abs(white.scale.y - base) < 1e-9, "and open again");
+    const sh = K.r3dContactShadowMesh(A.root); assert(sh.parent === A.root && sh.material.transparent && !sh.material.depthWrite, "a contact shadow under it");
+    T.r3d(null); T.toTitle(); T.setStats(ZERO);
+  });
+  test("v71 authored-asset bridge (Wilds'): an embedded GLB replaces an actor's procedural look, fitted to its bounds, its clips found through aliases, its Slot_ nodes attachment points; a bad file leaves the procedural model; nothing ships without a licence", async () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); if (!r3dOrSkip()) return;
+    const K = T.r3dKit(), THREE = K.THREE;
+    const pos = new Float32Array([-0.5, 0, 0, 0.5, 0, 0, 0, 2, 0]), times = new Float32Array([0, 1]), vals = new Float32Array([0, 2, 0, 0, 2.2, 0]);
+    const bin = new Uint8Array(68); bin.set(new Uint8Array(pos.buffer), 0); bin.set(new Uint8Array(times.buffer), 36); bin.set(new Uint8Array(vals.buffer), 44);
+    const anim = name => ({ name, channels: [{ sampler: 0, target: { node: 1, path: "translation" } }], samplers: [{ input: 1, output: 2 }] });
+    const gltf = { asset: { version: "2.0" }, scene: 0, scenes: [{ nodes: [0] }], nodes: [{ name: "Body", mesh: 0, children: [1] }, { name: "Slot_Hat", translation: [0, 2, 0] }],
+      meshes: [{ primitives: [{ attributes: { POSITION: 0 } }] }], buffers: [{ byteLength: 68, uri: "data:application/octet-stream;base64," + btoa(String.fromCharCode(...bin)) }],
+      bufferViews: [{ buffer: 0, byteOffset: 0, byteLength: 36 }, { buffer: 0, byteOffset: 36, byteLength: 8 }, { buffer: 0, byteOffset: 44, byteLength: 24 }],
+      accessors: [{ bufferView: 0, componentType: 5126, count: 3, type: "VEC3", min: [-0.5, 0, 0], max: [0.5, 2, 0] }, { bufferView: 1, componentType: 5126, count: 2, type: "SCALAR", min: [0], max: [1] }, { bufferView: 2, componentType: 5126, count: 2, type: "VEC3" }],
+      animations: [anim("Idle"), anim("Flinch")] };
+    const host = new THREE.Group(), proc = new THREE.Mesh(new THREE.BoxGeometry(0.6, 1, 0.4).translate(0, 0.5, 0), K.r3dToon(0xffffff)); host.add(proc);
+    K.r3dActorRegister("specActor", host, proc);
+    let bad = null; try { await K.r3dActorLoad("specActor", "data:model/gltf-binary;base64,AAAA"); } catch (e) { bad = e; }
+    assert(bad && K.r3dAssetsStatus().actors.specActor.mode === "procedural" && proc.visible, "a file that won't load leaves the procedural model in place");
+    let refused = null; try { await K.r3dActorLoad("specActor", gltf, { ship: true }); } catch (e) { refused = e; }
+    assert(refused && /licen/.test(String(refused.message)), "an asset marked for shipping without a licence is refused");
+    const r = await K.r3dActorLoad("specActor", gltf, { manifest: { license: "CC0-1.0", author: "spec" }, ship: true });
+    const st = K.r3dAssetsStatus().actors.specActor, model = host.children[1], box = new THREE.Box3().setFromObject(model);
+    assert(st.mode === "authored" && !proc.visible && model.visible, `the authored model replaces the look (${st.mode})`);
+    assert(Math.abs(box.max.y - box.min.y - 1) < 1e-3 && Math.abs(box.min.y) < 1e-3 && Math.abs(r.scale - 0.5) < 1e-6, `fitted: the procedural model's height, its feet on its ground (${box.min.y}..${box.max.y})`);
+    assert(st.slots.includes("Slot_Hat") && st.animations.includes("idle") && st.animations.includes("flinch") && st.current === "idle" && st.licence === "CC0-1.0", `slots, clips, idle playing, the licence kept (${JSON.stringify(st)})`);
+    assert(K.r3dActorAnimate("specActor", "hurt") && K.r3dAssetsStatus().actors.specActor.current === "flinch", "\"hurt\" finds the Flinch clip through its aliases, and crossfades to it");
+    K.r3dAssetsUpdate(0.5); assert(K.r3dActorUse("specActor", "procedural") && proc.visible && !model.visible && K.r3dActorUse("specActor", "authored") && !proc.visible, "and the two swap back and forth");
+    assert(K.r3dAssetsStatus().unlicensedShipped === 0, "nothing shipped without a licence");
+    T.r3d(null); T.toTitle(); T.setStats(ZERO);
+  });
   test("v69 3D bosses: all sixteen are modelled (not cut-outs), and each draws in place, idle, hurt and dead, with the shots they throw, and no errors", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); const on = T.r3d(true);
     if (!T.r3dState().ok) { assert(!on, "no WebGL here: it stays off"); T.r3d(null); T.toTitle(); T.setStats(ZERO); return; }
@@ -3656,7 +3762,7 @@
     T.seasonAt("2026-10-15"); T.closeSheet(); T.openSheet("challenges"); assert(document.querySelectorAll("#chalList .chal:not(.chal-soon)").length === 3, "in Season One: three seasonal challenges");
     $("chalMoreBtn").click(); document.querySelector('#chalMenu [data-per="event"]').click(); assert(/Events/.test($("chalMoreLbl").textContent) && document.querySelectorAll("#chalList .chal-soon").length === 1, "no event on: coming soon");
     T.setFlags({ "event.banner": "Test Week" }); T.closeSheet(); T.openSheet("challenges"); assert(document.querySelectorAll("#chalList .chal:not(.chal-soon)").length === 3, "an event on: three for it");
-    T.setFlags({}); T.seasonAt(null);
+    T.setFlags({}); T.seasonAt(OFF_SEASON);
     const line = $("chalTabs").getBoundingClientRect().bottom, set = $("chalSet").getBoundingClientRect().top; assert(set >= line, `the set bonus clears the line (${set} ≥ ${line})`);
     T.closeSheet();
   });

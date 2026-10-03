@@ -31,7 +31,7 @@
     const smooth = shell.clone(), sp = smooth.attributes.position;   // (the same shell before the sculpt, for the ink line)
     for (let i = 0; i < sp.count; i++) { const x = sp.getX(i), y = sp.getY(i), z = sp.getZ(i); if (z > 0.02) sp.setZ(i, z - r3dSkullRelief(x, -y) * Math.min(1, z * 2.5)); }
     smooth.computeVertexNormals();
-    const faceMat = new THREE.MeshToonMaterial({ map: tex, gradientMap: r3dBoneRamp(), transparent: true, alphaTest: 0.5 }); faceMat.onBeforeCompile = r3dRim;
+    const faceMat = new THREE.MeshToonMaterial({ toneMapped: false, map: tex, gradientMap: r3dBoneRamp(), transparent: true, alphaTest: 0.5 }); faceMat.onBeforeCompile = r3dRim;
     const head = new THREE.Group(), tilt = new THREE.Group(), squash = new THREE.Group(), spin = new THREE.Group();
     const craniumG = r3dInked(cranium, back); craniumG.scale.set(0.86, 0.86, 0.84); craniumG.position.set(0, 0.1, -0.26);   // (set back behind the face, so the sculpted hollows (the sockets, the nose) never have the back of his head showing through them)
     const face = new THREE.Group(), ink = new THREE.Mesh(smooth, R3D.cache.ink || (R3D.cache.ink = r3dInk())); ink.renderOrder = -1;
