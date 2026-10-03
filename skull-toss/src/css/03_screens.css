@@ -1,0 +1,210 @@
+/* ── Full screens: the stage (main menu), pause, round over ─────────────── */
+.screen{position:fixed;inset:0;z-index:4;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:16px;text-align:center;
+  padding:calc(18px + env(safe-area-inset-top,0px)) 16px calc(22px + env(safe-area-inset-bottom,0px));
+  background:radial-gradient(85% 55% at 50% 40%,rgba(38,54,74,.2),rgba(16,14,12,.62) 64%,rgba(16,14,12,.9));overflow:auto}
+.screen.title{padding-top:calc(66px + env(safe-area-inset-top,0px))}
+.title .logo{margin-top:.14em}   /* the lettering overhangs its line box a little */
+.screen .col{position:relative;z-index:1;width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center;gap:16px;margin:auto 0}
+.screen-top{position:absolute;z-index:2;top:calc(14px + env(safe-area-inset-top,0px));left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+
+/* the stage: velvet curtains, a scalloped valance and footlights */
+.curtain{position:absolute;top:0;bottom:0;width:clamp(16px,7vw,130px);z-index:0;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,0,0,.35),transparent 30%,rgba(0,0,0,.25) 55%,transparent 70%,rgba(0,0,0,.35)) 0 0/34px 100%,linear-gradient(var(--red-d),#5E1F18);border-right:3px solid var(--ink)}
+.curtain.left{left:0}.curtain.right{right:0;transform:scaleX(-1)}
+.valance{position:absolute;left:0;right:0;top:0;height:calc(34px + env(safe-area-inset-top,0px));z-index:0;pointer-events:none;
+  background:radial-gradient(circle at 50% 0,#8E3A2C 0 21px,var(--ink) 22px 24px,transparent 25px) 0 calc(100% - 22px)/44px 44px repeat-x,linear-gradient(#8E3A2C,#7E2A22);
+  border-bottom:0;filter:drop-shadow(0 4px 0 rgba(0,0,0,.35))}
+.valance::after{content:"";position:absolute;left:0;right:0;bottom:-18px;height:8px;background:repeating-linear-gradient(90deg,var(--mustard) 0 3px,transparent 3px 7px);opacity:.9}
+.footlights{position:absolute;left:0;right:0;bottom:0;height:34%;z-index:0;pointer-events:none;background:radial-gradient(60% 70% at 50% 110%,rgba(224,184,92,.2),rgba(224,184,92,0))}
+
+/* the title card logo: bouncing hand-inked letters; the O is the hoop */
+.logo{margin:0;display:flex;flex-direction:column;align-items:center;font:clamp(64px,19vw,116px)/.86 var(--display);color:var(--cream);text-transform:uppercase;letter-spacing:.01em;text-shadow:var(--outline),0 5px 0 var(--ink)}
+.logo span{display:flex}
+.logo i{font-style:normal;display:inline-block;text-shadow:var(--outline),0 5px 0 var(--ink),0 8px 0 var(--ink);animation:bob 1.6s ease-in-out infinite;animation-delay:calc(var(--i) * -.18s)}
+.logo .w2 i{color:var(--mustard-l)}
+/* the skull itself is the O in TOSS: its canvas reaches up behind SKULL so it has room to hop */
+/* the skull in the O: its slot is letter-sized, but its two canvases spill past it so an aura is never cut off.
+   The back canvas sits behind the lettering (an aura's far side), the front one over it (the skull, the near side). */
+.logo .mascot{position:relative;flex:none;width:.94em;height:2.3em;margin:-1.44em .02em 0;cursor:pointer;touch-action:manipulation}
+.logo .mascot canvas{position:absolute;left:-.75em;top:-.15em;width:calc(100% + 1.5em);height:calc(100% + .7em);pointer-events:none}
+.logo .mascot .m-back{z-index:-1}
+.logo .mascot .m-front{z-index:1;filter:drop-shadow(0 .055em 0 var(--ink))}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-.06em) rotate(2deg)}}
+.logo.sm{font-size:clamp(46px,13vw,76px)}
+.tagline{margin:-2px 0 2px;max-width:30ch;font:800 14px/1.45 var(--ui);color:var(--cream);text-shadow:var(--outline)}
+.menu-stack{width:100%;display:flex;flex-direction:column;gap:16px;padding-top:6px}
+.menu-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;padding-top:4px}
+.meta{margin:0;font:20px/1.2 var(--num);letter-spacing:.1em;color:var(--cream-dim);text-shadow:var(--outline)}
+.meta b{color:var(--mustard-l);font-weight:400}
+
+/* pause */
+.pause .col{gap:14px}
+.eyebrow{margin:0;font:900 12px/1.3 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--cream-dim);text-shadow:var(--outline)}
+.eyebrow b{color:var(--mustard-l);font-weight:900}
+
+/* round over: a headstone in the moonlight, carved with how the round went */
+.results .col{gap:10px}
+.rip{margin:0 0 -2px;font:clamp(40px,12.5vw,70px)/.92 var(--display);letter-spacing:.015em;text-transform:uppercase;color:var(--cream);
+  text-shadow:var(--outline),0 6px 0 var(--ink),0 14px 26px rgba(0,0,0,.5);transform:rotate(-1.4deg)}
+.rip i{font-style:normal;letter-spacing:.08em}
+.grave{position:relative;width:100%;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:0;padding:26px 0 30px}
+.plot{position:relative}
+/* the mound of fresh earth the stone stands in, with a couple of grass tufts */
+.mound{position:absolute;left:-13%;right:-13%;bottom:-30px;height:58px;background:radial-gradient(70% 150% at 50% 100%,#4A3524,#2A1D14);
+  border:3px solid var(--ink);border-bottom:0;border-radius:50% 50% 0 0/100% 100% 0 0}
+.mound::before,.mound::after{content:"";position:absolute;bottom:3px;width:22px;height:17px;background:#37522A;
+  clip-path:polygon(50% 0,58% 62%,72% 26%,66% 76%,88% 58%,70% 100%,30% 100%,12% 58%,34% 76%,28% 26%,42% 62%)}
+.mound::before{left:9%}.mound::after{right:11%;transform:scaleX(-1)}
+#sleeper{position:relative;z-index:2;width:clamp(86px,25vw,132px);height:clamp(86px,25vw,132px);margin:0 -14px -6px -10px;filter:drop-shadow(0 5px 0 rgba(0,0,0,.35))}
+/* the stone: a rounded slab with a carved slate face */
+.stone{position:relative;z-index:1;padding:8px 10px 12px;transform:rotate(.5deg);
+  background:linear-gradient(180deg,#A2AAB8 0%,#8A93A3 42%,#767F8E 100%);border:3px solid var(--ink);
+  border-radius:44% 44% 10px 10px/26% 26% 8px 8px;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.22),inset 0 -7px 0 rgba(0,0,0,.18),0 7px 0 var(--ink),0 20px 40px rgba(0,0,0,.5)}
+.stone::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--noise);opacity:.4;mix-blend-mode:multiply;pointer-events:none}
+.slate{position:relative;padding:12px 12px 11px;background:linear-gradient(180deg,#2E333B,#20242B);border:3px solid var(--ink);
+  border-radius:46% 46% 8px 8px/31% 31% 6px 6px;box-shadow:inset 0 3px 10px rgba(0,0,0,.55)}
+.who{margin:0 0 7px;text-align:center;font:900 10px/1.2 var(--ui);letter-spacing:.22em;text-transform:uppercase;color:var(--cream-faint)}
+.res-stats{margin:0;display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:1px 9px}
+.res-stats dt,.res-stats dd{margin:0;font:clamp(15px,4.3vw,21px)/1.45 var(--num);letter-spacing:.05em;color:var(--cream);text-transform:uppercase}
+.res-stats dt{display:flex;align-items:baseline;gap:7px;white-space:nowrap}
+.res-stats dt::after{content:"";flex:1;min-width:12px;border-bottom:3px dotted rgba(242,231,201,.4);transform:translateY(-.25em)}
+.res-stats dd{text-align:right;white-space:nowrap}.res-stats dd.long{white-space:normal;line-height:1.2}
+.res-stats .stars{color:var(--gold);letter-spacing:.06em}
+.grade{display:flex;align-items:center;gap:9px;margin:8px 0 0;padding-top:8px;border-top:2px solid rgba(242,231,201,.3);
+  font:clamp(18px,5.4vw,26px)/1 var(--num);letter-spacing:.06em;text-transform:uppercase;color:var(--cream)}
+.grade span{display:flex;align-items:baseline;gap:8px;flex:1}
+.grade span::after{content:"";flex:1;min-width:12px;border-bottom:3px dotted rgba(242,231,201,.4);transform:translateY(-.25em)}
+.grade b{display:grid;place-items:center;min-width:1.75em;height:1.75em;padding:.12em .1em 0;border:3px solid currentColor;border-radius:50%;font-weight:400;letter-spacing:.02em}
+.grade.top{color:var(--mustard-l)}
+.cross{position:absolute;left:50%;top:clamp(-30px,-8.4vw,-24px);width:clamp(34px,9vw,46px);height:auto;transform:translateX(-50%) rotate(-2deg);z-index:2;filter:drop-shadow(0 4px 0 rgba(0,0,0,.35))}
+.cross path{fill:#98A3B4;stroke:var(--ink);stroke-width:3.4;stroke-linejoin:round}
+/* the banner across the foot of the stone */
+.ribbon{position:absolute;left:-9px;right:-9px;bottom:-11px;margin:0;padding:6px 14px 4px;text-align:center;
+  background:var(--cream);border:3px solid var(--ink);box-shadow:0 4px 0 var(--ink);transform:rotate(-1.2deg);
+  font:clamp(14px,4.2vw,19px)/1.1 var(--comic);letter-spacing:.04em;text-transform:uppercase;color:var(--ink)}
+.ribbon::before,.ribbon::after{content:"";position:absolute;top:50%;width:13px;height:13px;margin-top:-8px;background:var(--bone);
+  border:3px solid var(--ink);transform:rotate(45deg);z-index:-1}
+.ribbon::before{left:-9px}.ribbon::after{right:-9px}
+.ribbon span:empty{display:none}
+.ribbon #newBest{color:var(--red)}
+/* the bones you earned sit in the top-right corner of the progress panel, and the text wraps round them */
+.res-bones{float:right;display:inline-flex;align-items:center;gap:7px;margin:-2px -4px 6px 12px;padding:5px 11px 3px;border-radius:8px;background:var(--mustard);border:3px solid var(--ink);box-shadow:0 3px 0 var(--ink);font:26px/1 var(--num);color:var(--ink);transform:rotate(2deg)}
+.res-bones b{font-weight:400}
+.res-bones svg{width:20px;height:20px}
+.res-bones > span{font:12px/1 var(--display);letter-spacing:.06em;text-transform:uppercase}
+.next{width:100%;padding:11px 14px;border-radius:10px;background:var(--panel);border:3px solid var(--ink);box-shadow:0 4px 0 var(--ink);text-align:left;font:700 13px/1.45 var(--ui);color:var(--cream-dim)}
+.next::after{content:"";display:block;clear:both}
+.next b{color:var(--mustard-l);font-weight:900}
+.next-text{min-height:36px}
+.next .bar{clear:both;margin-top:8px}
+.res-actions{width:100%;display:grid;grid-template-columns:1.55fr 1fr;gap:12px;margin-top:2px}
+.res-actions .btn{font-size:20px;padding:0 12px;gap:8px;white-space:nowrap}
+
+/* shared progress bar: a mustard fill in an inked tube */
+.bar{height:12px;border-radius:7px;background:rgba(23,19,15,.55);border:2px solid var(--ink);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:repeating-linear-gradient(-45deg,var(--mustard-l) 0 8px,var(--mustard) 8px 16px);transition:width .5s var(--ease)}
+
+@media (min-height:780px){.screen{gap:22px}.menu-stack{gap:18px}}
+@media (max-height:780px){.results .col{gap:7px}.rip{font-size:clamp(34px,10vw,54px)}.slate{padding:10px 11px 9px}.res-stats dt,.res-stats dd{font-size:clamp(14px,3.9vw,18px);line-height:1.34}.res-bones{font-size:22px;padding:4px 10px 2px}.next{padding:9px 12px;font-size:12px}.mound{height:38px}}
+@media (max-height:680px){.btn{min-height:52px;font-size:21px}.menu-stack{gap:12px}}
+
+/* v45: the title fits between the curtains; the curtains start closed and open on launch, after the studio logo */
+.screen.title{padding-left:calc(clamp(16px,7vw,130px) + 14px);padding-right:calc(clamp(16px,7vw,130px) + 14px)}
+.screen.title .screen-top{left:calc(clamp(16px,7vw,130px) + 12px);right:calc(clamp(16px,7vw,130px) + 12px)}
+#bonesTitle{display:none}
+.tagline{text-transform:uppercase;letter-spacing:.08em}
+.curtain{transition:width 1.3s cubic-bezier(.6,0,.2,1)}
+.title.closed .curtain{width:51%}
+.title.closed .col,.title.closed .screen-top{opacity:0}
+.title .col{transition:opacity .5s .8s}
+.splash-logo .word{font:clamp(40px,12vw,84px)/1 var(--display);letter-spacing:.08em;color:var(--cream);text-shadow:var(--outline),0 5px 0 var(--ink)}
+.splash-logo .sub{margin-top:10px;font:800 13px/1 var(--ui);letter-spacing:.4em;color:var(--mustard-l);text-transform:uppercase}
+@keyframes splashIn{0%{opacity:0;transform:scale(.94)}25%,80%{opacity:1;transform:scale(1)}100%{opacity:1;transform:scale(1.02)}}
+@media (prefers-reduced-motion:reduce){.curtain{transition:none}.splash-logo{animation-duration:.9s}}
+
+/* v45: the headstone reads better: the name big across the arch, the stats inside the slate, a bigger Morty asleep beside it */
+.who{margin:2px 0 8px;font:clamp(22px,6.4vw,32px)/1 var(--display);letter-spacing:.03em;color:var(--cream);text-shadow:0 2px 0 var(--ink);overflow-wrap:anywhere}
+.slate{padding:22px 16px 13px}
+.res-stats{gap:0 10px}
+.res-stats dt,.res-stats dd{font-size:clamp(15px,4.1vw,20px)}
+.stone .ribbon{max-width:100%;margin-left:auto;margin-right:auto}
+#sleeper{width:clamp(118px,34vw,176px);height:clamp(118px,34vw,176px);margin:0 -26px -10px -14px}
+
+/* v45: the studio logo on true black, then a fade to the closed curtains */
+.splash{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:#000;transition:opacity .6s ease}
+.splash.out{opacity:0;pointer-events:none}
+.splash-logo{opacity:0;transform:scale(.94);animation:splashIn .9s ease-out .2s forwards;transition:opacity .45s ease,transform .45s ease}
+.splash.done .splash-logo{transform:scale(1.02)}
+.splash-logo img{display:block;width:min(76vw,52vh,480px);height:auto}
+
+/* v49: the title's six small buttons in two rows of three, icon over label */
+.title .menu-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 10px;width:100%;padding-top:2px}
+.title .menu-row .chip-btn{flex-direction:column;justify-content:center;gap:3px;padding:8px 2px 7px;min-height:58px;font-size:clamp(11px,3.1vw,15px);letter-spacing:0}
+.title .menu-row .chip-btn .icon{width:19px;height:19px}
+.title .menu-row .chip-btn>[data-t]{max-width:100%}
+/* v49: a slower, smoother opening: the studio logo eases in and out, the black lifts gently, the curtains glide open */
+.splash{transition:opacity 1.2s cubic-bezier(.4,0,.2,1)}
+.splash-logo{animation:splashIn2 3.2s cubic-bezier(.4,0,.2,1) .3s forwards;transition:opacity 1s cubic-bezier(.4,0,.2,1),transform 1.2s cubic-bezier(.4,0,.2,1)}
+@keyframes splashIn2{0%{opacity:0;transform:scale(.95)}40%{opacity:1;transform:scale(1)}100%{opacity:1;transform:scale(1.025)}}
+.splash.done .splash-logo{transform:scale(1.04)}
+.curtain{transition:width 2.6s cubic-bezier(.45,0,.2,1)}
+.title .col{transition:opacity 1.2s cubic-bezier(.4,0,.2,1) 1.3s}
+.title .screen-top{transition:opacity 1.2s cubic-bezier(.4,0,.2,1) 1.6s}
+@media (prefers-reduced-motion:reduce){.curtain{transition:none}.splash-logo{animation-duration:1.2s}.title .col,.title .screen-top{transition-duration:.4s;transition-delay:0s}}
+/* v49: the headstone's four small buttons in one row, and the whole results screen fits without scrolling */
+.results .res-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:100%;padding-top:0}
+.results .res-row .chip-btn{flex-direction:column;justify-content:center;gap:3px;padding:7px 2px 6px;min-height:52px;font-size:clamp(10.5px,2.9vw,14px);letter-spacing:0;line-height:1.05}
+.results .res-row .chip-btn .icon{width:17px;height:17px}
+/* v50: the title's small buttons thinner, the big four a little closer, the tagline as written */
+.title .menu-row .chip-btn{gap:1px;min-height:44px;padding:4px 2px 3px}
+.title .menu-row .chip-btn .icon{width:14px;height:14px}
+.title .menu-stack{gap:11px}
+.tagline{text-transform:none;letter-spacing:.03em;font-size:15px}
+/* v50: the headstone stands in the middle, Morty's head at its top-left corner under the title (where he was across,
+   higher up), the best score under the stone, no heap of dirt, and a wider New high score banner; smaller bones box */
+.results .grave{display:flex;justify-content:center;align-items:flex-start;padding:26px 0 18px}
+.results .plot{width:min(300px,74vw)}
+.results #sleeper{--sw:clamp(96px,27vw,140px);position:absolute;left:calc(-6px - var(--sw) * .4);top:calc(-4px - var(--sw) * .4);z-index:3;margin:0;width:calc(var(--sw) * 1.8);height:calc(var(--sw) * 1.8);pointer-events:none}   /* v55: room round him for hats, wings and auras */
+.results .ribbon{left:-26px;right:-26px}
+.results #bestLine{margin-top:-6px;font-size:18px}
+.res-bones{gap:5px;padding:3px 8px 2px;margin:-1px -2px 4px 10px;border-width:2px;font-size:0.8em}
+.res-bones b{font-size:18px}.res-bones svg{width:15px;height:15px}.res-bones > span{font-size:10px}
+/* v51: the curtains are pulled, not slid: each one pivots from its top outer corner as it goes out to the side,
+   bunches at its inner edge, overshoots and settles; closed, the fabric stirs a little. The title stands in front. */
+.title{--strip:clamp(16px,7vw,130px)}
+.curtain{width:51%;background:none;border:0;transition:none;transform-origin:top left;filter:drop-shadow(3px 0 0 var(--ink)) drop-shadow(0 8px 12px rgba(0,0,0,.45));will-change:transform}
+.curtain::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.35),transparent 30%,rgba(0,0,0,.25) 55%,transparent 70%,rgba(0,0,0,.35)) 0 0/34px 100%,linear-gradient(var(--red-d),#5E1F18)}
+.curtain.left{left:0;transform:translateX(calc(-100% + var(--strip))) rotate(-1.5deg)}
+.curtain.right{right:0;transform-origin:top right;transform:translateX(calc(100% - var(--strip))) rotate(1.5deg);filter:drop-shadow(-3px 0 0 var(--ink)) drop-shadow(0 8px 12px rgba(0,0,0,.45))}
+.curtain.left::before{clip-path:polygon(0 0,100% 0,calc(100% - 6px) 18%,100% 36%,calc(100% - 9px) 55%,calc(100% - 2px) 72%,calc(100% - 12px) 88%,calc(100% - 5px) 100%,0 100%)}
+.curtain.right::before{clip-path:polygon(0 0,100% 0,100% 100%,5px 100%,12px 88%,2px 72%,9px 55%,0 36%,6px 18%)}
+.title.closed .curtain.left,.title.closed .curtain.right{transform:none}
+.title.closed .curtain.left::before{clip-path:polygon(0 0,100% 0,100% 18%,100% 36%,100% 55%,100% 72%,100% 88%,100% 100%,0 100%);animation:stir 3.4s ease-in-out infinite alternate}
+.title.closed .curtain.right::before{clip-path:polygon(0 0,100% 0,100% 100%,0 100%,0 88%,0 72%,0 55%,0 36%,0 18%);animation:stir 3.1s ease-in-out infinite alternate-reverse}
+@keyframes stir{0%{transform:skewX(0) scaleY(1)}100%{transform:skewX(.6deg) scaleY(1.004)}}
+.title.opening .curtain.left{animation:pullL 1.8s cubic-bezier(.5,0,.3,1) forwards}
+.title.opening .curtain.right{animation:pullR 1.8s cubic-bezier(.5,0,.3,1) forwards}
+.title.opening .curtain.left::before{animation:bunchL 1.8s ease-out forwards}
+.title.opening .curtain.right::before{animation:bunchR 1.8s ease-out forwards}
+@keyframes pullL{0%{transform:none}10%{transform:translateX(1.5%) translateY(0) rotate(.8deg)}60%{transform:translateX(calc(-100% + var(--strip) - 3%)) translateY(-.6%) rotate(-12deg)}80%{transform:translateX(calc(-100% + var(--strip))) rotate(1deg)}92%{transform:translateX(calc(-100% + var(--strip))) rotate(-2.4deg)}100%{transform:translateX(calc(-100% + var(--strip))) rotate(-1.5deg)}}
+@keyframes pullR{0%{transform:none}10%{transform:translateX(-1.5%) translateY(0) rotate(-.8deg)}60%{transform:translateX(calc(100% - var(--strip) + 3%)) translateY(-.6%) rotate(12deg)}80%{transform:translateX(calc(100% - var(--strip))) rotate(-1deg)}92%{transform:translateX(calc(100% - var(--strip))) rotate(2.4deg)}100%{transform:translateX(calc(100% - var(--strip))) rotate(1.5deg)}}
+@keyframes bunchL{0%{clip-path:polygon(0 0,100% 0,100% 18%,100% 36%,100% 55%,100% 72%,100% 88%,100% 100%,0 100%)}55%{clip-path:polygon(0 0,100% 0,calc(100% - 14px) 18%,100% 36%,calc(100% - 20px) 55%,calc(100% - 4px) 72%,calc(100% - 26px) 88%,calc(100% - 10px) 100%,0 100%)}100%{clip-path:polygon(0 0,100% 0,calc(100% - 6px) 18%,100% 36%,calc(100% - 9px) 55%,calc(100% - 2px) 72%,calc(100% - 12px) 88%,calc(100% - 5px) 100%,0 100%)}}
+@keyframes bunchR{0%{clip-path:polygon(0 0,100% 0,100% 100%,0 100%,0 88%,0 72%,0 55%,0 36%,0 18%)}55%{clip-path:polygon(0 0,100% 0,100% 100%,10px 100%,26px 88%,4px 72%,20px 55%,0 36%,14px 18%)}100%{clip-path:polygon(0 0,100% 0,100% 100%,5px 100%,12px 88%,2px 72%,9px 55%,0 36%,6px 18%)}}
+/* the dark, the spotlights and the lettering they find; the buttons stay live under it all */
+.intro-cv{position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none}
+.title.closed .col,.title.closed .screen-top{opacity:1}
+.title.dim .col{transition:none}
+.title .logo{transition:filter .5s ease}
+.title.lit .logo{filter:brightness(1.18) drop-shadow(0 0 18px rgba(255,220,150,.55))}
+@media (prefers-reduced-motion:reduce){.title.opening .curtain,.title.opening .curtain::before,.title.closed .curtain::before{animation:none}}
+/* v53: while the curtains are shut (and as they open) only the lettering stands in front of them; the menu is behind,
+   and shows as they part. A tap on the closed curtains skips ahead instead of pressing a button nobody can see. */
+.title.closed .col,.title.opening .col{z-index:auto}
+.title.closed .curtain,.title.opening .curtain,.title.closed .valance,.title.opening .valance{z-index:2}
+.title.closed .col>.logo,.title.opening .col>.logo,.title.closed .col>.tagline,.title.opening .col>.tagline{position:relative;z-index:3}
+.title.closed .screen-top,.title.opening .screen-top{z-index:1}
+.title.closed .curtain{pointer-events:auto}
+/* v53: the studio logo fades out instead of stopping dead (taking its animation away used to snap it) */
+.splash.done .splash-logo{animation:splashOut 1.1s cubic-bezier(.4,0,.2,1) forwards !important}
+@keyframes splashOut{0%{opacity:1;transform:scale(1.025)}100%{opacity:0;transform:scale(1.045)}}

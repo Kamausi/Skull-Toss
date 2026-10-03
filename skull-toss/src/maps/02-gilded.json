@@ -1,0 +1,663 @@
+{
+  "id": "gilded",
+  "n": 2,
+  "name": "The Gilded Graveyard",
+  "reel": "Reel Two",
+  "premise": "Where the rich were buried with their money. The gold never stopped shining, and it never stopped moving.",
+  "identity": {
+    "visual": "Gold-domed mausoleums, gilded angels and urns, moonlight on marble.",
+    "spatial": "The lane runs under a gilded arch; urns and bells stand close by it, near enough to touch.",
+    "mechanic": "Environmental interaction: gilded urns bounce the skull and bank shots count; a headstone and a gilded plaque stand beside the lane to bank off, and every few rings the ring is sealed until a throw banks in.",
+    "throw": "Play the urns and the boards: a bounce off gold or stone can still find the ring, and a sealed ring wants one.",
+    "boss": "The Count drags the urns into his waltz: they circle with him, so the banks change every lap.",
+    "targets": "Braziers swinging on chains between the tombs.",
+    "hazards": "Bats out of the crypts.",
+    "camera": "Formal and still, the arch always framing the ring.",
+    "ambient": "Skeletons polishing plaques, a ghost, bats in the domes.",
+    "music": "The waltz on a pipe organ, a semitone down.",
+    "sfx": "Organ drones, bells, the BOING of a gilded urn.",
+    "transition": "The arch's gates swing shut, then an iris on the full moon.",
+    "reward": "The Count's Gilded Handlebar and the second shard."
+  },
+  "sheet": {
+    "concept": "Introduce the environment talking back: things by the lane move when Morty hits them, and gold bounces; then bank shots on purpose: a board to bank off, and rings that only open to a bank.",
+    "plane": "The throw lane under the gilded arch (z 0–7.8); the urns stand in the hazard zone either side of the line.",
+    "launcher": [
+      0,
+      0.9,
+      0
+    ],
+    "zones": {
+      "ring": {
+        "x": [
+          -1.5,
+          1.5
+        ],
+        "y": [
+          1.8,
+          3.3
+        ],
+        "z": [
+          4.7,
+          7.5
+        ]
+      },
+      "targets": {
+        "x": [
+          -1.7,
+          1.7
+        ],
+        "y": [
+          1.4,
+          3.2
+        ],
+        "z": [
+          7.4,
+          9.2
+        ]
+      },
+      "hazards": {
+        "x": [
+          -2.2,
+          2.2
+        ],
+        "y": [
+          1.0,
+          4.2
+        ],
+        "z": [
+          3.6,
+          5.4
+        ]
+      }
+    },
+    "corridor": {
+      "halfWidth": 2.4,
+      "zMax": 16
+    },
+    "camera": {
+      "x": [
+        -0.28,
+        0.28
+      ],
+      "y": [
+        -0.12,
+        0.1
+      ],
+      "z": [
+        -0.4,
+        1.0
+      ]
+    },
+    "parallax": [
+      "sky",
+      "far",
+      "ground",
+      "world",
+      "near",
+      "fg"
+    ],
+    "interactions": [
+      {
+        "on": "angel",
+        "does": "rotate"
+      },
+      {
+        "on": "urn",
+        "does": "shake"
+      },
+      {
+        "on": "stone",
+        "does": "crack"
+      },
+      {
+        "on": "cross",
+        "does": "fall"
+      },
+      {
+        "on": "lantern",
+        "does": "move"
+      },
+      {
+        "on": "mausoleum",
+        "does": "shake"
+      },
+      {
+        "on": "walkers",
+        "does": "react"
+      }
+    ],
+    "ambient": [
+      "bats",
+      "ghost",
+      "walkers",
+      "weather",
+      "glints"
+    ],
+    "lighting": {
+      "key": [
+        0.45,
+        0.89
+      ],
+      "ambient": "#262A40",
+      "rim": "rgba(227,182,75,.4)",
+      "ring": 0.36,
+      "boss": "#C8A0FF"
+    },
+    "arenas": {
+      "mini": {
+        "z": [
+          5.0,
+          7.8
+        ],
+        "note": "the Bat Baron perches on the arch and its chains"
+      },
+      "end": {
+        "z": [
+          9.0,
+          14.0
+        ],
+        "note": "the Count waltzes the ring round the arch with two urns in tow"
+      }
+    },
+    "transition": "The arch's gilded gates swing shut on the lane.",
+    "reward": {
+      "bodyPart": "beard:handlebar",
+      "section": "rightArm",
+      "fragment": "gilded",
+      "show": "The Count's moustache, twirled to a point, lands on Morty's jaw."
+    }
+  },
+  "look": {
+    "sky": [
+      "#101426",
+      "#1E2440",
+      "#3A3A5C",
+      "#5E5670"
+    ],
+    "horizon": "rgba(227,182,75,.14)",
+    "moon": "full",
+    "moonColor": "#F6EBC8",
+    "stars": 1.0,
+    "skyline": "gilded",
+    "silhouette": "#10121E",
+    "haze": "rgba(90,90,120,.24)",
+    "ground": [
+      "#3A3C4A",
+      "#2A2C38",
+      "#1E2028",
+      "#121318"
+    ],
+    "hills": [
+      "#44465A",
+      "#3A3C4E",
+      "#303244"
+    ],
+    "hillRim": "rgba(227,182,75,.14)",
+    "grass": [
+      "#4A6A5A",
+      "#3A5A4A"
+    ],
+    "lane": "flagstone",
+    "light": "rgba(227,182,75,.1)",
+    "props": "gilded",
+    "foreground": "chains",
+    "weather": "mist",
+    "tint": null,
+    "ambient": {
+      "walkers": [
+        "zombie",
+        "skeleton",
+        "ghost"
+      ],
+      "ghost": true,
+      "bats": 2.0,
+      "witch": false,
+      "digger": true,
+      "cat": false,
+      "lightning": false,
+      "crows": true,
+      "batsToo": true
+    }
+  },
+  "anchor": "post",
+  "ring": {
+    "speed": 1.06,
+    "tri": {
+      "a": 1.35,
+      "up": 0.85,
+      "near": 1.3,
+      "far": 1.4,
+      "skew": 0.2
+    },
+    "seqs": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        2,
+        1
+      ],
+      [
+        0,
+        1,
+        2,
+        1
+      ]
+    ],
+    "mods": [
+      "bob"
+    ],
+    "path": "triangle"
+  },
+  "tiers": [
+    "II",
+    "III"
+  ],
+  "mechanic": {
+    "kind": "bats"
+  },
+  "ground": "stone",
+  "obstacles": {
+    "A": [
+      {
+        "kind": "bumper",
+        "at": [
+          -1.55,
+          2.6,
+          4.6
+        ],
+        "r": 0.3,
+        "from": 10
+      },
+      {
+        "kind": "bank",
+        "_doc": "a headstone laid along the lane: stone, so it gives back less; from its third ring, every third ring is sealed until a throw banks in (v63, the owner's playtest: it looked huge; now a plaque 1.3 m by 1.6 m on a post, where a bank still reaches the ring)",
+        "at": [
+          1.75,
+          4.4
+        ],
+        "len": 1.3,
+        "y": [
+          1.5,
+          3.1
+        ],
+        "mat": "stone",
+        "seal": {
+          "need": 1,
+          "every": 3
+        },
+        "from": 20
+      },
+      {
+        "kind": "gate",
+        "_doc": "v66 (the owner's call): a real gate across the lane that swings open and shut on its clock; the map's ring interaction works it (ring it and it's held open two throws); through the gate, the ring and on into the actor is a key, and two keys in the first half open the secret path (07wa_gates.js)",
+        "span": [
+          -1.6,
+          1.6
+        ],
+        "h": 3.3,
+        "z": 2.8,
+        "cycle": [
+          3.2,
+          1.0
+        ],
+        "phase": 0.8,
+        "look": "gilt",
+        "from": 14
+      }
+    ],
+    "B": [
+      {
+        "kind": "bank",
+        "_doc": "a gilded plaque that slides in and out on its rail: a moving bank, and gold gives back nearly all of it (v63, the owner's playtest: it looked huge; now a plaque 1.3 m by 1.6 m on a post, where a bank still reaches the ring)",
+        "at": [
+          -1.75,
+          4.4
+        ],
+        "len": 1.3,
+        "y": [
+          1.5,
+          3.1
+        ],
+        "mat": "metal",
+        "slide": [
+          0.3,
+          4.4
+        ],
+        "seal": {
+          "need": 1,
+          "every": 3
+        },
+        "from": 0
+      },
+      {
+        "kind": "bumper",
+        "at": [
+          1.45,
+          2.0,
+          4.9
+        ],
+        "r": 0.3,
+        "drift": [
+          0.3,
+          5.2
+        ],
+        "from": 0
+      },
+      {
+        "kind": "bumper",
+        "at": [
+          0.0,
+          3.55,
+          3.9
+        ],
+        "r": 0.26,
+        "from": 4
+      },
+      {
+        "kind": "coach",
+        "_doc": "v67: the foreground pressure event (07wb_coach.js): a phantom coach crosses the lane on its schedule, told first (lamp, bell, a track on the ground); wait for it or lob over it; a ghost where it passes in front of the ring",
+        "z": 2.3,
+        "y": [
+          1.5,
+          2.6
+        ],
+        "every": [
+          8,
+          1.2
+        ],
+        "speed": 3.4,
+        "look": "gilt",
+        "phase": 1.3,
+        "from": 2
+      }
+    ],
+    "boss": [
+      {
+        "kind": "bumper",
+        "at": [
+          -1.3,
+          2.6,
+          4.6
+        ],
+        "r": 0.3,
+        "orbit": [
+          1.3,
+          4.0
+        ],
+        "from": 0
+      },
+      {
+        "kind": "bumper",
+        "at": [
+          1.3,
+          2.6,
+          4.6
+        ],
+        "r": 0.3,
+        "orbit": [
+          1.3,
+          4.0
+        ],
+        "from": 0
+      }
+    ]
+  },
+  "targetTypes": {
+    "A": [
+      "standard",
+      "swinging"
+    ],
+    "B": [
+      "swinging",
+      "shielded"
+    ]
+  },
+  "bosses": {
+    "mini": "batbaron",
+    "end": "count"
+  },
+  "acts": [
+    "The Gilded Gates",
+    "Mausoleum Row",
+    "The Angels' Walk",
+    "The Count's Crypt"
+  ],
+  "travel": {
+    "step": 6,
+    "arrive": [
+      0.85,
+      0.7,
+      0.55,
+      0.4,
+      0.25
+    ],
+    "gap": 2.6,
+    "far": 170,
+    "_doc": "v47 perceptual travel (docs/TRAVEL.md): see 01-hollow.json.",
+    "pal": "gilded",
+    "backdrop": [
+      "willow",
+      "gilded-mausoleum",
+      "obelisk",
+      "tree"
+    ],
+    "zones": [
+      {
+        "id": "gates",
+        "from": [
+          0,
+          0
+        ],
+        "density": 0.5,
+        "fog": 0.06,
+        "tone": "rgba(0,0,0,0)",
+        "near": "tuft",
+        "mix": {
+          "iron-fence": 3,
+          "gas-lamp": 2,
+          "stone": 3,
+          "cross": 2,
+          "urn": 1,
+          "weeping-angel": 1,
+          "tuft": 1
+        }
+      },
+      {
+        "id": "mausoleums",
+        "from": [
+          10,
+          6
+        ],
+        "density": 0.62,
+        "fog": 0.1,
+        "tone": "rgba(40,30,60,.1)",
+        "near": "tuft",
+        "mix": {
+          "gilded-mausoleum": 2,
+          "stone": 3,
+          "obelisk": 2,
+          "iron-fence": 2,
+          "gas-lamp": 1
+        },
+        "backdrop": [
+          "gilded-mausoleum",
+          "willow"
+        ]
+      },
+      {
+        "id": "angels",
+        "from": [
+          20,
+          8
+        ],
+        "density": 0.6,
+        "fog": 0.14,
+        "tone": "rgba(60,50,20,.12)",
+        "near": "tuft",
+        "mix": {
+          "weeping-angel": 4,
+          "urn": 2,
+          "cross": 2,
+          "gas-lamp": 1,
+          "willow": 1
+        },
+        "flock": 0.4
+      },
+      {
+        "id": "bats",
+        "from": [
+          30,
+          -6
+        ],
+        "density": 0.36,
+        "fog": 0.24,
+        "tone": "rgba(24,14,40,.26)",
+        "near": "tuft",
+        "mix": {
+          "willow": 2,
+          "crypt": 2,
+          "obelisk": 2,
+          "tree": 2,
+          "iron-fence": 1
+        },
+        "flock": 0.8
+      },
+      {
+        "id": "crypt",
+        "from": [
+          30,
+          30
+        ],
+        "density": 0.55,
+        "fog": 0.16,
+        "tone": "rgba(50,20,40,.2)",
+        "near": "tuft",
+        "mix": {
+          "gilded-mausoleum": 2,
+          "stone": 3,
+          "cross": 2,
+          "iron-fence": 2,
+          "gas-lamp": 1
+        }
+      }
+    ],
+    "landmarks": [
+      {
+        "asset": "digger",
+        "hit": 0,
+        "ahead": 12.5,
+        "x": -2.9
+      },
+      {
+        "asset": "gilded-gate",
+        "hit": 0,
+        "ahead": 16,
+        "x": -7.4
+      },
+      {
+        "asset": "angel",
+        "hit": 0,
+        "ahead": 6.5,
+        "x": -3.3
+      },
+      {
+        "asset": "angel",
+        "hit": 0,
+        "ahead": 8.6,
+        "x": 3.4
+      },
+      {
+        "asset": "lantern",
+        "hit": 0,
+        "ahead": 7.5,
+        "x": -4.2
+      },
+      {
+        "asset": "count-lair",
+        "hit": 50,
+        "ahead": 44,
+        "x": 0,
+        "mul": 1.25,
+        "wakes": "end"
+      }
+    ],
+    "clear": [
+      {
+        "hit": 30,
+        "back": 6,
+        "ahead": 28,
+        "x": 4.2
+      },
+      {
+        "hit": 50,
+        "back": 6,
+        "ahead": 34,
+        "x": 5
+      }
+    ],
+    "land": {
+      "hills": 2.4,
+      "roll": 1.0,
+      "wave": 110,
+      "curve": 0.8,
+      "bend": 150
+    },
+    "sky": {
+      "arc": 0.7,
+      "late": [
+        "#0A0B18",
+        "#6A5230"
+      ],
+      "k": 0.3
+    }
+  },
+  "fragment": "gilded",
+  "target": "brazier",
+  "music": {
+    "rate": 0.97,
+    "key": -1
+  },
+  "blurb": "Gilded urns by the lane bounce the skull: bank shots count, bats come out of the domes",
+  "ecosystem": {
+    "_doc": "v58 MAP → ECOSYSTEM → CAST (blueprint.json: ecosystem): who and what lives here, and nowhere else it doesn't belong.",
+    "teaches": "Ricochet",
+    "cast": [
+      "gravedigger",
+      "zombie",
+      "skeleton",
+      "ghost",
+      "crow",
+      "bat"
+    ],
+    "wildlife": {
+      "crow": 0
+    },
+    "vegetation": [
+      "willow",
+      "tree"
+    ],
+    "props": [
+      "angel",
+      "urn",
+      "gilded-gate",
+      "iron-fence",
+      "gas-lamp",
+      "lantern",
+      "crypt"
+    ],
+    "hazards": [
+      "gilded bars to bank off",
+      "bumpers"
+    ]
+  },
+  "encounter": {
+    "_doc": "v58 the ring interaction (07w_encounter.js): what hangs behind the ring on this map, and what going through the ring into it does (path: the next throw's movers and threats stand aside; bonus: points only).",
+    "interaction": "bell",
+    "consequence": "path"
+  }
+}

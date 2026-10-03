@@ -1,0 +1,765 @@
+/* ── The Skull Vault ─────────────────────────────────────────────────── */
+.preview{position:relative;height:200px;margin:12px 0 4px;border-radius:14px;overflow:hidden;border:4px solid var(--ink);box-shadow:0 5px 0 var(--ink);
+  background:radial-gradient(60% 70% at 50% 100%,rgba(224,184,92,.35),transparent 70%),linear-gradient(180deg,#5E1F18,#7E2A22 60%,#4A1812)}
+.preview::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.35),transparent 12%,rgba(0,0,0,.2) 24%,transparent 36%,rgba(0,0,0,.25) 50%,transparent 62%,rgba(0,0,0,.2) 76%,transparent 88%,rgba(0,0,0,.35));pointer-events:none}
+.preview::after{content:"";position:absolute;left:0;right:0;bottom:0;height:22%;background:linear-gradient(#6B4526,#4A2F19);border-top:3px solid var(--ink);pointer-events:none}
+.preview canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;cursor:grab;touch-action:pan-y}
+.preview .tag{position:absolute;z-index:2;left:10px;top:9px;padding:5px 8px 3px;border-radius:5px;background:var(--paper);border:2px solid var(--ink);font:14px/1 var(--display);letter-spacing:.04em;text-transform:uppercase;color:var(--ink);transform:rotate(-2deg)}
+.cat-tabs{position:sticky;top:0;z-index:3;margin:12px -16px 0;padding:8px 16px 10px;background:var(--panel);display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;border-bottom:2px dashed var(--line)}
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tabs button{flex:none;border:3px solid var(--ink);border-radius:8px;background:var(--paper);color:var(--ink);font:17px/1 var(--display);letter-spacing:.04em;text-transform:uppercase;padding:9px 12px 7px;cursor:pointer;box-shadow:0 3px 0 var(--ink)}
+.cat-tabs button[aria-selected="true"]{background:var(--mustard);transform:translateY(-2px) rotate(-2deg)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+@media (min-width:440px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.grid .item > span{max-width:100%;overflow-wrap:anywhere}   /* (a long name wraps rather than pushing the grid off a small phone: v41) */
+.grid.rows{grid-template-columns:1fr}
+.item{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:18px 4px 8px;border-radius:12px;border:3px solid var(--ink);background:var(--panel-2);cursor:pointer;
+  font:15px/1.1 var(--display);letter-spacing:.02em;text-transform:uppercase;color:var(--cream);text-align:center;box-shadow:0 4px 0 var(--ink);transition:transform .14s var(--snap)}
+.item:hover{transform:translateY(-2px) rotate(-1deg)}
+.item:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.item canvas{width:60px;height:60px}
+.item .stars{position:absolute;left:7px;top:5px;font:11px/1 var(--ui);letter-spacing:1px;color:var(--mustard)}
+.item .stars.r-lost{color:var(--gold);text-shadow:0 0 6px rgba(227,182,75,.8)}
+.item .stars.r-special{color:#D98A6E}
+.item .stars.r-featured{color:#8FC0B8}
+.item .price{display:inline-flex;align-items:center;gap:4px;font:18px/1 var(--num);letter-spacing:.04em;color:var(--mustard-l)}
+.item .price svg{width:14px;height:14px}
+.item .state{font:18px/1 var(--num);letter-spacing:.06em;min-height:16px;color:var(--cream-faint)}
+.item.equipped{background:var(--teal);box-shadow:0 4px 0 var(--ink),0 0 0 3px var(--mustard)}
+.item.equipped .state{color:var(--mustard-l)}
+.item.locked canvas{opacity:.35;filter:grayscale(1) brightness(.85)}
+.item.locked{color:var(--cream-dim);background:var(--panel)}
+.item.selected{background:var(--purple);transform:translateY(-3px) rotate(-1.5deg)}
+.item.selected canvas{opacity:1;filter:none}
+.item .lock{position:absolute;right:7px;top:5px;width:16px;height:16px;color:var(--cream-faint)}
+.item .new{position:absolute;right:-6px;top:-6px;width:16px;height:16px;border-radius:50%;background:var(--red);border:3px solid var(--ink)}
+.item.deny{animation:deny .3s}
+.grid.rows .item{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;text-align:left;padding:16px 14px 12px;gap:4px 12px}
+.grid.rows .item .t-name{flex:1 1 60%;font-size:20px}
+.grid.rows .item .sub{order:3;flex-basis:100%;margin:0;text-transform:none;letter-spacing:0}
+.grid.rows .item .state{font-size:20px}
+.grid.rows .item .lock{top:auto;bottom:10px}
+.rar-name{font:900 11px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase}
+.t-stock{color:var(--cream-faint)}.t-featured{color:#8FC0B8}.t-special{color:#E0A58E}.t-lost{color:var(--gold)}
+.buybar{display:flex;align-items:center;gap:12px}
+.buybar .info{flex:1;min-width:0;text-align:left}
+.buybar .info .lbl{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font:20px/1.1 var(--display);letter-spacing:.02em;text-transform:uppercase;text-shadow:0 2px 0 var(--ink)}
+.buybar .info .sub{color:var(--cream-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.buybar .btn{width:auto;min-width:150px}
+
+/* challenges: paper tickets */
+.timer{display:flex;align-items:center;gap:8px;margin:16px 0 4px;font:800 13px/1.3 var(--ui);color:var(--cream-dim)}
+.timer b{font:22px/1 var(--num);letter-spacing:.06em;color:var(--mustard-l)}
+.chal{position:relative;margin-top:14px;padding:16px 16px 14px;border-radius:12px;background:var(--paper);color:var(--ink);border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink)}
+.chal:nth-child(odd){transform:rotate(-.6deg)}.chal:nth-child(even){transform:rotate(.6deg)}
+.chal::before,.chal::after{content:"";position:absolute;top:50%;width:18px;height:18px;margin-top:-9px;border-radius:50%;background:var(--panel);border:3px solid var(--ink)}
+.chal::before{left:-11px;clip-path:inset(0 0 0 50%)}.chal::after{right:-11px;clip-path:inset(0 50% 0 0)}
+.chal.done{background:#EAD9A0}
+.chal.claimed{opacity:.6}
+.chal-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.chal-title{font:22px/1.05 var(--display);text-transform:uppercase;letter-spacing:.02em;color:var(--ink)}
+.chal-reward{flex:none;display:inline-flex;align-items:center;gap:5px;padding:5px 9px 3px;border-radius:6px;background:var(--red);border:2px solid var(--ink);font:22px/1 var(--num);letter-spacing:.04em;color:var(--cream);transform:rotate(3deg)}
+.chal-reward svg{width:16px;height:16px}
+.chal-prog{display:flex;align-items:center;gap:12px;margin-top:14px}
+.chal-prog .bar{flex:1;background:rgba(23,19,15,.2)}
+.chal-prog span{font:20px/1 var(--num);letter-spacing:.06em;color:var(--ink);min-width:48px;text-align:right}
+.chal .btn{margin-top:14px}
+.chal .k{color:var(--wood)}
+.chal-tabs{margin-top:4px}
+.chal-tabs button{position:relative}
+.chal-tabs .dot{position:absolute;top:-6px;right:-6px;width:13px;height:13px;border-radius:50%;background:var(--red);border:2.5px solid var(--ink)}
+.chal.weekly .chal-reward{background:var(--teal)}
+.chal.monthly .chal-reward{background:var(--purple)}
+.tip{margin-top:20px;padding:14px;border-radius:12px;border:3px dashed var(--line-2);font:700 13px/1.5 var(--ui);color:var(--cream-dim)}
+.tip b{color:var(--mustard-l)}
+
+/* ribbons for things that can't be bought in the Vault */
+.item .ribbon{position:absolute;left:50%;bottom:-8px;transform:translateX(-50%) rotate(-2deg);padding:2px 6px 1px;border-radius:4px;border:2px solid var(--ink);font:10px/1 var(--display);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.item .ribbon.shame{background:#8E8A7E;color:var(--ink)}
+.item .ribbon.boss{background:var(--red);color:var(--cream)}
+.item .ribbon.prize{background:repeating-linear-gradient(90deg,#C8503A 0 6px,#F2E7C9 6px 12px);color:var(--ink);text-shadow:0 0 2px #F2E7C9}
+.item .ribbon.shop{background:var(--mustard);color:var(--ink)}
+.grid.rows .item .ribbon{left:auto;right:36px;bottom:auto;top:8px;transform:rotate(2deg)}
+/* the Curio Cart */
+.preview.cart{height:232px;background:#1C1620}
+@media (max-height:760px){.preview.cart{height:188px}}
+.preview.cart::before,.preview.cart::after{display:none}
+.preview.cart::after{height:26%;background:linear-gradient(#8C6239,#5B3B20)}
+.preview.cart .tag{left:12px;right:12px;top:auto;bottom:8px;max-width:none;padding:5px 10px 4px;text-align:center;border-radius:4px;background:#171310;border-color:#0C0A08;color:var(--cream);box-shadow:inset 0 0 0 2px rgba(242,231,201,.14);font:800 11.5px/1.3 var(--ui);letter-spacing:.02em;text-transform:none;transform:none}
+.item .kindtag{font:800 9px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--cream-faint)}
+.item s{font:14px/1 var(--num);color:var(--cream-faint)}
+.item .sale{position:absolute;right:-6px;top:-8px;padding:3px 5px 2px;border-radius:5px;background:var(--red);border:2px solid var(--ink);font:13px/1 var(--num);color:var(--cream);transform:rotate(6deg)}
+.coffin{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0 4px;padding:12px 14px;border-radius:12px;background:linear-gradient(180deg,#4A2F19,#2E1C0E);border:3px solid var(--ink);box-shadow:0 4px 0 var(--ink)}
+.coffin .lbl{font:20px/1 var(--display);letter-spacing:.03em;color:var(--cream);text-shadow:0 2px 0 var(--ink)}
+.coffin .sub{margin-top:4px;font:700 12px/1.3 var(--ui);color:var(--cream-dim)}
+.coffin .btn{width:auto;flex:none}
+.coffin .btn svg{width:16px;height:16px}
+/* the leaderboard */
+.board-tabs{margin-top:6px;grid-template-columns:1fr 1fr}
+.board{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.board li{display:grid;grid-template-columns:34px 44px 1fr auto;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:12px;background:var(--panel-2);border:3px solid var(--ink);box-shadow:0 3px 0 var(--ink)}
+.board li.me{background:var(--teal);box-shadow:0 3px 0 var(--ink),0 0 0 3px var(--mustard)}
+.board .rank{font:22px/1 var(--num);color:var(--cream-dim);text-align:center}
+.board .rank.r1{color:var(--gold)}.board .rank.r2{color:#D8DCE2}.board .rank.r3{color:#D8955A}
+.board canvas{width:44px;height:44px}
+.board .who{display:flex;flex-direction:column;gap:3px;min-width:0}
+.board .who b{font:17px/1.05 var(--display);letter-spacing:.02em;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .who span{font:700 11px/1 var(--ui);color:var(--cream-faint)}
+.board .sc{font:24px/1 var(--num);letter-spacing:.03em;color:#FFD94E;text-shadow:0 2px 0 var(--ink)}
+.board-empty{margin:14px 4px 0;font:700 13px/1.4 var(--ui);color:var(--cream-dim);text-align:center}
+/* profile stat groups */
+.stat-h{margin:18px 0 0;font:18px/1 var(--display);letter-spacing:.04em;color:var(--mustard-l);text-shadow:var(--outline)}
+.stat-h.shame{color:#C8C0B0}
+#stats .stats{grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+#stats .stat{padding:8px 9px 7px;border-width:2px;box-shadow:0 2px 0 var(--ink)}
+#stats .stat dt{font-size:8.5px;letter-spacing:.1em;line-height:1.15;min-height:2.3em}
+#stats .stat dd{margin-top:3px;font-size:23px}
+
+/* ── Play: Story or Arcade, then (for Arcade) a map ─────────────────────────── */
+.modes{display:flex;flex-direction:column;gap:16px;margin-top:10px}
+.mode-card{display:flex;align-items:flex-start;gap:14px;width:100%;padding:16px;border-radius:14px;border:3px solid var(--ink);box-shadow:0 6px 0 var(--ink);text-align:left;cursor:pointer;color:var(--ink);background:var(--paper);transition:transform .14s var(--snap)}
+.mode-card:nth-child(odd){transform:rotate(-.8deg)}.mode-card:nth-child(even){transform:rotate(.8deg)}
+.mode-card:hover,.mode-card:focus-visible{transform:rotate(0) scale(1.02);outline:none}
+.mode-card:active{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+.mode-card.story{background:linear-gradient(180deg,var(--mustard-l),var(--mustard))}
+.mode-ic{flex:none;display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:var(--ink);color:var(--cream)}
+.mode-ic svg{width:32px;height:32px}
+.mode-card.story .mode-ic{background:var(--cream);box-shadow:inset 0 0 0 3px var(--ink)}   /* the Crow King is an ink-black bird: he needs a light sky */
+.mode-card.story .mode-ic svg{width:36px;height:36px}
+.mode-t{display:flex;flex-direction:column;gap:4px;min-width:0}
+.mode-t .k{color:var(--wood)}
+.mode-t b{font:34px/1 var(--display);letter-spacing:.03em;text-transform:uppercase}
+.mode-s{font:700 13px/1.4 var(--ui)}
+.mode-best{font:17px/1 var(--num);letter-spacing:.06em;color:var(--red-d)}
+.mode-best:empty{display:none}
+.map-k{margin:8px 0 0;font:800 11px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--cream-faint)}
+.map-card{position:relative;display:block;width:100%;margin-top:14px;padding:14px 16px 13px 22px;border-radius:12px;border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink);background:var(--panel-2);color:var(--cream);text-align:left;cursor:pointer;overflow:hidden;transition:transform .14s var(--snap)}
+.map-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:9px;background:var(--tint,#26364A);border-right:3px solid var(--ink)}
+.map-card:hover,.map-card:focus-visible{transform:scale(1.02) rotate(-.5deg);outline:none}
+.map-card:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}
+.map-card b{display:block;font:22px/1.05 var(--display);letter-spacing:.02em;text-transform:uppercase}
+.map-card .n{float:right;margin:3px 0 0 12px;font:16px/1 var(--num);letter-spacing:.08em;color:var(--mustard-l)}
+.map-card .d{display:block;margin-top:6px;font:700 12.5px/1.4 var(--ui);color:var(--cream-dim)}
+.map-card .rec{display:flex;gap:14px;margin-top:9px;font:17px/1 var(--num);letter-spacing:.06em;color:var(--mustard-l)}
+.map-card .rec i{font-style:normal;color:var(--cream-faint)}
+
+/* ── Achievements ─────────────────────────────────────────────── */
+.ach-head{margin-top:8px}
+.ach-head p{margin:0 0 8px;font:800 13px/1 var(--ui);color:var(--cream-dim)}
+.ach-head p b{font:24px/1 var(--num);letter-spacing:.04em;color:var(--mustard-l);margin-right:2px}
+.ach-list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.ach{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;border:3px solid var(--ink);box-shadow:0 4px 0 var(--ink);background:var(--panel-2);color:var(--cream-dim)}
+.ach .medal{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#3A4254;border:3px solid var(--ink);color:rgba(242,231,201,.45)}
+.ach .medal svg{width:22px;height:22px}
+.ach.got{background:var(--paper);color:var(--ink)}
+.ach.got .medal{background:radial-gradient(circle at 40% 35%,#FFE38A,var(--gold) 55%,#A77A22);color:var(--ink);box-shadow:inset 0 0 0 2px rgba(255,248,220,.6)}
+/* the skull icon is ink-eyed: on a gold medal its head goes bone-white with an ink edge, or it's just a blot */
+.ach.got .medal use[href="#i-skull"],.ach-pop .medal use[href="#i-skull"]{color:var(--cream);stroke:var(--ink);stroke-width:1.3px}
+.ach-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ach-t b{font:18px/1.05 var(--display);letter-spacing:.02em;text-transform:uppercase;color:var(--cream)}
+.ach.got .ach-t b{color:var(--ink)}
+.ach-t span{font:700 12px/1.3 var(--ui)}
+.ach-prog{display:flex;align-items:center;gap:8px;margin-top:5px}
+.ach-prog .bar{flex:1}
+.ach-prog em{font:14px/1 var(--num);font-style:normal;letter-spacing:.05em;color:var(--mustard-l);white-space:nowrap}
+.ach-r{flex:none;font:17px/1 var(--num);letter-spacing:.05em;color:var(--mustard-l)}
+.ach.got .ach-r{color:var(--teal)}
+
+/* the medal that drops in when one unlocks */
+.ach-pop{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top,0px));z-index:14;display:flex;align-items:center;gap:10px;width:min(360px,calc(100% - 24px));padding:9px 12px 9px 9px;border-radius:12px;
+  background:var(--paper);border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink),0 12px 26px rgba(0,0,0,.45);color:var(--ink);pointer-events:none;transform:translate(-50%,-140%)}
+.ach-pop.in{animation:achin .5s var(--snap) forwards}
+.ach-pop.out{animation:achout .35s ease-in forwards}
+@keyframes achin{0%{transform:translate(-50%,-140%) rotate(-2deg)}100%{transform:translate(-50%,0) rotate(-1deg)}}
+@keyframes achout{0%{transform:translate(-50%,0) rotate(-1deg)}100%{transform:translate(-50%,-140%)}}
+/* mid-run it drops in just under the score instead, so your skulls, score and pause button stay in sight */
+.ach-pop.play{width:min(330px,calc(100% - 24px));opacity:0;transform:translate(-50%,-24px)}
+.ach-pop.play.in{animation:achinp .45s var(--snap) forwards}
+.ach-pop.play.out{animation:achoutp .3s ease-in forwards}
+@keyframes achinp{0%{opacity:0;transform:translate(-50%,-24px) scale(.9) rotate(-2deg)}100%{opacity:1;transform:translate(-50%,0) rotate(-1deg)}}
+@keyframes achoutp{0%{opacity:1;transform:translate(-50%,0) rotate(-1deg)}100%{opacity:0;transform:translate(-50%,-16px) scale(.94)}}
+.ach-pop .medal{flex:none;display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#FFE38A,var(--gold) 55%,#A77A22);border:3px solid var(--ink);animation:medal .7s var(--snap)}
+.ach-pop .medal svg{width:24px;height:24px}
+@keyframes medal{0%{transform:scale(.3) rotate(-40deg)}100%{transform:none}}
+.ach-pop .t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.ach-pop .k{color:var(--red-d);letter-spacing:.14em}
+.ach-pop b{font:20px/1 var(--display);letter-spacing:.02em;text-transform:uppercase}
+.ach-pop .s{font:700 11.5px/1.25 var(--ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ach-pop .r{flex:none;display:inline-flex;align-items:center;gap:4px;padding:4px 7px 2px;border-radius:6px;background:var(--mustard);border:2px solid var(--ink);font:18px/1 var(--num)}
+.ach-pop .r svg{width:14px;height:14px}
+/* the signature shots on the profile: two to a row, what each takes under its name, the ones not yet made dimmed */
+#stats .stats.shots{grid-template-columns:repeat(2,1fr)}
+#stats .stat.shot dt{min-height:0}
+#stats .stat.shot dt small{display:block;margin-top:3px;font:700 10px/1.25 var(--ui);letter-spacing:0;text-transform:none;color:var(--ink);opacity:.7}
+#stats .stat.shot.unseen{opacity:.55}
+.stat-h .n{font:16px/1 var(--num);color:var(--cream-dim)}
+/* more ways to play (07i_modes.js): smaller tiles, two to a row, the mini-games tinted like fairground tickets */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.mode-tile{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;padding:12px 12px 11px;border-radius:12px;border:3px solid var(--ink);box-shadow:0 4px 0 var(--ink);
+  background:var(--panel-2);color:var(--cream);text-align:left;cursor:pointer;transition:transform .14s var(--snap)}
+.mode-tile:nth-child(odd){transform:rotate(-.6deg)}.mode-tile:nth-child(even){transform:rotate(.6deg)}
+.mode-tile:hover,.mode-tile:focus-visible{transform:rotate(0) scale(1.03);outline:none}
+.mode-tile:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.mode-tile b{font:19px/1 var(--display);letter-spacing:.03em;text-transform:uppercase;overflow-wrap:anywhere}
+.mode-tile .d{font:700 11.5px/1.35 var(--ui);color:var(--cream-dim)}
+.mode-tile .rec{margin-top:auto;font:15px/1 var(--num);letter-spacing:.06em;color:var(--mustard-l)}
+.mode-tile.m-practice{background:var(--teal)}
+.mode-tile.m-rush{background:linear-gradient(180deg,#5A2A22,#3A1A16)}
+.mode-tile.m-mini{background:linear-gradient(180deg,#66506B,#4A3A50)}
+.mode-tile.locked{filter:grayscale(.8) brightness(.75);cursor:not-allowed}
+.mode-tile.locked .rec{color:var(--cream-faint)}
+.practice-opts{display:grid;gap:8px;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--panel-2);border:2px solid var(--line-2)}
+.practice-opts .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0;border:0}
+.practice-opts .lbl{font:800 12px var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--cream-dim)}
+/* the Codex (09k_codex.js): entries as index cards; the Archive as aged paper */
+.codex-count{margin:12px 0 0;font:16px/1 var(--num);letter-spacing:.06em;color:var(--mustard-l)}
+.codex-list{display:grid;gap:10px;margin-top:10px}
+.codex-list .entry{padding:11px 13px 10px;border-radius:10px;background:var(--paper);color:var(--ink);border:2px solid var(--ink);box-shadow:0 3px 0 var(--ink)}
+.codex-list .entry b{display:block;font:18px/1.05 var(--display);letter-spacing:.03em;text-transform:uppercase}
+.codex-list .entry p{margin:5px 0 0;font:700 12.5px/1.4 var(--ui)}
+.codex-list .entry .cx-stat{display:inline-block;margin-top:6px;font:14px/1 var(--num);letter-spacing:.06em;color:var(--red-d)}
+.codex-list .entry.unseen{background:var(--panel-2);color:var(--cream-faint);border-color:var(--line-2);box-shadow:none}
+.codex-list .doc{padding:14px 16px;border-radius:4px;background:linear-gradient(180deg,#EFE2C2,#E2D0A6);color:#2B2118;box-shadow:0 3px 0 var(--ink),inset 0 0 30px rgba(120,80,30,.25);transform:rotate(-.4deg)}
+.codex-list .doc:nth-child(even){transform:rotate(.5deg)}
+.codex-list .doc h3{margin:2px 0 6px;font:800 15px/1.2 "Courier New",Courier,ui-monospace,monospace;text-transform:uppercase;letter-spacing:.04em}
+.codex-list .doc .doc-date{margin:0;font:700 11px/1 "Courier New",Courier,ui-monospace,monospace;letter-spacing:.1em;color:#6B4526}
+.codex-list .doc .doc-body{margin:0;font:13px/1.5 "Courier New",Courier,ui-monospace,monospace}
+.codex-list .doc.sealed{background:var(--panel-2);color:var(--cream-faint);box-shadow:none;border:2px dashed var(--line-2)}
+.codex-list .doc.sealed .doc-date{color:var(--cream-faint)}
+
+/* the Vault's outfits row (v29): three numbered slots, then Save look and Surprise me */
+.outfits{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:12px}
+.outfits .k{font:800 11px var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--cream-dim)}
+.outfits .slots{display:flex;gap:6px}
+.outfits .slot{width:34px;height:34px;border-radius:50%;border:2px dashed var(--line-2);background:transparent;color:var(--cream-faint);font:18px/1 var(--num);cursor:pointer}
+.outfits .slot.filled{border:2px solid var(--ink);background:var(--mustard);color:var(--ink);box-shadow:0 2px 0 var(--ink)}
+.outfits .slot.on{outline:2px solid var(--cream);outline-offset:2px}
+.outfits .ghost-btn{padding:7px 10px;font-size:12px}
+
+/* the Soul Shop (v30): Souls in violet, the premium colour */
+.souls-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;background:#3A2A5A;border:2px solid var(--ink);font:18px/1 var(--num);color:#E4D6FF}
+.souls-status{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:var(--panel-2);font:700 12.5px/1.4 var(--ui);color:var(--cream-dim)}
+.item.soul{background:linear-gradient(180deg,#4A3A70,#2E2248);color:var(--cream)}
+.price.soul,.item .price.soul{color:#D8C4FF}
+.ribbon.soul{background:#7E5CC8;color:var(--cream)}
+.souls-packs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.soul-door{width:100%;margin-top:12px;background:linear-gradient(180deg,#5A447E,#3A2A5A)}
+
+/* mastery (v32): a row per shot, map or boss, with three tiers to claim */
+.m-list{display:grid;gap:10px;margin-top:10px}
+.m-row{padding:11px 12px;border-radius:12px;background:var(--panel-2);border:2px solid var(--line-2)}
+.m-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.m-head b{font:17px/1.1 var(--display);letter-spacing:.03em;text-transform:uppercase}
+.m-have{font:17px/1 var(--num);color:var(--mustard-l);white-space:nowrap}
+.m-row p{margin:4px 0 0;font:700 11.5px/1.35 var(--ui);color:var(--cream-dim)}
+.m-tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.m-tier{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border-radius:8px;border:2px solid var(--ink);background:#2A2F3A;color:var(--cream-faint);cursor:pointer}
+.m-tier .m-t{font:800 10px/1.2 var(--ui);letter-spacing:.06em;text-transform:uppercase;text-align:center}
+.m-tier .m-p{font:15px/1 var(--num)}
+.m-tier.bronze.got{background:#8C5A2E;color:var(--cream)}.m-tier.silver.got{background:#8E949F;color:var(--ink)}.m-tier.gold.got{background:var(--gold);color:var(--ink)}
+.m-tier.got:not(.claimed){box-shadow:0 0 0 2px var(--cream),0 3px 0 var(--ink);animation:gain .9s var(--snap) infinite alternate}
+.m-tier.claimed{opacity:.6;cursor:default}
+
+.board-rival{margin:10px 0 0;padding:8px 12px;border-radius:10px;background:var(--panel-2);border:2px solid var(--mustard);font:700 12.5px/1.35 var(--ui);color:var(--cream)}
+
+/* the Diegetic Arcade (v36): cabinets with a marquee in lights, a screen with the top scores, and a coin slot */
+#mapList.arcade{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+.cabinet{display:flex;flex-direction:column;gap:0;padding:0;border-radius:14px 14px 6px 6px;border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink);background:linear-gradient(180deg,#4A2E1C,#2E1C12);color:var(--cream);cursor:pointer;overflow:hidden;text-align:center;transition:transform .14s var(--snap)}
+.cabinet:hover,.cabinet:focus-visible{transform:translateY(-2px) rotate(-.5deg);outline:none}
+.cabinet .marq{padding:7px 6px 6px;background:radial-gradient(ellipse at 50% 60%,#FFE9A8,#E3B64B 60%,#A87A20);color:var(--ink);font:13px/1.05 var(--display);letter-spacing:.04em;text-transform:uppercase;border-bottom:3px solid var(--ink);
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.35);text-shadow:0 1px 0 rgba(255,255,255,.4);min-height:40px;display:grid;place-items:center}
+.cabinet .scr{display:flex;flex-direction:column;gap:3px;margin:8px 8px 6px;padding:8px 6px;min-height:74px;border-radius:10px;background:radial-gradient(ellipse at 50% 40%,var(--tint,#26364A),#0B0E15);border:2px solid var(--ink);box-shadow:inset 0 0 12px rgba(0,0,0,.7)}
+.cabinet .hs{display:flex;gap:6px;justify-content:center;font:14px/1.1 var(--num);letter-spacing:.08em;color:#BFF4D8;text-shadow:0 0 6px rgba(120,240,190,.6)}
+.cabinet .hs i{font-style:normal;color:var(--cream-faint)}.cabinet .hs b{font-weight:400;color:#FFE9A8}
+.cabinet .hs.none,.cabinet .ooo{margin:auto;font:12px/1.2 var(--num);letter-spacing:.1em;color:var(--cream-faint)}
+.cabinet .ooo{color:#E0503E;text-shadow:none;transform:rotate(-6deg);border:2px solid #E0503E;padding:3px 6px;border-radius:4px}
+.cabinet .slot{margin:0 8px 8px;padding:5px 4px;border-radius:5px;background:#17130F;font:11px/1.1 var(--num);letter-spacing:.12em;color:var(--mustard-l)}
+.cabinet.locked{filter:grayscale(.7) brightness(.8);cursor:not-allowed}
+.ini-box{margin:4px auto 0;padding:10px 14px;border-radius:12px;background:#0B0E15;border:3px solid var(--ink);box-shadow:0 0 0 2px var(--mustard),0 4px 0 var(--ink);text-align:center}
+.ini-box .k{margin:0;font:18px/1 var(--num);letter-spacing:.14em;color:#FFE9A8;animation:gain .8s var(--snap) infinite alternate}
+.ini-rank{margin:4px 0 6px;font:700 12px var(--ui);color:var(--cream-dim)}
+.ini-letters{display:flex;gap:10px;justify-content:center}
+.ini{display:flex;flex-direction:column;align-items:center;gap:2px}
+.ini b{font:40px/1 var(--num);color:#BFF4D8;text-shadow:0 0 8px rgba(120,240,190,.7)}
+.ini button{width:34px;height:22px;border-radius:6px;border:2px solid var(--ink);background:var(--cream);color:var(--ink);font:12px/1 var(--ui);cursor:pointer}
+.ini-tip{margin:6px 0 0;font:700 10.5px var(--ui);color:var(--cream-faint)}
+
+.streak{margin:10px 0 0;font:18px/1 var(--num);letter-spacing:.06em;color:#FFB070}
+.event-banner{margin:-6px 0 0;padding:5px 12px;border-radius:999px;background:var(--red);border:2px solid var(--ink);font:800 11px/1.2 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--cream)}
+.event-banner.warn{background:var(--mustard);color:var(--ink)}
+/* the play-data question (v39): a slip of paper under the title, asked once */
+.consent-card{width:min(340px,92%);margin:2px auto 0;padding:10px 12px;border-radius:6px;background:var(--cream);color:var(--ink);border:2px solid var(--ink);box-shadow:0 3px 0 var(--ink);text-align:left}
+.consent-card p{margin:0;font:700 12.5px/1.35 var(--ui)}.consent-card .cc-body{margin:4px 0 8px;font-weight:600;font-size:12px}
+.consent-card .cc-btns{display:flex;gap:8px;flex-wrap:wrap}.consent-card .cc-btns .chip-btn{flex:1 1 0;min-width:108px;justify-content:center}
+.consent-card .cc-btns .chip-btn.yes{background:var(--mustard-l)}
+details.row.sent{display:block}details.row.sent summary{cursor:pointer;font:700 13px/1.3 var(--ui);min-height:24px}details.row.sent p{margin:6px 0 0;font:600 12px/1.45 var(--ui);opacity:.85}
+.restore-list{display:flex;flex-wrap:wrap;gap:6px}.restore-list .ghost-btn{font-size:12px}
+
+/* the Director's Challenge (v38): a typed studio note on yellow paper */
+.director-card{margin-top:4px;padding:14px 14px 12px;border-radius:6px;background:linear-gradient(180deg,#F4E6A8,#E8D48A);color:#2B2118;border:3px solid var(--ink);box-shadow:0 5px 0 var(--ink);transform:rotate(-.6deg);font-family:"Courier New",Courier,ui-monospace,monospace}
+.director-card .dk{margin:0;font:800 11px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:#7E2A22}
+.director-card .from{margin:3px 0 8px;font:italic 700 11px/1.2 "Courier New",monospace;color:#6B4526}
+.director-card .dt{display:block;font:800 14px/1.25 "Courier New",monospace;text-transform:uppercase}
+.director-card .quote{margin:6px 0;font:700 12.5px/1.4 "Courier New",monospace}
+.director-card .notes{list-style:none;margin:6px 0;padding:0;display:grid;gap:4px}
+.director-card .notes li{display:flex;gap:8px;align-items:baseline;font:700 13px/1.3 "Courier New",monospace}
+.director-card .notes li i{font-style:normal;color:#A87A20}.director-card .notes li.got i{color:#C0392B}
+.director-card .notes li em{margin-left:auto;font-style:normal;font:14px/1 var(--num);color:#7E2A22}
+.director-card .meta{margin:6px 0 8px;font:700 11.5px/1.2 "Courier New",monospace;letter-spacing:0;color:#6B4526;text-shadow:none}
+.director-card .btn{width:100%}
+/* finger-sized targets on touch screens (v41: tools/matrix.mjs checks them) */
+@media (pointer:coarse){.cat-tabs button{min-height:44px}.outfits .slot{width:44px;height:44px}.outfits .ghost-btn{min-height:44px}}
+/* the Season sheet (v42) */
+.season-chip{--season:#E8893A;border-color:var(--ink);background:linear-gradient(180deg,#F6C98A,var(--season))}
+.season-hero{--season:#E8893A;margin-top:6px;padding:14px;border-radius:8px;border:3px solid var(--ink);box-shadow:0 4px 0 var(--ink);background:linear-gradient(160deg,#3A1C1C,#1E1426 70%);color:var(--cream)}
+.season-hero .k{margin:0;font:800 11px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--season)}
+.season-hero h3{margin:4px 0 2px;font:26px/1.05 var(--display);letter-spacing:.02em;color:var(--season);text-shadow:var(--outline)}
+.season-hero .line{margin:4px 0 8px;font:600 13px/1.4 var(--ui);color:var(--cream-dim)}
+.season-hero .left,.season-hero .stub{margin:6px 0;font:800 12px/1.2 var(--ui);letter-spacing:.06em;text-transform:uppercase}
+.season-hero .meter{height:12px;border-radius:6px;background:var(--ink);border:2px solid var(--ink);overflow:hidden}
+.season-hero .meter i{display:block;height:100%;background:var(--season)}
+.season-hero .btn{margin-top:8px;width:100%}
+.season-notes{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:6px}
+.season-notes li{display:flex;gap:10px;align-items:baseline;padding:8px 10px;border-radius:8px;background:var(--panel-2);font:700 13px/1.3 var(--ui)}
+.season-notes li i{font-style:normal;color:var(--mustard)}.season-notes li em{margin-left:auto;font-style:normal;font:15px/1 var(--num);color:var(--cream-dim)}
+.season-notes li.done{outline:2px solid var(--mustard)}
+.season-pass{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin:6px 0 8px;font:600 12.5px/1.4 var(--ui);color:var(--cream-dim)}
+.season-pass span{flex:1 1 200px}
+.season-track{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.season-track li{display:grid;grid-template-columns:34px minmax(0,1fr) minmax(0,1fr);gap:6px;align-items:stretch}
+.season-track .n{display:grid;place-items:center;border-radius:6px;background:var(--panel-3);font:18px/1 var(--num);color:var(--cream-dim)}
+.season-track li.got .n{background:var(--mustard);color:var(--ink)}
+.season-track .reward{display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:44px;padding:6px 8px;border-radius:6px;border:2px solid var(--line-2);background:var(--panel-2);color:var(--cream-dim);font:700 12px/1.25 var(--ui);text-align:left;overflow-wrap:anywhere}
+.season-track .reward.prem{border-style:dashed;border-color:#B48CFF}
+.season-track .reward.ready{border:2px solid var(--ink);background:var(--mustard);color:var(--ink);cursor:pointer;box-shadow:0 3px 0 var(--ink)}
+.season-track .reward.claimed{opacity:.6}
+.season-track .reward b{font:800 10px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase}
+.season-track .reward.none{align-items:center;opacity:.35}
+.season-none{margin:18px 4px;font:600 14px/1.5 var(--ui);color:var(--cream-dim)}
+.ribbon.season{background:#E8893A;color:var(--ink)}
+.cat-tabs button[data-group]:not(:first-child){margin-left:14px}
+.prof-pic{display:flex;gap:12px;align-items:center}.prof-pic canvas{width:96px;height:96px;flex:none;border-radius:8px}.pic-pick{min-width:0;flex:1}.pic-pick .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.pic-pick button{min-width:44px;min-height:44px;border:2px solid var(--ink);border-radius:8px;background:var(--paper);color:var(--ink);font:700 13px var(--ui,inherit);padding:4px 8px}.pic-pick button[aria-pressed=true]{background:var(--gold,#E3B64B)}.pic-pick button:disabled{opacity:.4}#prof-bio{width:100%;resize:none;font:inherit;border:2px solid var(--ink);border-radius:8px;padding:8px;box-sizing:border-box}
+
+/* v45: rarity colours that read at a glance: Stock bone-grey, Featured blue, Special purple, Lost gold */
+:root{--r-stock:#CFC6B4;--r-featured:#5FA8E8;--r-special:#B07CE8;--r-lost:#FFB43A}
+.item .stars,.item .stars.r-stock{color:var(--r-stock);text-shadow:0 1px 0 var(--ink)}
+.item .stars.r-featured{color:var(--r-featured);text-shadow:0 1px 0 var(--ink)}
+.item .stars.r-special{color:var(--r-special);text-shadow:0 1px 0 var(--ink)}
+.item .stars.r-lost{color:var(--r-lost);text-shadow:0 0 6px rgba(255,180,58,.9),0 1px 0 var(--ink)}
+.item.rar-featured{box-shadow:0 4px 0 var(--ink),inset 0 0 0 2px var(--r-featured)}
+.item.rar-special{box-shadow:0 4px 0 var(--ink),inset 0 0 0 2px var(--r-special)}
+.item.rar-lost{box-shadow:0 4px 0 var(--ink),inset 0 0 0 2px var(--r-lost),inset 0 0 18px rgba(255,180,58,.25)}
+.rar-name.t-stock{color:var(--r-stock)}.rar-name.t-featured{color:var(--r-featured)}.rar-name.t-special{color:var(--r-special)}.rar-name.t-lost{color:var(--r-lost)}
+/* v45: the Vault holds still and only the shelves scroll. The pedestal, the outfits and the shelf grid stay put; the
+   items scroll under them. Tapping an item opens it large on the pedestal (try-on) before you equip or buy it. */
+#sheet-customize .vault-body{display:flex;flex-direction:column;overflow:hidden;padding-bottom:0}
+#sheet-customize .preview{flex:none;height:clamp(150px,24vh,210px);margin:8px 0 2px;transition:height .25s var(--snap)}
+#sheet-customize .outfits{flex:none;margin-top:8px}
+.vault-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;margin:0 -16px;padding:0 16px 20px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;border-top:2px dashed var(--line)}
+#sheet-customize .section-k{flex:none;display:flex;align-items:center;gap:8px;margin:8px 0 6px}
+#sheet-customize .section-k .clear-badges{margin-left:auto;padding:4px 10px;font-size:11px}
+.cat-tabs.vault-cats,#sheet-customize .cat-tabs{position:static;flex:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:8px 0 0;padding:0;overflow:visible;border:0;background:none}
+@media (min-width:520px){#sheet-customize .cat-tabs{grid-template-columns:repeat(7,minmax(0,1fr))}}
+#sheet-customize .cat-tabs button{position:relative;min-width:0;padding:7px 2px 5px;font:12.5px/1.05 var(--display);letter-spacing:.02em;border-width:2px;border-radius:7px;box-shadow:0 2px 0 var(--ink);overflow-wrap:anywhere}
+#sheet-customize .cat-tabs button[aria-selected="true"]{transform:translateY(-1px) rotate(-1.5deg)}
+.cat-tabs .bubble{position:absolute;right:-6px;top:-7px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--red);border:2px solid var(--ink);color:var(--cream);font:11px/14px var(--num);letter-spacing:.02em;text-align:center;box-shadow:0 1px 0 var(--ink);pointer-events:none}
+.clear-ask{flex:none;display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 8px;padding:8px 10px;border-radius:10px;background:var(--panel-2);border:2px solid var(--ink);font:800 12px/1.3 var(--ui);color:var(--cream)}
+.clear-ask span{flex:1 1 100%}
+/* rarity: the shelf runs Stock, Featured, Special, Lost, each under its own heading */
+.grid .rar-head{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:6px 0 -2px;font:15px/1 var(--display);letter-spacing:.06em;text-transform:uppercase}
+.grid .rar-head::after{content:"";flex:1;height:2px;background:currentColor;opacity:.35}
+.grid .rar-head.t-stock{color:var(--r-stock)}.grid .rar-head.t-featured{color:var(--r-featured)}.grid .rar-head.t-special{color:var(--r-special)}.grid .rar-head.t-lost{color:var(--r-lost)}
+/* how a locked item is had: bones, a milestone, or either */
+.item .how{display:flex;gap:4px;justify-content:center;min-height:14px}
+.item .how i{display:inline-flex;align-items:center;gap:2px;padding:1px 5px;border-radius:6px;font:800 9px/12px var(--ui);font-style:normal;letter-spacing:.06em;text-transform:uppercase;border:1.5px solid var(--ink)}
+.item .how i svg{width:10px;height:10px}
+.item .how .b{background:var(--cream);color:var(--ink)}.item .how .m{background:var(--mustard);color:var(--ink)}
+.grid.rows .item .how{order:4;justify-content:flex-start}
+/* try-on: the pedestal fills the sheet, the shelves step aside, and the foot says what it costs */
+#sheet-customize.trying .preview{flex:1 1 auto;height:auto;min-height:0}
+#sheet-customize.trying .outfits,#sheet-customize.trying .cat-tabs,#sheet-customize.trying .section-k,#sheet-customize.trying .clear-ask,#sheet-customize.trying .vault-scroll{display:none}
+#sheet-customize.trying .sheet-body{padding-bottom:10px}
+.preview .try-close{position:absolute;z-index:3;right:8px;top:8px}
+#sheet-customize.trying .preview .tag{max-width:calc(100% - 70px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.buybar #tryBack{flex:none;width:auto}
+#sheet-customize.trying .buybar{flex-wrap:wrap;gap:8px 10px}
+#sheet-customize.trying .buybar .info{flex:1 1 100%}
+#sheet-customize.trying .buybar .info .sub{white-space:normal}
+#sheet-customize.trying .buybar #buyBtn{flex:1 1 auto}
+#sheet-customize .cat-tabs button{width:100%;margin:0;font-size:11px;letter-spacing:0;overflow-wrap:normal;word-break:normal;hyphens:none;display:flex;align-items:center;justify-content:center;text-align:center;min-height:30px}
+#sheet-customize .preview{height:clamp(130px,20vh,200px)}
+#sheet-customize .outfits{flex-wrap:nowrap;gap:6px}
+#sheet-customize .outfits .ghost-btn{padding:6px 8px;font-size:11px;white-space:nowrap}
+#sheet-customize .outfits .slot{width:30px;height:30px;font-size:16px}
+
+/* v45: the Curio Cart takes Souls: its shelves, its status line, and the Mystery Coffin's reel */
+.souls-chip b{color:#C8A8FF;font:18px/1 var(--num);margin-right:4px}
+.cart-status{margin:8px 0 0;padding:8px 10px;border-radius:10px;background:rgba(90,68,126,.35);border:2px solid var(--ink);font:800 12px/1.35 var(--ui);color:var(--cream)}
+.cart-shelf{margin:14px 0 6px;font:15px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--cream-dim);display:flex;align-items:center;gap:8px}
+.cart-shelf::after{content:"";flex:1;height:2px;background:currentColor;opacity:.3}
+#exclGrid .grid{margin-top:0}
+.price.soul{color:#C8A8FF}
+.coffin-show{position:absolute;inset:0;z-index:20;display:grid;place-items:center;padding:16px;background:rgba(8,6,10,.72)}
+.coffin-card{width:min(420px,100%);border-radius:var(--r-lg);background:var(--panel);box-shadow:0 0 0 3px var(--ink),0 10px 0 var(--ink);overflow:hidden;animation:coffinIn .35s var(--snap) both}
+@keyframes coffinIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:none}}
+.coffin-card canvas{display:block;width:100%;height:min(46vh,300px)}
+.coffin-won{margin:10px 14px 0;min-height:20px;text-align:center;font:20px/1.1 var(--display);letter-spacing:.03em;text-transform:uppercase;color:var(--mustard-l);text-shadow:0 2px 0 var(--ink)}
+.coffin-acts{display:flex;gap:10px;justify-content:center;padding:10px 14px 14px}
+.coffin-acts .btn{width:auto}
+.souls-chip{display:inline-flex;align-items:center;gap:6px;margin-left:auto;padding:6px 10px 6px 8px;border-radius:8px;background:#2A2040;border:2px solid var(--ink);box-shadow:0 3px 0 var(--ink);font:22px/1 var(--num);letter-spacing:.03em;color:var(--cream);transform:rotate(-2deg)}
+.souls-chip.bump{animation:bump .4s var(--snap)}
+/* v45: the set bonus under each period's three */
+.chal-set{position:relative;margin-top:14px;padding:16px 16px 14px;border-radius:12px;color:var(--ink);border:3px dashed var(--ink);box-shadow:0 5px 0 var(--ink);background:repeating-linear-gradient(135deg,#F3E6BE 0 14px,#EAD9A0 14px 28px)}
+.chal-set.claimed{opacity:.75}
+
+/* v45: the leaderboard's modes, who's online, and the card a tapped headstone opens */
+.board-modes{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:10px -16px 0;padding:2px 16px 4px}
+.board-modes::-webkit-scrollbar{display:none}
+.board-modes button{flex:none;padding:6px 10px 5px;border-radius:999px;border:2px solid var(--ink);background:var(--panel-2);color:var(--cream);font:13px/1 var(--display);letter-spacing:.03em;text-transform:uppercase;cursor:pointer;box-shadow:0 2px 0 var(--ink)}
+.board-modes button[aria-selected="true"]{background:var(--mustard);color:var(--ink)}
+.board-online{display:flex;align-items:center;gap:8px;margin:10px 0 0;font:800 12px/1 var(--ui);letter-spacing:.08em;text-transform:uppercase;color:var(--cream-dim)}
+.board-online i{width:10px;height:10px;border-radius:50%;background:#5BD86A;box-shadow:0 0 0 2px var(--ink),0 0 8px #5BD86A;animation:onlinePulse 1.6s ease-in-out infinite}
+@keyframes onlinePulse{50%{opacity:.45}}
+.board li{cursor:pointer}
+.board li:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+.player-card .cont-card{transform:none}
+.pc-pic{display:block;width:96px;height:96px;margin:-2px auto 4px}
+.player-card h2{margin:2px 0 0;overflow-wrap:anywhere}
+.pc-bio{margin:8px 0 0;font:700 13px/1.35 var(--ui);color:var(--cream);font-style:italic}
+.pc-bio:empty{display:none}
+.pc-stats{margin:12px 0 0;text-align:left}
+.pc-note{margin:10px 0 0;font:700 11px/1.3 var(--ui);color:var(--cream-faint)}
+/* v45: finger-sized hit areas round the small new controls (the matrix counts --hit), and a narrow phone wraps the outfits row */
+#sheet-customize .cat-tabs button{--hit:7px}
+#sheet-customize .cat-tabs button::before,#sheet-customize .outfits .slot::before,.board-modes button::before{content:"";position:absolute;inset:calc(0px - var(--hit)) -2px}
+#sheet-customize .outfits .slot{position:relative;--hit:7px}
+.board-modes button{position:relative;--hit:8px}
+#sheet-customize .outfits{flex-wrap:wrap}
+#sheet-customize .section-k .clear-badges{position:relative;--hit:8px;min-height:24px}
+#sheet-customize .section-k .clear-badges::before{content:"";position:absolute;inset:calc(0px - var(--hit)) 0}
+
+/* v46: the Mini Games card on the Play sheet */
+.mode-card.minis{background:linear-gradient(180deg,#9FD8C8,#5FA89A)}
+.mode-card.minis .mode-ic{background:#2A2040;color:#FFE36A}
+.minis .mode-grid{margin-top:12px}
+.mode-tile.m-cans{background:repeating-linear-gradient(90deg,#7A2A22 0 12px,#652018 12px 24px)}
+.prof-body{display:flex;gap:12px;align-items:center}.prof-body canvas{width:112px;height:176px;flex:none;border-radius:8px;background:rgba(20,15,12,.08)}.pb-text{min-width:0;flex:1}.pb-n{font:800 20px var(--display,inherit);margin:4px 0}
+/* v49: the set bonus as one slim strip at the top of the challenges */
+#chalSet .chal-set{margin:0 0 2px;padding:7px 12px;display:flex;align-items:center;gap:10px;border-width:2px;box-shadow:0 3px 0 var(--ink);border-radius:10px}
+#chalSet .chal-title{flex:1 1 auto;min-width:0;font-size:14px;line-height:1.15}
+#chalSet .bar{flex:0 0 64px;height:8px;background:rgba(23,19,15,.2)}
+#chalSet .n{font:15px/1 var(--num);letter-spacing:.04em}
+#chalSet .chal-reward{flex:none;font-size:15px}
+/* v49: settings in sections, and Sign in with Google */
+.set-h{margin:18px 2px 2px;font:22px/1 var(--display);letter-spacing:.04em;color:var(--mustard-l);text-shadow:var(--outline);text-align:left}
+.set-h:first-child{margin-top:4px}
+.google-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1F1F1F;font:800 15px/1 var(--ui);padding:10px 16px}
+.google-btn .gicon{width:20px;height:20px;flex:none}
+.google-btn.out{background:var(--paper)}.google-btn.out .gicon{opacity:.6}
+.google-btn.wide{width:100%;margin:10px 0 2px}
+.acct-btns{display:flex;gap:8px;flex-wrap:wrap}
+.pic-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:6px}
+.pic-grid button{padding:0;border:2px solid var(--ink);border-radius:8px;background:none;aspect-ratio:1;overflow:hidden;cursor:pointer}
+.pic-grid button canvas{display:block;width:100%;height:100%}
+.pic-grid button[aria-pressed=true]{outline:3px solid var(--mustard-l);outline-offset:1px}
+/* v49: the Closet, a drop-down holding Surprise me, the four outfits, Save look and the shelves */
+#sheet-customize .closet{flex:none;margin-top:8px;border:3px solid var(--ink);border-radius:12px;background:var(--panel-2,rgba(255,255,255,.04));box-shadow:0 4px 0 var(--ink)}
+#sheet-customize .closet>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;min-height:44px}
+#sheet-customize .closet>summary::-webkit-details-marker{display:none}
+#sheet-customize .closet .closet-t{font:22px/1 var(--display);letter-spacing:.04em;text-transform:uppercase;color:var(--cream);text-shadow:var(--outline)}
+#sheet-customize .closet .closet-now{flex:1;font:800 12px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--mustard-l)}
+#sheet-customize .closet .chev{width:18px;height:18px;transform:rotate(-90deg);transition:transform .2s var(--snap);color:var(--cream)}
+#sheet-customize .closet[open] .chev{transform:rotate(90deg)}
+#sheet-customize .closet-body{padding:0 10px 10px;max-height:46vh;overflow:auto}
+#sheet-customize .closet .outfits{margin-top:0;justify-content:space-between;flex-wrap:nowrap}
+#sheet-customize .closet .outfits .slots{flex:1;justify-content:center}
+#sheet-customize.trying .closet{display:none}
+.coffin-buy{display:flex;flex-direction:column;gap:6px;flex:none}.coffin-buy .btn{min-width:108px;justify-content:center}.coffin-buy .btn svg{width:16px;height:16px;vertical-align:-2px}
+.souls-next{margin-top:3px;font:15px/1.1 var(--num);letter-spacing:.06em;color:var(--mustard-l)}
+/* v49: Soul packs, tier by tier */
+.souls-packs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.souls-packs .pack{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px 9px;border:3px solid var(--ink);border-radius:10px;background:var(--paper);color:var(--ink);box-shadow:0 4px 0 var(--ink);cursor:pointer}
+.souls-packs .pack .pn{font:20px/1 var(--num);letter-spacing:.04em}
+.souls-packs .pack .pb{font:800 10px/1.1 var(--ui);color:#1F7A3A;text-align:center;min-height:11px}
+.souls-packs .pack .pb.none{color:var(--ink-2,#6B5A48)}
+.souls-packs .pack .pp{font:800 13px/1 var(--ui);padding:4px 8px;border-radius:6px;background:var(--mustard);border:2px solid var(--ink)}
+.souls-packs .pack.whale{background:linear-gradient(#FFF1B8,#F2D66A)}
+.souls-packs .pack:disabled{opacity:.55;cursor:default}
+/* v49: mid-run, the achievement is a slim, see-through strip */
+.ach-pop.play{width:min(290px,calc(100% - 40px));padding:4px 8px 4px 5px;gap:7px;border-width:2px;border-radius:9px;background:rgba(242,231,201,.82);box-shadow:0 3px 0 rgba(23,19,15,.6)}
+.ach-pop.play .medal{width:28px;height:28px;border-width:2px}.ach-pop.play .medal svg{width:15px;height:15px}
+.ach-pop.play .k{font-size:8.5px}.ach-pop.play b{font-size:15px}.ach-pop.play .s{display:none}
+.ach-pop.play .r{padding:2px 5px 1px;font-size:14px;border-width:1.5px}.ach-pop.play .r svg{width:11px;height:11px}
+/* v50: Settings shows its categories; one opens its settings */
+.set-cats{display:flex;flex-direction:column;gap:12px;margin-top:4px;min-height:calc(100dvh - 130px - env(safe-area-inset-bottom,0px))}
+.set-cats .set-cat{flex:1 1 0;justify-content:center;max-height:160px}   /* v53: the five fill the screen */
+.set-cat{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:12px 44px 12px 14px;border:3px solid var(--ink);border-radius:12px;background:var(--paper);color:var(--ink);box-shadow:0 4px 0 var(--ink);cursor:pointer;position:relative;min-height:60px}
+.set-cat::after{content:"›";position:absolute;right:14px;top:50%;transform:translateY(-52%);font:900 28px/1 var(--ui);opacity:.6}
+.set-cat b{font:22px/1 var(--display);letter-spacing:.04em;text-transform:uppercase}
+.set-cat span{font:600 13px/1.25 var(--ui);opacity:.75}
+.set-cat:active{transform:translateY(2px);box-shadow:0 2px 0 var(--ink)}
+.set-sub{margin:16px 2px 4px;font:19px/1 var(--display);letter-spacing:.05em;color:var(--mustard-l);text-shadow:var(--outline);text-align:left}
+.set-sec .set-sub:first-child{margin-top:4px}
+.set-note{margin:2px 4px 6px;font:600 13px/1.3 var(--ui);opacity:.8}
+.acct-btns .link-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px;font:800 15px/1 var(--ui);text-align:center}
+.acct-btns .link-btn .gicon{width:20px;height:20px;flex:none}
+.acct-btns>button{flex:1 1 220px}
+.email-box{display:flex;flex-direction:column;gap:8px;margin-top:8px;width:100%}
+.email-box input,.redeem-box input{font:700 16px var(--ui);padding:10px 12px;border:3px solid var(--ink);border-radius:10px;background:#fff;color:#1F1F1F;min-width:0}
+.redeem-box{display:flex;gap:8px;width:100%;margin-top:6px}
+.redeem-box input{flex:1 1 auto;min-width:0;text-transform:uppercase;letter-spacing:.12em}
+.redeem-box .btn{flex:0 0 auto;width:auto;min-width:0;min-height:48px;margin:0;padding:10px 30px;font-size:16px}   /* v53: the field gets the room, the button fits its word */
+#redeemNote.good{color:var(--mint,#7FD18B)}
+.info-btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:6px 0}
+.info-btns button{min-height:44px}
+.info-body p{margin:0 0 12px;font:600 15px/1.45 var(--ui);text-align:left}
+/* v50: achievements as cards, two across */
+.ach-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ach-grid .ach{flex-direction:column;align-items:center;text-align:center;gap:6px;padding:12px 8px 10px;position:relative;min-height:170px}
+.ach-grid .ach .medal{width:52px;height:52px}.ach-grid .ach .medal svg{width:26px;height:26px}
+.ach-grid .ach-t{align-items:center;flex:1 1 auto;width:100%}
+.ach-grid .ach-t b{font-size:16px;overflow-wrap:anywhere}
+.ach-grid .ach-t span{font-size:11.5px}
+.ach-grid .ach-prog{width:100%;flex-direction:column;gap:4px;margin-top:auto;padding-top:5px}
+.ach-grid .ach-prog .bar{width:100%}
+.ach-grid .ach-r{font-size:15px;padding:3px 10px;border-radius:999px;border:2px solid var(--ink);background:rgba(0,0,0,.18)}
+@media (min-width:700px){.ach-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* v50: four challenge tabs, the fourth a drop-down of Seasonal and Events; the set bonus clears the dotted line */
+.chal-tabs{overflow:visible;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.chal-tabs button{padding:9px 4px 7px;font-size:15px;min-width:0}
+.chal-more{position:relative;min-width:0;display:flex}
+.chal-more>button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap}
+.chal-more>button i{font:900 12px/1 var(--ui);font-style:normal}
+.chal-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:6;display:flex;flex-direction:column;gap:6px;padding:6px;min-width:150px;border:3px solid var(--ink);border-radius:10px;background:var(--panel);box-shadow:0 5px 0 var(--ink)}
+.chal-menu[hidden]{display:none}
+.chal-menu button{width:100%;text-align:left;padding:10px 12px 8px}
+#chalSet{margin-top:14px}
+/* v50: Practice — options in a tidy grid (a fixed label column, the choices filling the rest), slim map rows */
+.practice-opts{gap:6px;padding:10px}
+.practice-opts .row{display:grid;grid-template-columns:78px minmax(0,1fr);align-items:center;gap:8px;min-height:0}
+.practice-opts .lbl{text-align:left}
+.practice-opts .seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);width:100%;margin:0}
+.practice-opts .seg button{min-height:38px;padding:6px 4px;font-size:14px;white-space:nowrap}
+.map-card.prac{display:flex;align-items:center;gap:12px;margin-top:8px;padding:9px 14px 8px 22px;box-shadow:0 3px 0 var(--ink)}
+.map-card.prac b{order:2;flex:1;min-width:0;font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.map-card.prac .n{order:1;float:none;margin:0;display:inline-flex;align-items:center;gap:6px;flex:none;min-width:64px}
+.map-card.prac .lk{width:15px;height:15px;color:var(--cream)}
+/* v50: the Director's Challenge, easier to read — flat, bigger type, the UI face for the notes, clear rows */
+.director-card{transform:none;padding:16px 16px 14px;background:#F6EBBE;color:#1E1712}
+.director-card .dk{font-size:12.5px;color:#8E2A20}
+.director-card .from{font:italic 700 13px/1.3 var(--ui);color:#5A3A1E;margin:4px 0 10px}
+.director-card .dt{font:20px/1.1 var(--display);letter-spacing:.03em;color:#1E1712}
+.director-card .quote{margin:8px 0 10px;font:italic 600 14.5px/1.45 var(--ui);color:#3A2A1C}
+.director-card .notes{gap:6px;margin:8px 0}
+.director-card .notes li{font:700 15px/1.35 var(--ui);padding:7px 10px;border-radius:8px;background:rgba(43,33,24,.07);border:1.5px solid rgba(43,33,24,.18)}
+.director-card .notes li.got{background:rgba(192,57,43,.1)}
+.director-card .notes li i{font-size:17px}
+.director-card .notes li em{font-size:16px}
+.director-card .meta{font:700 13px/1.35 var(--ui);color:#4A3522}
+.director-card .btn{margin-top:6px}
+/* v50: the Vault — the shelves in three rows of seven; the chosen card carries its own Equip / Buy button (no try-on
+   stage, no bar at the foot); how a locked thing is had is plain text; a slimmer Closet */
+.cat-tabs.vault-cats,#sheet-customize .cat-tabs{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+#sheet-customize .cat-tabs button{padding:7px 1px 5px;font-size:12.5px;letter-spacing:.01em;min-height:36px;white-space:nowrap;overflow:hidden;text-overflow:clip}
+#sheet-customize .cat-tabs button[data-group]:not(:first-child){margin-left:0}
+#sheet-customize #buybar{display:none!important}
+.grid .cell{display:flex;flex-direction:column;gap:6px;min-width:0}
+.grid .cell .item{flex:1}
+.grid .cell .card-act{width:100%;min-width:0;padding:8px 4px;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.grid .cell .card-act svg{width:14px;height:14px}
+.grid.rows .cell .card-act{width:auto;align-self:flex-end;min-width:140px}
+.item.selected{outline:3px solid var(--mustard-l);outline-offset:1px}
+.item .how i{padding:0;border:0;background:none!important;color:var(--cream-dim)!important;font-size:9.5px}
+.item .how i svg{display:none}
+.item .how i+i::before{content:"·";margin:0 3px 0 0}
+#sheet-customize .closet>summary{min-height:36px;padding:5px 12px}
+#sheet-customize .closet .closet-t{font-size:18px}
+#sheet-customize .closet .closet-now{font-size:11px}
+#sheet-customize .closet+.section-k{margin-top:12px}
+#sheet-customize .closet-body{padding:2px 10px 10px}
+#sheet-customize .closet .outfits{margin-bottom:8px}
+/* v50: the leaderboard — one row of tabs (All-time, a Daily/Weekly/Monthly drop-down, This device); the top ten fit
+   without scrolling; See more opens the top hundred in a window of its own */
+.board-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;position:relative;z-index:4}
+.board-tabs>button,.board-per>button{min-width:0;padding:8px 4px;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board-per{position:relative;display:flex;min-width:0}
+.board-per>button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.board-per>button i{font:900 11px/1 var(--ui);font-style:normal}
+.board-menu{left:0;right:auto}
+.board-modes{margin-top:8px}
+#sheet-board .board{gap:4px;margin-top:8px}
+#sheet-board .board li{grid-template-columns:28px 32px 1fr auto;padding:3px 10px 3px 6px;border-width:2px;box-shadow:0 2px 0 var(--ink);border-radius:9px;min-height:40px}
+#sheet-board .board canvas{width:32px;height:32px}
+#sheet-board .board .rank{font-size:18px}
+#sheet-board .board .who{gap:1px}
+#sheet-board .board .who b{font-size:15px}
+#sheet-board .board .who span{font-size:10px}
+#sheet-board .board .sc{font-size:18px}
+#sheet-board #boardOpt{padding:6px 0}
+.board-more{width:100%;margin-top:8px}
+.board-top .cont-card{width:min(440px,calc(100vw - 24px));max-height:calc(100vh - 48px);max-height:calc(100dvh - 48px);display:flex;flex-direction:column}
+.board-top .board{flex:1 1 auto;min-height:0;overflow-y:auto;margin:10px 0;padding:2px 4px 4px;gap:4px;text-align:left}
+.board-top .board li{grid-template-columns:34px 32px 1fr auto;padding:3px 10px 3px 6px;border-width:2px;box-shadow:0 2px 0 var(--ink);border-radius:9px}
+.board-top .board canvas{width:32px;height:32px}
+/* v50: the Codex's twelve parts, in three rows of four */
+#codexTabs{position:static;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;overflow:visible;margin:8px 0 0;padding:0 0 10px}
+#codexTabs button{min-width:0;padding:8px 2px 6px;font-size:13px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-width:2px;box-shadow:0 2px 0 var(--ink)}
+#codexTabs button[aria-selected="true"]{transform:translateY(-1px) rotate(-1.5deg)}
+/* v50: mastery's fourth tier, Diamond, and five parts */
+.m-tiers{grid-template-columns:repeat(4,minmax(0,1fr))}
+.m-tier.diamond.got{background:linear-gradient(135deg,#BFF3FF,#6FD3F0 45%,#E8FBFF);color:var(--ink)}
+.m-tier.diamond:not(.got){background:#243040}
+#masteryTabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;overflow:visible}
+#masteryTabs button{min-width:0;padding:8px 2px 6px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* v50: the four new mini-games' tiles */
+.mode-tile.m-pitch{background:linear-gradient(160deg,#2E5A4A,#1E3A30)}
+.mode-tile.m-sudden{background:repeating-linear-gradient(135deg,#3A1418 0 10px,#2A0E12 10px 20px)}
+.mode-tile.m-gale{background:linear-gradient(160deg,#3A5068,#243446)}
+.mode-tile.m-swing{background:linear-gradient(160deg,#5A3A6A,#3A2448)}
+#miniModes{grid-template-columns:repeat(2,minmax(0,1fr))}
+#sheet-customize .cat-tabs button{font-size:10.5px;letter-spacing:0;padding:7px 0 5px}
+@media (min-width:430px){#sheet-customize .cat-tabs button{font-size:12px}}
+/* v50: small screens — the shelf, codex and mastery tabs shrink their type and wrap rather than cut a word */
+#sheet-customize .cat-tabs button{font-size:clamp(8px,2.55vw,12px)!important;padding:7px 0 5px}
+#codexTabs button,#masteryTabs button{white-space:normal;overflow:visible;text-overflow:clip;line-height:1.05;font-size:clamp(10px,3.1vw,13px);overflow-wrap:normal;hyphens:none}
+/* v51: a finished challenge drops in where the achievements do, on its own ticket colour */
+.ach-pop.chal{background:#EAD9A6}
+.ach-pop.chal .medal{background:var(--teal);color:var(--cream)}
+/* v51: Adventure+ — its card (red, cracked), and its way in: THE END, the reel burns through, the title, the line */
+.mode-card.plus{background:linear-gradient(160deg,#5A1A20,#2A0A10);color:var(--cream)}
+.mode-card.plus .mode-ic{background:#C0392B;color:var(--cream)}
+.mode-card.plus b{color:#FFD6C8}
+.mode-card.plus.locked{filter:grayscale(.85) brightness(.7)}
+.plus-intro{position:fixed;inset:0;z-index:70;background:#000;display:grid;place-items:center;overflow:hidden;cursor:pointer}
+.plus-intro .pi-end{position:absolute;font:clamp(42px,12vw,80px)/1 var(--display);letter-spacing:.1em;color:var(--cream);text-shadow:var(--outline);opacity:0}
+.plus-intro .pi-burn{position:absolute;inset:0;opacity:0;background:radial-gradient(circle at 48% 46%,#FFF3C0 0,#F58A3A 12%,#7E2A22 22%,#000 34%)}
+.plus-intro .pi-card{position:relative;text-align:center;opacity:0}
+.plus-intro .pi-k{margin:0;font:800 13px/1 var(--ui);letter-spacing:.4em;text-transform:uppercase;color:var(--mustard-l)}
+.plus-intro .pi-t{margin:8px 0 12px;font:clamp(46px,14vw,92px)/1 var(--display);letter-spacing:.04em;color:#FF6A5A;text-shadow:var(--outline),0 0 22px rgba(255,80,60,.5)}
+.plus-intro .pi-s{margin:0;font:italic 700 clamp(16px,4.6vw,22px)/1.3 var(--ui);color:var(--cream)}
+.plus-intro.go .pi-end{animation:piEnd 1s ease forwards}
+.plus-intro.go .pi-burn{animation:piBurn 1s ease .85s forwards}
+.plus-intro.go .pi-card{animation:piCard 2.2s ease 1.5s forwards}
+@keyframes piEnd{0%{opacity:0}25%,70%{opacity:1;transform:none}85%{opacity:1;transform:translateX(3px) skewX(-6deg)}100%{opacity:0;transform:translateX(-6px) skewX(10deg)}}
+@keyframes piBurn{0%{opacity:0;transform:scale(.2)}40%{opacity:1;transform:scale(1.2)}100%{opacity:0;transform:scale(4)}}
+@keyframes piCard{0%{opacity:0;transform:scale(1.2)}12%{opacity:1;transform:scale(.97)}20%{transform:scale(1)}45%{transform:translateX(-4px)}47%{transform:translateX(5px)}49%{transform:none}90%{opacity:1}100%{opacity:1;transform:scale(1.04)}}
+/* v53: the board's modes in four: Adventure ▾ (and Adventure+), Arcade, Boss Rush, Mini-games ▾ (all eight) */
+.board-modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));overflow:visible;margin:8px 0 0;padding:2px 0 4px}
+.board-modes>button,.board-drop>button{width:100%;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board-drop{position:relative;display:flex;min-width:0}
+.board-drop>button{display:inline-flex;align-items:center;justify-content:center;gap:3px}
+.board-drop>button .dd-l{overflow:hidden;text-overflow:ellipsis;font:inherit}
+.board-drop>button i{font:900 11px/1 var(--ui);font-style:normal;flex:none}
+.board-drop .board-menu{left:0;right:auto;min-width:170px}
+.board-drop:last-child .board-menu{left:auto;right:0}
+.board-drop .board-menu button{border-radius:8px;padding:10px 12px 8px;text-align:left;font-size:14px}
+.board-drop .board-menu button[aria-checked="true"]{background:var(--mustard);color:var(--ink)}
+.board-modes{grid-template-columns:1.35fr .95fr 1.05fr 1.25fr;gap:5px}
+.board-modes>button,.board-drop>button{padding:7px 4px 6px;font:12px/1 var(--display);letter-spacing:.01em}
+@media (max-width:400px){.board-modes{grid-template-columns:1fr 1fr;gap:6px}.board-modes>button,.board-drop>button{padding:9px 6px 8px;font-size:13px}}
+/* v53: the Codex — its parts in a menu, its entries a row of book pages that scrolls sideways */
+.codex-drop{position:relative;margin:8px 0 0}
+#codexCatBtn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 16px 10px;border:3px solid var(--ink);border-radius:12px;background:var(--mustard);color:var(--ink);font:20px/1 var(--display);letter-spacing:.04em;text-transform:uppercase;box-shadow:0 4px 0 var(--ink);cursor:pointer}
+#codexCatBtn i{font:900 14px/1 var(--ui);font-style:normal}
+#codexTabs.codex-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:8;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:8px;max-height:60vh;overflow-y:auto;margin:0}
+#codexTabs.codex-menu[hidden]{display:none}
+#codexTabs.codex-menu button{min-width:0;white-space:normal;padding:10px 10px 8px;border-radius:8px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);font:14px/1.05 var(--display);letter-spacing:.02em;text-transform:uppercase;text-align:left;box-shadow:0 2px 0 var(--ink);transform:none}
+#codexTabs.codex-menu button[aria-checked="true"]{background:var(--mustard)}
+.codex-list{display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;margin:10px -16px 0;padding:6px 16px 14px;scrollbar-width:none}
+.codex-list::-webkit-scrollbar{display:none}
+.codex-list>.entry,.codex-list>.doc{flex:0 0 min(78vw,330px);min-height:min(62dvh,470px);scroll-snap-align:center;position:relative;display:flex;flex-direction:column;padding:26px 22px 34px 30px;border-radius:4px 12px 12px 4px}
+.codex-list>.entry{background:linear-gradient(90deg,rgba(60,40,20,.28),rgba(60,40,20,0) 18px),repeating-linear-gradient(180deg,transparent 0 27px,rgba(90,110,140,.18) 27px 28px),linear-gradient(180deg,#F1E4C4,#E4D2A8);border:2px solid var(--ink);box-shadow:0 5px 0 var(--ink),inset 0 0 36px rgba(120,80,30,.22)}
+.codex-list>.entry::after{content:attr(data-page);position:absolute;bottom:10px;left:0;right:0;text-align:center;font:13px/1 var(--num);letter-spacing:.1em;color:#7A5A34}
+.codex-list>.entry b{font:26px/1.02 var(--display);margin-bottom:6px}
+.codex-list>.entry p{font:700 15px/1.55 var(--ui);margin-top:10px}
+.codex-list>.entry .cx-stat{margin-top:auto;padding-top:14px;font-size:16px}
+.codex-list>.entry.unseen{background:repeating-linear-gradient(180deg,transparent 0 27px,rgba(255,255,255,.04) 27px 28px),var(--panel-2);border:2px dashed var(--line-2);box-shadow:none}
+.codex-list>.entry.unseen::after{color:var(--cream-faint)}
+.codex-list>.doc{transform:none}.codex-list>.doc:nth-child(even){transform:none}
+.codex-list>.doc h3{font-size:18px}.codex-list>.doc .doc-body{font-size:14.5px}
+/* v53: each kind of achievement is two rows that scroll sideways */
+.ach-grid{grid-template-columns:none;grid-template-rows:repeat(2,auto);grid-auto-flow:column;grid-auto-columns:min(42vw,170px);overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;margin:0 -16px;padding:2px 16px 12px;scrollbar-width:none}
+.ach-grid::-webkit-scrollbar{display:none}
+.ach-grid>.ach{scroll-snap-align:start}
+@media (min-width:700px){.ach-grid{grid-template-columns:none;grid-auto-columns:190px}}
+/* v53: the Cart's exclusives: each shelf one row that scrolls sideways */
+#exclGrid .grid{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:min(29vw,120px);overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;margin:0 -16px 6px;padding:2px 16px 10px;scrollbar-width:none}
+#exclGrid .grid::-webkit-scrollbar{display:none}
+#exclGrid .grid>*{scroll-snap-align:start}
+/* v53: the bones and Souls balances, smaller, and the same size wherever they show */
+.bones,.sheet-head .bones,.souls-chip,.sheet-head .souls-chip{height:30px;box-sizing:border-box;gap:5px;padding:0 9px 0 7px;border-radius:7px;border-width:2px;box-shadow:0 2px 0 var(--ink);font:17px/1 var(--num);letter-spacing:.03em}
+.bones svg,.souls-chip svg{width:14px;height:14px}
+.souls-chip b{font:17px/1 var(--num);margin-right:2px}
+#achList .ach-grid{margin:0;padding:2px 0 12px}
+/* v53: the challenge pages fit the screen without scrolling: slimmer tickets, the note at the foot gone */
+#sheet-challenges .chal{margin-top:9px;padding:10px 14px 9px}
+#sheet-challenges .chal-title{font-size:18px}
+#sheet-challenges .chal-reward{font-size:18px;padding:4px 8px 2px}
+#sheet-challenges .chal-prog{margin-top:8px}
+#sheet-challenges .chal-prog span{font-size:17px}
+#sheet-challenges .chal .btn{margin-top:8px;min-height:44px}
+#sheet-challenges .sheet-body>.tip{display:none}
+@media (max-height:700px){#sheet-challenges .chal{margin-top:7px;padding:8px 12px 7px}#sheet-challenges .chal-title{font-size:16px}}
+.pb-ring{background:none!important;border-radius:0!important;width:124px!important;height:124px!important}
+/* v53: an achievement's difficulty, by what it pays */
+.ach-tier{display:inline-block;margin-top:4px;padding:2px 7px 1px;border-radius:999px;border:1.5px solid var(--ink);font:800 9.5px/1.3 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.ach-tier.easy{background:#9BC57A}.ach-tier.medium{background:#E3B64B}.ach-tier.hard{background:#E8893A}.ach-tier.legendary{background:#B48CFF}
+/* v53: the mini-games as the carnival's booths: an awning in each one's colours, and its verb stamped on */
+.mode-tile.booth{position:relative;padding-top:26px;overflow:hidden}
+.booth .awning{position:absolute;left:0;right:0;top:0;height:16px;background:repeating-linear-gradient(90deg,var(--aw1) 0 16px,var(--aw2) 16px 32px);border-bottom:3px solid var(--ink);
+  -webkit-mask:radial-gradient(circle at 8px 16px,transparent 0 5px,#000 5.5px) 0 0/16px 100% repeat-x,linear-gradient(#000,#000) 0 0/100% 11px no-repeat;mask:radial-gradient(circle at 8px 16px,transparent 0 5px,#000 5.5px) 0 0/16px 100% repeat-x,linear-gradient(#000,#000) 0 0/100% 11px no-repeat}
+.booth .verb{align-self:flex-start;padding:2px 7px 1px;border:2px solid var(--ink);border-radius:4px;background:var(--cream);color:var(--ink);font:12px/1.2 var(--display);letter-spacing:.08em;text-transform:uppercase;transform:rotate(-3deg);box-shadow:0 2px 0 var(--ink)}
+.booth .tm{position:absolute;right:8px;top:22px;padding:1px 6px;border:2px solid var(--ink);border-radius:4px;background:var(--bone);color:var(--ink);font:10px/1.2 var(--display);letter-spacing:.08em;text-transform:uppercase;transform:rotate(3deg)}.booth .tm.timed{background:var(--gold)}   /* v64: timed or not, at a glance */
+.booth.m-gallery{background:#3E6488;--aw1:#E8DDC0;--aw2:#6E93B8}
+.booth.m-cans{--aw1:#F2E7C9;--aw2:#B8322A}
+.booth.m-longshot{background:#1E4A4A;--aw1:#E3B64B;--aw2:#2F6B6B}
+.booth.m-curtain{background:#5A1C22;--aw1:#E3B64B;--aw2:#7A2830}
+.booth.m-pitch{background:#2F5A34;--aw1:#F2E7C9;--aw2:#4F8A4E}
+.booth.m-gale{background:#4C5866;--aw1:#C9D2DC;--aw2:#6B7888}
+.booth.m-sudden{background:#141218;--aw1:#3A3440;--aw2:#1E1A24}
+.booth.m-sudden .verb{background:#C0392B;color:var(--cream)}
+.booth.m-swing{background:#5A3E24;--aw1:#E3B64B;--aw2:#8A6A3E}
+/* v55: smaller achievement cards */
+.ach-grid{grid-auto-columns:min(33vw,132px)}
+@media (min-width:700px){.ach-grid{grid-auto-columns:150px}}
+.ach-grid .ach{min-height:0;padding:8px 6px 7px;gap:3px}
+.ach-grid .ach .medal{width:36px;height:36px}.ach-grid .ach .medal svg{width:18px;height:18px}
+.ach-grid .ach-t b{font-size:13px}
+.ach-grid .ach-t span{font-size:10px;line-height:1.25}
+.ach-grid .ach-prog{gap:2px;padding-top:3px}.ach-grid .ach-prog em{font-size:10px}
+.ach-grid .ach-r{font-size:12.5px;padding:2px 8px}
+.ach-grid .ach-tier{margin-top:2px;font-size:8.5px;padding:1px 6px 0}
+/* v55: settings categories: bigger names, readable descriptions */
+.set-cat b{font-size:clamp(24px,7vw,30px)}
+.set-cat span{font:700 clamp(14px,4vw,16.5px)/1.3 var(--ui);opacity:.85}
+/* v55: the Codex fits the screen: the page row fills what's left, a long page scrolls inside itself */
+#sheet-codex .sheet-body{display:flex;flex-direction:column;overflow:hidden}
+#sheet-codex .codex-list{flex:1 1 auto;min-height:0;align-items:stretch}
+#sheet-codex .codex-list>.entry,#sheet-codex .codex-list>.doc{min-height:0;max-height:100%;overflow-y:auto;padding:18px 18px 24px 24px}
+#sheet-codex .tip{flex:none;margin:6px 0 0;padding:8px 12px;font-size:11.5px}
+@media (max-height:720px){#sheet-codex .tip{display:none}}
+/* v55: mastery as pages in a sideways row, each with its eight tiers on a milestone line that scrolls */
+#masteryList{display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;margin:10px -16px 0;padding:4px 16px 12px;scrollbar-width:none}
+#masteryList::-webkit-scrollbar{display:none}
+.m-page{flex:0 0 min(80vw,340px);scroll-snap-align:center;display:flex;flex-direction:column;padding:18px 16px 16px 22px;border-radius:4px 12px 12px 4px;background:linear-gradient(90deg,#D9C79E,#F2E7C9 14px);color:var(--ink);border:2px solid var(--ink);box-shadow:0 4px 0 var(--ink),inset 3px 0 0 rgba(0,0,0,.12)}
+.m-page .m-head b{font-size:20px;color:var(--ink)}
+.m-page .m-have{font:18px/1 var(--num);color:var(--red-d)}
+.m-page p{color:#4A3A2A;font-size:12.5px;min-height:2.7em}
+.m-line{overflow-x:auto;overflow-y:hidden;margin:10px -16px 0 -22px;padding:6px 16px 4px 22px;scrollbar-width:thin}
+.m-track{position:relative;display:flex;gap:10px;width:max-content;padding-top:4px}
+.m-track::before{content:"";position:absolute;left:20px;right:20px;top:24px;height:4px;border-radius:2px;background:rgba(23,19,15,.25)}
+.m-fill{position:absolute;left:20px;top:24px;height:4px;border-radius:2px;background:var(--red-d);max-width:calc(100% - 40px)}
+.m-page .m-tier{position:relative;width:74px;flex:none;background:none;border:0;box-shadow:none;color:var(--ink);padding:0 0 4px;gap:3px;animation:none}
+.m-dot{display:grid;place-items:center;width:40px;height:40px;margin:0 auto;border-radius:50%;border:3px solid var(--ink);background:#C9BC9A;font:17px/1 var(--num);color:var(--ink);box-shadow:0 2px 0 var(--ink)}
+.m-page .m-tier .m-t{font:800 10px/1.2 var(--ui);color:#4A3A2A}
+.m-page .m-tier .m-p{font:14px/1 var(--num);color:var(--ink)}
+.m-page .m-tier.got .m-dot{box-shadow:0 0 0 3px var(--cream),0 0 0 5px var(--ink);animation:gain .9s var(--snap) infinite alternate}
+.m-page .m-tier.claimed .m-dot{animation:none;box-shadow:0 2px 0 var(--ink);opacity:.85}
+.m-tier.bronze.got .m-dot,.m-tier.bronze.claimed .m-dot{background:#B07A45}.m-tier.silver.got .m-dot,.m-tier.silver.claimed .m-dot{background:#B5BAC4}
+.m-tier.gold.got .m-dot,.m-tier.gold.claimed .m-dot{background:var(--gold)}.m-tier.platinum.got .m-dot,.m-tier.platinum.claimed .m-dot{background:#DCE3EA}
+.m-tier.emerald.got .m-dot,.m-tier.emerald.claimed .m-dot{background:#3FAE6A}.m-tier.ruby.got .m-dot,.m-tier.ruby.claimed .m-dot{background:#C8364A;color:var(--cream)}
+.m-tier.obsidian.got .m-dot,.m-tier.obsidian.claimed .m-dot{background:#2A2632;color:var(--cream)}
+.m-tier.diamond.got .m-dot,.m-tier.diamond.claimed .m-dot{background:linear-gradient(135deg,#BFF3FF,#6FD3F0 45%,#E8FBFF)}
+.m-page .m-tier.got:not(.claimed) .m-p{color:var(--red-d)}
+.m-page .m-tier.m-tier.m-tier{background:none;color:var(--ink);opacity:1}
+.m-page{width:min(80vw,340px);max-width:min(80vw,340px);box-sizing:border-box}

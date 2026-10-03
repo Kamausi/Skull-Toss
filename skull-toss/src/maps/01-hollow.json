@@ -1,0 +1,587 @@
+{
+  "id": "hollow",
+  "n": 1,
+  "name": "Crow Hollow",
+  "reel": "Reel One",
+  "premise": "The hollow where Morty was buried with the reel in 1933. The crows kept it for the Pumpkin King, and the pumpkins learned to grin.",
+  "identity": {
+    "visual": "A harvest hollow at dusk: a crooked barn, a windmill, pumpkin rows, crows on every rail.",
+    "spatial": "Open and shallow: one clean lane between the pumpkin rows, the ring on its pole right over it.",
+    "mechanic": "None: the throw itself. The ring slides side to side on its pole, then flies its triangle.",
+    "throw": "Plain arcs under a still sky. Lead the swing.",
+    "boss": "The Pumpkin King's mouth is the ring and his eyes are targets: shut his eyes to stop the seeds, then throw down his throat.",
+    "targets": "Jack-o'-lanterns hung in the oak, still at first.",
+    "hazards": "None; the bosses bring their own.",
+    "camera": "The rostrum camera at rest: lean, follow, settle.",
+    "ambient": "Crows on the rails, the black cat, a zombie farmhand, the witch across the harvest moon.",
+    "music": "The original waltz at 92 bpm.",
+    "sfx": "Caws, creaking wood, rustling corn.",
+    "transition": "An iris on the moon.",
+    "reward": "Pumpkin-Vine Curls and the first shard of the Black Ring."
+  },
+  "sheet": {
+    "concept": "Teach the throw. Nothing in the hollow is in the way; everything in it watches.",
+    "plane": "The throw lane, launcher to ring (z 0–7.8), between the pumpkin rows.",
+    "launcher": [
+      0,
+      0.9,
+      0
+    ],
+    "zones": {
+      "ring": {
+        "x": [
+          -1.35,
+          1.35
+        ],
+        "y": [
+          1.9,
+          3.2
+        ],
+        "z": [
+          4.8,
+          7.4
+        ]
+      },
+      "targets": {
+        "x": [
+          -1.6,
+          1.6
+        ],
+        "y": [
+          1.4,
+          3.1
+        ],
+        "z": [
+          7.4,
+          9.0
+        ]
+      },
+      "hazards": {
+        "x": [
+          -2.3,
+          2.3
+        ],
+        "y": [
+          0.0,
+          4.2
+        ],
+        "z": [
+          1.8,
+          5.4
+        ]
+      }
+    },
+    "corridor": {
+      "halfWidth": 2.4,
+      "zMax": 16
+    },
+    "camera": {
+      "x": [
+        -0.3,
+        0.3
+      ],
+      "y": [
+        -0.13,
+        0.1
+      ],
+      "z": [
+        -0.4,
+        1.0
+      ]
+    },
+    "parallax": [
+      "sky",
+      "far",
+      "ground",
+      "world",
+      "near",
+      "fg"
+    ],
+    "interactions": [
+      {
+        "on": "pumpkin",
+        "does": "squeak"
+      },
+      {
+        "on": "jack",
+        "does": "squeak"
+      },
+      {
+        "on": "scarecrow",
+        "does": "rotate"
+      },
+      {
+        "on": "corn",
+        "does": "bend"
+      },
+      {
+        "on": "tree",
+        "does": "bend"
+      },
+      {
+        "on": "hay",
+        "does": "shake"
+      },
+      {
+        "on": "rail",
+        "does": "shake"
+      },
+      {
+        "on": "crows",
+        "does": "react"
+      }
+    ],
+    "ambient": [
+      "crows",
+      "cat",
+      "witch",
+      "walkers",
+      "windmill",
+      "weather"
+    ],
+    "lighting": {
+      "key": [
+        -0.55,
+        0.83
+      ],
+      "ambient": "#3A2A30",
+      "rim": "rgba(255,200,120,.35)",
+      "ring": 0.34,
+      "boss": "#FFB84A"
+    },
+    "arenas": {
+      "mini": {
+        "z": [
+          5.0,
+          7.8
+        ],
+        "note": "the Crow King perches along the branch and swoops through depth"
+      },
+      "end": {
+        "z": [
+          7.8,
+          9.4
+        ],
+        "note": "the Pumpkin King rises in the pumpkin rows; his mouth rides in the ring plane"
+      }
+    },
+    "transition": "The oak's leaves blow across the lens, then an iris on the harvest moon.",
+    "reward": {
+      "bodyPart": "hair:vines",
+      "section": "leftArm",
+      "fragment": "hollow",
+      "show": "The Pumpkin King's vines curl onto Morty's crown; the shard spins out of his mouth."
+    }
+  },
+  "look": {
+    "sky": [
+      "#261826",
+      "#4E2A34",
+      "#944A34",
+      "#D08A48"
+    ],
+    "horizon": "rgba(255,190,90,.18)",
+    "moon": "art",
+    "moonColor": "#F2E7C9",
+    "stars": 0.6,
+    "skyline": "farm",
+    "silhouette": "#24140F",
+    "haze": "rgba(208,138,72,.2)",
+    "ground": [
+      "#4E3A24",
+      "#382818",
+      "#261A10",
+      "#150E08"
+    ],
+    "hills": [
+      "#5E4428",
+      "#4E3A22",
+      "#40301C"
+    ],
+    "hillRim": "rgba(255,200,120,.14)",
+    "grass": [
+      "#7A7A3A",
+      "#5E5A2A"
+    ],
+    "lane": "dirt",
+    "light": "rgba(255,170,60,.12)",
+    "props": "patch",
+    "foreground": "branches",
+    "weather": "leaves",
+    "tint": null,
+    "ambient": {
+      "walkers": [
+        "zombie"
+      ],
+      "ghost": false,
+      "bats": 0.6,
+      "witch": true,
+      "digger": false,
+      "cat": true,
+      "lightning": false,
+      "crows": true
+    }
+  },
+  "anchor": "post",
+  "ring": {
+    "speed": 1.0,
+    "tri": {
+      "a": 1.25,
+      "up": 0.8,
+      "near": 1.2,
+      "far": 1.3,
+      "skew": 0
+    },
+    "seqs": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        2,
+        1
+      ]
+    ],
+    "mods": [],
+    "path": "triangle"
+  },
+  "tiers": [
+    "I",
+    "II"
+  ],
+  "mechanic": {
+    "kind": "none"
+  },
+  "obstacles": {
+    "A": [
+      {
+        "kind": "gate",
+        "_doc": "v66 (the owner's call): a real gate across the lane that swings open and shut on its clock; the map's ring interaction works it (ring it and it's held open two throws); through the gate, the ring and on into the actor is a key, and two keys in the first half open the secret path (07wa_gates.js)",
+        "span": [
+          -1.6,
+          1.6
+        ],
+        "h": 3.3,
+        "z": 2.8,
+        "cycle": [
+          3.2,
+          1.0
+        ],
+        "phase": 0.0,
+        "look": "wood",
+        "from": 16
+      }
+    ],
+    "B": [
+      {
+        "kind": "coach",
+        "_doc": "v67: the foreground pressure event (07wb_coach.js): a phantom coach crosses the lane on its schedule, told first (lamp, bell, a track on the ground); wait for it or lob over it; a ghost where it passes in front of the ring",
+        "z": 2.3,
+        "y": [
+          1.5,
+          2.6
+        ],
+        "every": [
+          8,
+          1.2
+        ],
+        "speed": 3.4,
+        "look": "wood",
+        "phase": 0.0,
+        "from": 2
+      }
+    ],
+    "boss": []
+  },
+  "targetTypes": {
+    "A": [
+      "standard"
+    ],
+    "B": [
+      "standard",
+      "swinging"
+    ]
+  },
+  "bosses": {
+    "mini": "crow",
+    "end": "pumpkin"
+  },
+  "acts": [
+    "The Hollow",
+    "Haunted Farm",
+    "Harvest Grove",
+    "Pumpkin Field"
+  ],
+  "travel": {
+    "_doc": "v47 perceptual travel (docs/TRAVEL.md): every make before a boss carries Morty step metres further on (the last few steps before each boss shorter, so the world slows as he arrives), and the scenery comes toward him. Zones start where the camera stands at a hit, plus a lead (metres). The world stands still through each boss fight.",
+    "step": 6,
+    "arrive": [
+      0.85,
+      0.7,
+      0.55,
+      0.4,
+      0.25
+    ],
+    "gap": 2.4,
+    "far": 170,
+    "zones": [
+      {
+        "id": "hollow",
+        "from": [
+          0,
+          0
+        ],
+        "density": 0.42,
+        "fog": 0.04,
+        "tone": "rgba(0,0,0,0)",
+        "mix": {
+          "pumpkins": 3,
+          "pumpkin": 2,
+          "tree-autumn": 2,
+          "bush": 2,
+          "fence": 1,
+          "haybale": 1,
+          "tuft": 3,
+          "scarecrow": 1
+        },
+        "near": "bush"
+      },
+      {
+        "id": "farm",
+        "from": [
+          10,
+          6
+        ],
+        "density": 0.62,
+        "fog": 0.08,
+        "tone": "rgba(70,40,20,.1)",
+        "mix": {
+          "corn": 7,
+          "fence": 2,
+          "haybale": 2,
+          "scarecrow": 1,
+          "pumpkins": 2,
+          "cart": 1,
+          "tuft": 2
+        },
+        "near": "corn"
+      },
+      {
+        "id": "harvest",
+        "from": [
+          20,
+          8
+        ],
+        "density": 0.6,
+        "fog": 0.16,
+        "tone": "rgba(40,16,30,.18)",
+        "mix": {
+          "tree-autumn": 4,
+          "pumpkins": 4,
+          "bush": 3,
+          "tree-bare": 1,
+          "crowpost": 1,
+          "jack": 1,
+          "tuft": 2
+        },
+        "near": "bush",
+        "flock": 0.4
+      },
+      {
+        "id": "crows",
+        "from": [
+          30,
+          -6
+        ],
+        "density": 0.36,
+        "fog": 0.24,
+        "tone": "rgba(20,10,34,.28)",
+        "mix": {
+          "tree-bare": 4,
+          "crowpost": 3,
+          "bush": 1
+        },
+        "near": "tree-bare",
+        "flock": 0.8,
+        "backdrop": [
+          "tree-bare"
+        ]
+      },
+      {
+        "id": "field",
+        "from": [
+          30,
+          30
+        ],
+        "density": 0.55,
+        "fog": 0.14,
+        "tone": "rgba(70,24,4,.2)",
+        "mix": {
+          "pumpkins": 6,
+          "pumpkin-giant": 2,
+          "jack": 2,
+          "haybale": 1,
+          "tuft": 2,
+          "bush": 1
+        },
+        "near": "bush",
+        "backdrop": [
+          "tree-autumn",
+          "pumpkin-giant",
+          "pumpkin-giant"
+        ]
+      }
+    ],
+    "landmarks": [
+      {
+        "asset": "pumpkins",
+        "hit": 0,
+        "ahead": 7.5,
+        "x": -3.8
+      },
+      {
+        "asset": "scarecrow",
+        "hit": 0,
+        "ahead": 11,
+        "x": -5.4
+      },
+      {
+        "asset": "fence",
+        "hit": 0,
+        "ahead": 17.5,
+        "x": 6.6
+      },
+      {
+        "asset": "tree-autumn",
+        "hit": 0,
+        "ahead": 22,
+        "x": -9.5,
+        "mul": 1.2
+      },
+      {
+        "asset": "haybale",
+        "hit": 0,
+        "ahead": 9.5,
+        "x": 3.8
+      },
+      {
+        "asset": "tree-autumn",
+        "hit": 0,
+        "ahead": 30,
+        "x": 10.5,
+        "mul": 1.3
+      },
+      {
+        "asset": "signpost",
+        "hit": 9,
+        "ahead": 14,
+        "x": 3.6
+      },
+      {
+        "asset": "farmhouse",
+        "hit": 14,
+        "ahead": 12,
+        "x": -8
+      },
+      {
+        "asset": "barn",
+        "hit": 18,
+        "ahead": 12,
+        "x": 9
+      },
+      {
+        "asset": "signpost",
+        "hit": 28,
+        "ahead": 12,
+        "x": -3.7
+      },
+      {
+        "asset": "king-lair",
+        "hit": 50,
+        "ahead": 44,
+        "x": 0,
+        "wakes": "end",
+        "mul": 1.35
+      }
+    ],
+    "clear": [
+      {
+        "hit": 30,
+        "back": 6,
+        "ahead": 28,
+        "x": 4.2
+      },
+      {
+        "hit": 50,
+        "back": 6,
+        "ahead": 34,
+        "x": 5
+      }
+    ],
+    "backdrop": [
+      "tree-autumn",
+      "tree-autumn",
+      "tree-bare"
+    ],
+    "land": {
+      "hills": 3.2,
+      "roll": 1.4,
+      "wave": 95,
+      "curve": 1.0,
+      "bend": 160
+    },
+    "sky": {
+      "arc": 0.8,
+      "late": [
+        "#0B0A1C",
+        "#5A3A4A"
+      ],
+      "k": 0.35
+    }
+  },
+  "fragment": "hollow",
+  "target": "jack",
+  "music": {
+    "rate": 1.0,
+    "key": 0
+  },
+  "blurb": "The gentlest ring: it slides side to side on its pole, then flies a small triangle",
+  "ecosystem": {
+    "_doc": "v58 MAP → ECOSYSTEM → CAST (blueprint.json: ecosystem): who and what lives here, and nowhere else it doesn't belong.",
+    "teaches": "Fundamentals",
+    "cast": [
+      "zombie",
+      "witch",
+      "cat",
+      "crow"
+    ],
+    "wildlife": {
+      "crow": 0
+    },
+    "vegetation": [
+      "corn",
+      "tree-autumn",
+      "bush",
+      "tree-bare"
+    ],
+    "props": [
+      "pumpkins",
+      "haybale",
+      "scarecrow",
+      "fence",
+      "cart",
+      "crowpost"
+    ],
+    "hazards": [
+      "crows on the wing",
+      "the scarecrow's arms"
+    ]
+  },
+  "encounter": {
+    "_doc": "v58 the ring interaction (07w_encounter.js): what hangs behind the ring on this map, and what going through the ring into it does (path: the next throw's movers and threats stand aside; bonus: points only).",
+    "interaction": "lantern",
+    "consequence": "path"
+  }
+}

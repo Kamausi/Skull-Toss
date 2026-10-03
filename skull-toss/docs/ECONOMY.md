@@ -1,0 +1,84 @@
+# The economy: bones and Souls
+
+**Two currencies, by design** (the owner, 2026-09-28; Decision Ledger "Bones and Souls are two currencies by design",
+APPROVED). Bones are the soft currency, earned by playing and kept on the profile. Souls are the premium currency,
+kept only on the server. Neither replaces the other, and no look is sold for both. Both buy looks and tickets only:
+nothing either buys changes how Morty flies. The one exception is continues, which cost bones.
+
+## Bones (the soft currency)
+
+Bones are earned by playing and live on the profile, in this browser and in the cloud save.
+
+**Sources**
+
+- **The end of a run:** `runBones`, scaled by hits and score, plus a bonus for a new best.
+- **Bosses and pieces:** an end boss down pays 150 + 50 × map; Boss Rush pays points, not bones.
+- **Challenges:** daily, weekly and monthly (claimed by hand), and achievements (paid when reached).
+- **In play:** bonus targets (3 each), the Bone Magnet power-up (+20 a make), Can Alley after an end boss (5 a can, 100 + 25 × map for the lot) and secrets (150 each, once).
+- **Challenge sets (v45):** claim all three of a period's challenges for a bonus: 150 a day, 600 a week, 2,500 a month.
+- **Targets:** 3 for a plain target, 15 for a secret one, 25 for a gold one (`07e_directors.js`).
+- **Secret paths (v66):** 20 bones a ring made down the secret path and 300 for its end boss, paid with the run's bones (`r.secretBones`, `07wa_gates.js`).
+- **The crossing between maps:** 5 a ring, 20 a gold ring, and 100 + 50 × map for making all ten (`07q_crossing.js`).
+- **Career and streak:** 25 × level for each career level gained (`04h_career.js`). The daily streak pays 20 × days, up to 7 days, and the `event.bones` flag scales it.
+- **Mastery:** each tier of shot, map and boss mastery pays once (60 up to 2,500; `09n_mastery.js`).
+- **The Director's Challenge:** 100, 200 and 400 for its three weekly notes, each paid the first time in a week (`07k_director.js`).
+- **Seasons:** bones on the Season Ticket's stubs (`07l_season.js`).
+- **One-offs:** a 300-bone welcome gift on a new profile, and promo codes (`09p_general.js`).
+
+**Sinks**
+
+- the Skull Vault's prices (300 to about 11,000);
+- continues: 200, then 400, then 800 bones within a run (or an ad where one is available; `07g_continue.js`);
+- the Curio Cart's Mystery Coffin, which can be opened for 1,200 bones instead of 60 Souls (`09g_store.js`).
+
+**v45: the Curio Cart takes Souls, not bones.** Its 24 exclusives are in the shared economy (`Economy.CART`) at
+130 to 400 Souls, one of them a quarter off each UTC day (`Economy.dealOf`), and the Mystery Coffin costs 60 Souls (or, from v49, 1,200 bones)
+(`Economy.COFFIN`; the server takes the Souls, the game draws the Vault look inside). An exclusive bought with bones
+before v45 stays yours.
+
+**Practice pays nothing.** A Practice run plays on a copy of the profile, so no bone, stat, challenge or medal
+moves.
+
+**Exploit review.** A save code (or editing local storage) can change a player's own bones, stats and
+unlocks. That's accepted for a soft currency that buys looks and nothing else. Nothing bones can buy changes how
+Morty flies, and **the leaderboard never reads the profile's bests**. It posts only runs played to their end in
+the game (`boardBest`), and from v34 the server re-checks each run before it goes up.
+
+## Souls (the premium currency)
+
+Souls are the server's alone.
+
+- **Where they live.** The balance and what it has bought live in `wallets/{uid}`, written only by Cloud Functions. They are never on the profile, never in a save code, and never in the cloud save: the Firestore rules refuse a save carrying a `souls` or `wallet` field.
+- **What they cost.** Prices come from `firebase/functions/shared/economy.js`. The server charges its own price, whatever the caller sends; the spec checks this.
+- **Getting them.** 200 the first time you play (v49, once per account: `claimWelcomeSouls`), a free daily handful (10, once per UTC day, by the server's clock, with a countdown to the next), and Soul packs bought in a store at the industry's tiers (v49: $0.99 → 100, $4.99 → 500, $9.99 → 1,100, $19.99 → 2,300, $49.99 → 6,000, $99.99 → 13,000; `Economy.PACK_TIERS`). A pack is credited only after the store confirms the receipt, and a receipt is recorded, so it can never be credited twice.
+- **The ledger.** Every change to a balance is written to `ledger/`.
+- **Offline.** The game shows the Soul Shop as unavailable. A Soul item is judged only once the wallet has arrived, and never on the device's word.
+- **What Souls buy.** Looks only (two four-piece sets at the Soul Shop and, from v45, the Curio Cart's exclusives and its Mystery Coffin), like bones, and each season's Premium Ticket (v42), which pays extra looks and bones on the Season Ticket.
+
+- **Refunds (v39).** A refunded pack's Souls come back off the wallet. What's already spent stays spent, and the shortfall is **owed**: new Souls pay it off first, and nothing can be bought until they have. The Soul Shop shows what's owed. See firebase/README.md, "Refunds".
+- **Support and rollback (v39).** `firebase/functions/tools/admin.js` can grant Souls (with a reason), refund a receipt by hand, and reverse any single ledger entry (a purchase, a daily claim or a grant). Every action is itself a ledger entry.
+- **Kill switches (v39).** `kill.souls` in `config/live` closes the shop on the server as well as in the game. Paid packs are still credited.
+
+## The audit (v39)
+
+`economyAudit()` (04b_economy.js) checks the catalog's rules, and the spec requires it to find nothing. Run it on a
+page with `SkullToss.economy()` in the console. It checks:
+
+- no id is used twice within a kind (it caught the career title Headliner colliding with the 40-hit one, now Top of the Bill);
+- every bones price is a positive multiple of 50, with a rarity of 1 to 4 stars;
+- every goal names a stat the game keeps;
+- the middle price rises with each star;
+- no look is sold for both bones and Souls, and the Vault's Soul looks are exactly the server's, at the server's prices;
+- the Soul packs grow;
+- **pacing:** everything in the Vault costs between 150 and 3,000 middling Story runs (20 hits, 15,000 points), and
+  the cheapest Soul look takes 7 to 60 days of free daily Souls.
+
+**The numbers today:** 275 looks sold for bones, 666,500 bones in all. A middling run pays 256 bones, so everything
+takes about 2,600 such runs. Challenges, bosses, secrets, the streak and a better score all shorten that. The middle
+prices by rarity are 450, 1,200, 3,100 and 7,500. The cheapest Soul look (150) is 15 days of free Souls.
+
+**Still to do before real money.**
+
+- Fill in the store receipt checks in `functions/receipts.js`.
+- Turn on App Check for the callable functions (`enforceAppCheck: true` in `functions/index.js`).
+- Set per-user rate limits in the console if abuse shows up. The handlers are idempotent, so repeated calls are safe.
