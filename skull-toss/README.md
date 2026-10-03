@@ -1,0 +1,1908 @@
+# SKULL TOSS v64
+
+Lob the skull through a ring in a haunted graveyard. Play **Story** to climb through the stages and beat the bosses, or **Arcade** to pick any map and see how long you can last. Three misses and you're buried.
+
+Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
+
+## New in v72: the visual overhaul begins: Morty's face is geometry
+
+On the owner's call ("Continue with the visual overhaul", every asset regenerated rather than 2D drawn into 3D), the
+first asset is Morty (3D renderer still off unless you add `?r3d`): his pupils, glyph eyes, brows and each tooth are
+meshes, his jaw drops on a hinge over a dark mouth, and his skin is a surface texture on the sculpted head, all driven
+by the same face state as the 2D. Every one of his 16 moods is built; masks, glasses, hair, beards and a few skins and
+eye cosmetics keep the old projected face until their own pass. `docs/PRODUCTION-AUDIT.md` (ASSET-001).
+
+## New in v71: the Wilds of Aether engine, under the 3D renderer
+
+The owner's call: upgrade Skull Toss with the Wilds of Aether engine before the visual overhaul. Its engine layers are
+in (the 3D renderer is still off unless you add `?r3d`; `docs/RENDER3D.md`, "The engine"):
+- **Three.js r186** and Wilds' renderer standards (sRGB, ACES filmic, a PCF shadow map), still bundled in the page.
+- **The world:** the ground is one lit 3D scene drawn once a frame, its hills, bends and road the 2D land's own, on the
+  very pixels the 2D camera puts them, with fog, shadows and the Marsh's water. Flat ground keeps its painted colour.
+- **The scatter:** grass, rocks, rail ties and rails, boardwalk planks and posts, flagstones, as instanced geometry
+  that stays put as the road goes by.
+- **The character pipeline** (levels of detail with budgets, a rig, the face as geometry with blinks, gaze and every
+  expression in the game) and **the authored-asset bridge** (a Blender model can replace a procedural one; nothing
+  ships without a licence), ready for the overhaul.
+- **The spec no longer depends on the calendar:** Season One (October to November 2026) put a seventh chip on the
+  title and failed four checks from 1 October; the spec now pins its calendar outside the season, and the season's
+  own checks move it in and out.
+
+## New in v70: the title card waits, and the 3D renderer's next steps
+
+- **A map's title card waits for you** (the owner's call). It stays up, saying "Tap to begin", until you tap, press
+  Space or press Enter; then the countdown leader plays as before. This holds for Full and Short title cards (Off still
+  shows none). Replays go to version 10, since a run now starts when the player taps; older replays are refused.
+- **Kept as built, on the owner's word:** the 80-hit map (the mini-boss at hit 30, the ring loose at 40, the end boss
+  at 50) and the rostrum camera's overshoot.
+- **The 3D renderer** (still off unless you add `?r3d`; see `docs/RENDER3D.md` and the production plan in
+  `docs/PRODUCTION-AUDIT.md`):
+  - the sixteen bosses and their shots are models, not cut-outs (v69);
+  - one depth buffer a frame, so 3D pieces hide each other by true depth (Morty through the ring, the ring through a
+    boss), while hats still sit on Morty;
+  - each map lights its models from its own palette (the key and a thin rim in the moon's colour, the fill from the
+    sky), so they read off the painted backdrops;
+  - `tools/perf3d.mjs` names the costliest pieces on each map.
+
+## New in v67: the open tasks closed
+
+- **The phantom coach** (the rail-shooter study's foreground pressure event). In every map's approach a ghostly coach
+  rushes across the lane between Morty and the ring on its schedule, through the band every throw flies through. Its
+  lamp glows at the side it'll come from and a dashed track lights across the ground first (1.2 s); throw while it's
+  crossing the middle and it runs the skull down; wait for it, or lob over it. Where it passes in front of the ring it
+  is only a ghost, so the ring always shows; its collision is its own box.
+- **Portals, checked on every map.** From the moment a portal opens to the far end of the rift nothing of the old place
+  pushes the throw (no wind, crosswind or obstacle); the next map is set up once, however fast you tap; play resumes
+  only when it has; the last boss opens no portal (THE END).
+- **Every map's encounters, both halves:** over a spread of moments a throw at the ring either goes in or fails for a
+  reason the game names, and there's always a way through.
+- **The hazards' eyes** are drawn at a readable size on a phone, with or without reduced motion (the tremble is left
+  out under reduced motion; the eyes still say what's coming).
+- **Decision 23 has its test:** Adventure+'s darker, red-cast print never holds the picture or tears across it.
+
+## New in v66: moving gates and secret paths
+
+The owner's call: real moving gates, tied to the interactive environment's actors, deciding whether secret paths open
+(the rail-shooter influence, in encounters only: the camera and the controls are unchanged).
+
+- **A real gate on every map.** From the second act of each map's first half (hit 14; the Hollow's from 16) a gate
+  stands across the lane between Morty and the ring: two barred leaves on hinges under an arch, in the map's own
+  material (wood, gilt, iron, bone, film). It swings open, stands open 3.2 s, rattles and flashes its lamps (the tell)
+  and swings shut for a second. Shut, it stops the skull like any blocker; open, the throw goes through the middle; a
+  lob over the arch clears it too. It opens toward Morty, clear of the ring and of the bank boards.
+- **The actors work it.** Ring the map's lantern, bell, chime or crank (its ring interaction, hung behind the ring) with
+  any throw, and the gate's winch hauls it open and holds it for the next two throws: its lamps go gold.
+- **Keys and the secret path.** Through the open gate, through the ring, and on into that actor, in one throw, is a
+  key; a notch lights on the gate's keyhole. Two keys in the first half open the map's secret path: the road forks up
+  ahead, the hidden way lamplit and marked by a keyhole arch, the old road carrying on and fading. The second half is
+  played down it: a smaller ring, gold targets far more often, 20 bones for every ring through and 300 more for
+  reaching the end boss that way. Adventure and Adventure+ only; the profile counts secret paths found.
+- The balance model (tools/balance.mjs) waits for a gate the way a person does; with gates in, casual, average and
+  good players still finish (5–6 of 6).
+
+## New in v65: the road turns, the targets stand on their own
+
+From the owner's playtest (Notion, QA & Playtesting).
+
+- **The camera turns with the road.** On a bend the sky, the far scenery and the far ground now pan the other way as
+  the road ahead swings off, so it reads as turning a corner, not as the world sliding sideways under a sky that
+  stands still. Only the bend itself is left in how the road and its scenery lie. Nothing within the play moves:
+  the ring, Morty and the throw are where they were. (The "Still" camera setting keeps the old, unturned view.)
+- **The near road hands over to the far road.** The painted lane used to stop at the ring's post while the real,
+  bending road only began three metres behind it; the two ran side by side into the distance on some maps (the
+  mine's rails, the film strip). Now the road is drawn from just past the ring at the lane's own width, and the
+  painted lane and its grass fade out over the same few metres, so there is one road that bends.
+- **Targets are staged round the ring, not welded to it.** They stand in the world on their own mounts: low ones on
+  a post from the ground, high ones on a cord from the flies, at spots close about where the ring rests. The ring
+  moves on past them (in front of some, behind others). A new one comes up out of the ground or down on its cord and
+  can't be hit until it has arrived.
+- **Morty in the rift, proven.** The portal already drew Morty flying through the rift; the spec now records each
+  rift frame he is drawn in and checks he is there, on screen, from the start of the journey to the end.
+
+## New in v64: the mini-games, from the playtest
+
+- **Timed or not, said up front.** Every mini-game's booth card and opening card say whether it's against the clock,
+  and the first hint repeats it. Only Curtain Call is timed (each window the curtains stay open); the rest take as long
+  as you like.
+- **Curtain Call is much kinder.** The curtains stay open 4 s at first and never less than 2.4 s (it was 3.2 s down to
+  1.3 s), what's on stage is about a quarter bigger and moves slower (and never faster than it does by the sixth act),
+  and a gold bar under the arch counts the window down.
+- **Long Shot you can see.** The board grows faster with distance, it backs off 15 m a hit past 90 m (was 20, then
+  25), and a board too small to read wears a pulsing gold marker.
+- **Sudden Death is harder, and fair.** The target shrinks from the second hit, the blades come at the third and the
+  fakes at the fifth. It no longer jinks at random: it turns about on a beat, and each turn is told by a flash 0.9 s
+  ahead.
+- **Target Gallery says what things are worth.** Every target wears a tag with its points. Now and then a red X comes
+  up in the middle row: hit it and it costs three points (never below nothing).
+- **A chalk mark instead of a line.** In Long Shot, Can Alley and Perfect Pitch, which have no aim line, the last
+  throw leaves a chalk cross where it met the board, so you can correct by eye.
+
+## New in v63: the playtest's look-and-feel fixes
+
+From the owner's playtest (Notion, QA & Playtesting).
+
+- **Bank plaques, not billboards.** Each bank board is now a plaque 1.3 m by 1.6 m on a post (it was a 2 m by 3.2 m
+  slab hanging in the air). A bank off it still reaches the waiting sealed ring.
+- **The intro's spotlights fade out.** Each beam runs on past its pool of light and thins away instead of ending in a
+  hard line, and the lights hunt for the title 0.8 s longer before they find it.
+- **The reel filter stays on.** A camera blur on a perfect throw used to replace the equipped reel's grade for a
+  moment, flashing back to the plain print. The blur now carries the reel's grade with it.
+- **No glitches in the way.** Of the old print's misbehaviours only the animator's hand and Morty's aside still come
+  up, and the hand draws back the moment you start aiming. The jam (which held the game and burned a hole over the
+  ring), the slipped frame, the wrong reel's card and the ink blot are retired.
+- **The Drowned Theater, cleaned up.** Its hazard is air rising from the wreck, one bubble at a time, drawn as a bubble
+  (it was two party balloons). There's one screen, the one inside the stage's arch (a second, framed one used to hang
+  over it). No skeleton or ghost wanders the stalls. More fish, nearer and a little bigger.
+
+## New in v62: wind in the line, and an Adventure you can finish
+
+The owner, 2026-09-27: make the wind affect the aim line, and adjust the difficulty of the Adventure and Adventure+
+"so players can ACTUALLY finish the game". The details are in [docs/WORLD-SYSTEMS.md](docs/WORLD-SYSTEMS.md).
+
+- **The aim line bends with the wind again** (reversing v61), and so does Skull Sense. Gale Force keeps its stronger
+  wind.
+- **A gentle climb over all eight maps.** The ring used to reach its fastest, widest, smallest by the second map. Now
+  each map climbs a little further than the last (`src/maps/blueprint.json: curve`). The Arcade keeps its old climb.
+- **Sealed rings wait for their bank.** A sealed ring glides to where a bank off the board can reach it and holds
+  still. A throw straight into it bounces off and costs no skull.
+- **Fair warnings.** Every tell comes at least a throw's flight before what it warns of: the circling bosses'
+  turnabouts, the jump cuts, a ring's whirr before it turns or lunges. The circling bosses go round slower.
+- **Skulls.** Each new map tops you up to at least three, plus one.
+- **Checkpoints.** Once you're past the first map, Adventure (and Adventure+, on its own count) lets you start at any
+  map you've reached, and after a lost run the results screen's button says "Retry map N". A run from a checkpoint can
+  finish the story, but it stays off the leaderboard.
+- **Adventure+ is gentler but still the harder one:** its push climbs from 1.2× to 1.7× (was 1.25× to 2×).
+
+How it was measured: `tools/balance.mjs` plays whole runs with a model player that leads the ring and misses the way
+a person does (see WORLD-SYSTEMS). Six runs each, with continues:
+
+| Player | Before v62 | v62, one sitting | v62, from checkpoints |
+|---|---|---|---|
+| novice | — | 2/6 finished | about 13 map attempts for the whole story |
+| casual | 0/6 (every run lost on map 2) | 6/6 | — |
+| average | 0/6 (map 2) | 6/6 | — |
+| good | 0/6 (map 2) | 6/6, no continues used | — |
+| good, Adventure+ | 0/6 (map 2) | 2/6 | — |
+| average, Adventure+ | — | 0/6 | about 11 map attempts |
+
+## New in v61: the playtest's first fixes
+
+These come from the owner's playtest, recorded in Notion (QA & Playtesting, 2026-09-27).
+
+- **No aim line in the skill attractions.** Long Shot, Can Alley and Perfect Pitch never show the aim line, whatever
+  the setting, and they don't show the last throw's ghost either. The other mini-games and the Adventure keep the
+  guide as set.
+- **The aim line never solves the wind.** The skull still flies with the wind. The guide, Skull Sense and the aim
+  itself no longer bend for it, so reading the wind and aiming into it is the player's job.
+- **Gale Force's wind carries Morty.** Even the breeze now carries a straight throw off the bullseye:
+
+  | Level | Wind (m/s² across) |
+  |---|---|
+  | breeze | 1.2 |
+  | gust | 2.0 |
+  | gale | 2.8 |
+  | storm | 3.6 |
+  | hurricane | 4.4 |
+
+  Aiming into it brings him back.
+- **The area progression bar is the Adventure's alone.** A mini-game has no bar. Practice, Boss Rush, Arcade and the
+  Director's Challenge keep only what isn't area progression (a clock, a count, a boss's health), with no stage chip
+  or boss track.
+- **Adventure+ no longer flickers.** The torn frames that flashed across the screen and the frame that stuck in the
+  gate every few seconds are gone. The darker, red-cast print stays.
+- **Perfect Pitch's pockets don't overlap.** Every pocket's rim clears its neighbours by at least 12 cm, and no two
+  catch zones touch.
+
+## New in v60: under the sea, what things are made of, near and far, and rings with a character
+
+The owner's research on projectile and physics games, translated into the throw. The Notion page "Research
+Translation" lists what was already in the game and what was a gap. These are the gaps, built. Each one is
+deterministic, so replays agree, and each is told before it matters. The details are in
+[docs/WORLD-SYSTEMS.md](docs/WORLD-SYSTEMS.md).
+
+- **The Drowned Theater's throw is under water.**
+  - The whole flight is wet: the skull weighs half as much, and the water drags it across and up and down but never
+    along the lane, so it still reaches the ring on time.
+  - The aim still means where it crosses in still water.
+  - Three new things live in the water:
+    - an **undertow** that carries the throw on a slow tide;
+    - a **bilge vent** that fizzes, then gushes a column upward on a beat;
+    - a drifting **air pocket** where the throw flies as on dry land.
+  - The aim guide shows the water's curve exactly.
+- **Everything is made of something.** Bone, stone, metal, ghost-glass and mud each bounce their own way (restitution
+  and friction), sound their own way and shed their own bits.
+  - The gilded urns are metal and bounce exactly as before.
+  - The Black Abyss's urns are ghost-glass, which gives back more than it got.
+  - Five maps name their ground.
+- **Bank boards and Bank Rings.** The Gilded Graveyard stands a headstone beside the lane in Act III, and a sliding gilt
+  plaque in the approach. The skull bounces off them exactly, and the Full aim guide shows the bounce.
+  - Every third ring the window fills with a gilt film: it only opens to a throw that has banked (off a board or an urn).
+  - A board-to-board double bank can't reach the ring from the sling, so none is asked for.
+- **Depth lanes.** In the Bone Desert (from hit 10) and the Black Abyss (from hit 20), the first half's ring stands near,
+  mid or far down the lane. It reads through:
+  - its size;
+  - its post walking down the lane;
+  - a haze on the far one;
+  - lit lanterns on stakes at its lane;
+  - the camera's lean;
+  - a whistle as it moves.
+
+  The lane is fixed as the skull settles, so it never moves under a throw.
+- **Rings with a character** (Act III on four maps):
+  - **timid** (the Whistling Woods): it flinches from a throw coming straight for it, and trembles when aimed at;
+  - **shy** (the Drowned Theater): it turns edge-on on the beat, with a whirr first;
+  - **a will-o'-the-wisp decoy** (the Black Marsh): a ring with no post and no reflection; through it is a miss;
+  - **angry** (the Clockwork Caves): it lunges on the whirr.
+
+  Every ring on its line now ticks softly just before it turns round while you aim.
+- **Chains climb in pitch.** Each bank, urn bounce and target hit in one throw rings two semitones higher than the last.
+- **The Homing Bone is a nudge.** It can turn a clank into a rim-in; it can't save a wide throw. This was the owner's
+  call, keeping to the research's "no auto-hit power-up".
+
+**Fixes along the way:**
+
+- A bank no longer counts forever. `skull.banked` was never reset, so after one urn bounce every later make paid
+  Adventure+'s trick bonus.
+- The aim guide no longer samples moving obstacles a step early.
+- `obCentre` handled a vent's two-number position.
+- Replays are now version 3, because the physics changed.
+
+## New in v59: the ring stays the star, and the world answers the throw
+
+Every throw goes RING → THROW → WORLD INTERACTION → CONSEQUENCE, and nothing takes the ring's job.
+
+- **No page-size ceiling.** The build used to refuse an `index.html` over 2,600 KB. The owner retired that limit on
+  2026-09-27: the build still prints the page's size so it can be tracked, but it never refuses a build or forces a cut.
+
+- **The Ring Interaction.** On three rings in every six, something optional hangs just behind the ring, off to one side,
+  swinging on its own pendulum. Each map has its own:
+
+| Map | Interaction |
+|---|---|
+| Crow Hollow | a lantern |
+| the Gilded Graveyard | a bell |
+| the Whistling Woods | wind chimes |
+| the Drowned Theater | a ship's bell |
+| the Black Marsh | a lantern |
+| the Bone Desert | a dinner triangle |
+| the Clockwork Caves | a crank |
+| the Black Abyss | a glowing orb |
+
+  - **A chain.** Go through the ring's lower side and on into it: +150, then +300 for a second in a row, and so on.
+  - **The way clears.** On most maps a chain also makes the next throw's movers and threats stand aside.
+  - Hit the interaction without making the ring and it only rings.
+- **Hazards behave, and say so with their eyes.** Every map hazard goes idle → notice → telegraph → active → recover, and
+  shows it with a pair of cartoon eyes:
+  - sleepy when idle;
+  - wide and watching when your aim comes near;
+  - narrowed under a frown as it winds up;
+  - screwed shut as it strikes;
+  - spinning and dizzy after.
+- **Weak points.** The Threats have one: the cannon's powder cap and the rivet at the crusher's top corner. Each glints softly;
+  hit it and the threat is knocked out (+200) and stands aside for two throws.
+- **Skull Sense.** While you aim, whatever the throw would pass answers a little: the interaction trembles and glints,
+  and a hazard opens its eyes. There are no meters and no markers.
+- **Categories, not "obstacles."** What the world puts round the ring is sorted into Threat, Blocker, Mover, Deflector,
+  Trigger, Target, Weak Point, Hazard, Prize, Secret and Set Piece. The Codex's tab is now "Threats & Movers", and each
+  entry says which category it is.
+- **The camera knows the encounter.** It keeps its moves (the lean, the follow, the snap, the jolts) and adds four
+  states:
+  - on the ring: framed on it;
+  - travelling: easing forward into the road;
+  - on a throw: following a make on to the interaction;
+  - on a consequence: a short look at what answered.
+
+## New in v58: the moon sets as you go, one reflection, a world that travels in every mode, and a theatre at the bottom of the sea
+
+- **The sky keeps time with the road.** The further a map carries Morty, the lower the moon: it sets on its own side of
+  the sky, never across the ring, and by the boss it is going down behind the skyline. The night turns with it: the
+  top of the sky deepens and the horizon takes the map's late colour. Its glow, its light, the vignette's clearing and
+  its road down the water all go with it. The Drowned Theater's screen and the moonless caves stay put.
+- **One ring reflection.** On the water the ring has a single reflection: rippling, softer than the ring, anchored under
+  it wherever it moves, and drawn even on a struggling phone. The flat copy that used to sit under it is gone. In the
+  Black Marsh the boardwalk now stops short of the ring, which stands in open water.
+- **Every mode travels.** One travel controller moves the world in every mode that plays a lane:
+  - Adventure and Adventure+ go by the map's legs and stand still through the bosses.
+  - Arcade, Practice, the Director's Challenge and the season's Feature go by the road: a step a make, slowing as the
+    map's far end comes up.
+  - Boss Rush stands in each boss's arena.
+  - An attraction's booth stays where it is.
+  The world, its life and the music all keep going while it moves.
+- **The Drowned Theater is under the sea.** The dock is gone.
+  - **The layout.** A wide sandy aisle runs between organised rows of sunken seats, staggered, with the odd one missing,
+    overturned or half buried. The sand drifts over the old red runner and the boards, with ripples, shells, stones and
+    weed. Barnacled columns and weedy balconies make the architecture, playbills peel on the walls, and broken flats
+    and props lie about.
+  - **The stage.** It stands at the back with the screen still lit. Weed hangs on its curtains and coral grows round the
+    arch; it is the most overgrown place in the house.
+  - **The water.** Blue-teal attenuation, light shafts, caustics wavering over the sand, the seats and the walls, drifting
+    motes and rising bubbles. Where the sky was, whales and mantas pass far off.
+  - **The life.** Schools and single fish wander between the seats and scatter when Morty goes by. Crabs crawl sideways
+    and dig in. Eels come out of their holes and go back. Jellyfish drift, a turtle glides across now and then, and an
+    octopus changes colour on a seat. Now and then a big fish passes close to the camera, low and to one side.
+- **The Black Marsh's life.**
+  - Under the murk: minnows, bigger fish that come up in a boil, an eel and tadpoles.
+  - On the surface: frogs on their pads that jump in when startled, a snapping turtle's head, a gator's eyes far off,
+    water striders and dragonflies touching down. Bubbles come up from the mud.
+- **Curl noise, for atmosphere only.** A curl-noise flow (swirling, never bunching) now carries:
+  - the marine snow, the bubbles and the sway of the weed;
+  - the wander of fish and fireflies;
+  - drifting spores and embers, and the mist banks;
+  - the portal's sparks.
+  It never touches the skull, the aim, the ring, a target or an obstacle.
+- The Diving Skull now turns up in the Black Marsh: the Drowned Theater has no surface to dive from.
+- **Every map has its own world: map, then ecosystem, then cast.** Characters aren't shared across the game any more:
+  each belongs to its maps and turns up nowhere else. The build refuses a map that breaks the rules.
+  - **The gravedigger:** only in the Gilded Graveyard (the sexton) and, as a prospector with a sun hat and a red bandana,
+    the Bone Desert.
+  - **Zombies:** the Graveyard, and a rare first one in Crow Hollow.
+  - **Skeletons:** the Graveyard's plain ones, drowned ones in the Drowned Theater (weed and barnacles), sun-bleached ones
+    with battered hats in the desert, and only flickering violet echoes in the Abyss.
+  - **Crows:** Crow Hollow and the Graveyard. Bats live in the Graveyard, the marsh and the caves; fish in the theatre
+    and the marsh.
+  - **The Whistling Woods:** owls on branches (they turn their heads after the skull and take off as Morty passes),
+    grazing deer that bound away, a fox that trots across and sits, and floating forest spirits.
+  - **The Bone Desert:** vultures circling, scorpions that dig in, tumbleweeds rolling on the wind, and heat haze over
+    the horizon.
+  - **The Clockwork Caves:** wind-up clockwork bugs that run down and rewind themselves, and bioluminescent fungi that
+    flare as Morty passes.
+  - **The Black Abyss:** things of the void that fade in and watch, void blooms and black thorns, and floating fragments
+    of the seven worlds before it.
+- **The Map Identity Test.** The build asks ten questions of every map, starting with "would removing the background
+  still leave enough to identify it?". It checks each map for:
+  - its own scenery;
+  - a cast that belongs;
+  - wildlife, vegetation and props of its own;
+  - a lane and weather unlike its neighbours';
+  - the mechanic its place in the order teaches (Fundamentals, Ricochet, Wind, Water, Unpredictability, Distance,
+    Timing, Mastery);
+  - a palette of its own;
+  - a lair on its own horizon.
+
+## New in v57: hills, a winding road, a band that plays along, and six new power-ups
+
+- **Hills and dips.** The land along the route has a shape. The road rises and falls in long swells, so a crest can hide
+  what's beyond it and a dip can swallow it. Either side, the land lifts into hills. Each map has its own: gentle in
+  the Hollow and the Gilded Graveyard, hilly in the Woods, dunes in the Bone Desert, rolling cave floor in the
+  Clockwork Caves, and a dramatic Abyss. The two water maps stay flat.
+- **A road that bends.** The route winds left and right, and a path in the map's own lane material (dirt, flagstones,
+  boardwalk, sand, rails or the Abyss's glow) runs off into the distance along it. A boss's lair on the horizon swings
+  into line as the road straightens toward it.
+- Both are looks only. Within nine metres of the camera, where the launcher, the ring and every hazard are, the ground
+  is flat and the road straight, so no throw plays differently.
+- **The band.** Short parts played on the beat, in each loop's own key (found from the recordings), come in and drop out
+  on the bar line:
+  - a soft kick once you've made three in a row;
+  - hats once the ring is on fire;
+  - a heartbeat on your last skull;
+  - a woodblock tick-tock while the world is carrying you forward;
+  - a bass line in the last eight hits before a boss;
+  - four notes up the scale after a perfect.
+- **Six power-ups with physics of their own**, one new a map:
+
+| Power-up | From | What it does |
+|---|---|---|
+| **Vine Swing** | the Whistling Woods | A vine hangs over the lane, swaying. Catch its end and you swing round the branch and are slung through the ring. Two catches. |
+| **Diving Skull** | the Black Marsh (v58: the only map with a surface to dive from) | A throw that drops short into the water dives instead of missing, swims on underwater, then leaps for the ring. Two dives. |
+| **Clone Skull** | the Black Marsh | Every throw splits in three. Whichever skull goes through the ring counts. |
+| **Rewind Bone** | the Bone Desert | Miss, and the film runs backwards. The throw never happened: no skull lost, and the streak is kept. |
+| **Homing Bone** | the Clockwork Caves | A throw that only just misses gets a nudge toward the ring (v60: enough to save a clank, never a wide one). |
+| **Gravity Flip** | the Black Abyss | The skull falls up: it dips, then climbs. The aim still marks where it crosses the ring. |
+
+## New in v56: the mini-games are the carnival's attractions
+
+Every mini-game is now an attraction you could find in the Skull Toss carnival, with its own set, its own goal and
+its own verb. None of them has a ring: the ring is hidden, and the skull is judged where it meets the attraction's own
+things. The aim guide's reticle sits on the attraction's plane.
+
+| Attraction | Verb | What it is | Skulls |
+|---|---|---|---|
+| **Target Gallery** | React | A blue and cream shooting gallery. Tin stars and spinning plates pay 1, ducks on conveyors 2, bullseyes that pop up and drop behind cover 3, and a golden target racing along the top rail 5 (it rings the bell). A plate edge-on slips past. | Ten, misses free |
+| **Can Alley** | Smash | A red striped booth and a pyramid of ten numbered cans with weight. A hit knocks what it hits and everything resting on it; the skull ploughs on through, slowed by each can; a can that flies knocks others over. The whole pyramid in one throw is a **Clean Sweep** (+5), and it's restacked. | Ten, misses free |
+| **Longshot** | Reach | A range with a board on legs at 10 m, then 15, 20, 25, 30, 40, 50 and on. The throw carries to the board, which is smaller each time. There's a breath of wind that grows with the distance, and the camera eases back. | Three |
+| **Curtain Call** | Time | A little stage. DING: the curtains part on the round's act (one target; one on the move; two, one of which goes; three in turn; the big finish in a spotlight), and slam shut. One throw a round, while they're open. Into a closed curtain, or a round that comes and goes with no throw, costs a skull. | Three |
+| **Perfect Pitch** | Place | A painted board of pockets: 10, 25, 50 and 100, smaller for more. Off the rim rattles out. Dead centre in the 100 is a **Perfect Pitch**: double, the bell, the lights chasing, the crowd. | Ten, misses free |
+| **Gale Force** | Compensate | A still bullseye in front of a wind machine. The wind turns every throw and gets up every three hits: breeze, gust, gale, storm, hurricane. Flags snap and paper and dust blow across. | Three |
+| **Sudden Death** | Survive | The dark, one spotlight, one target and no score on the screen, just SURVIVE. Every hit makes it worse: it moves, shrinks, quickens, blades cross in front, it jinks, the picture shakes, fakes appear, then it's tiny. | One |
+| **Swing Time** | Synchronize | A target on a pendulum under an iron frame: slow, then quicker, then wider, then out of time. Meet it where it's going to be; through the middle on the move is **DEAD CENTER** (3). | Three |
+
+- Each attraction's record is its own number: points (Gallery, Can Alley, Perfect Pitch), metres (Longshot), rounds
+  (Curtain Call) or hits (Gale Force, Sudden Death, Swing Time).
+- The Adventure's Can Alley bonus round uses the same booth and cans, with its clock, pay and prizes as before.
+- Two achievements follow the new rules: Curtain Caller is 10 rounds, and Full Gallery is 20 points.
+
+## New in v55: a portal you believe, painted water, and tidier screens
+
+- **Screens.**
+  - The Codex fits the screen; a long page scrolls inside itself.
+  - Achievement cards are smaller.
+  - Mastery is a row of page-cards. Each page has **eight tiers** (Bronze to Diamond) on a milestone line that scrolls
+    sideways and opens where you're up to. The first four tiers keep their old thresholds, so claims already made stay
+    made. The pay is rebalanced: less early, far more late.
+  - The Settings categories have bigger names and readable descriptions.
+  - Every screen opens at its top (the Curio Cart used to stay scrolled down).
+  - The closet runs in the order you'd dress Morty: skull, paint, eyes, teeth, mask, specs, hair, beard, hat, wings, then
+    effects, ring, launcher and specials.
+  - A diamond by the ring-fragment count on the profile once you've beaten Adventure+.
+- **Seasonal and Event challenges** belong to real seasons and live events. Outside them the tab just says more are
+  coming soon.
+- **Sign-in.**
+  - The `auth/firebase-app-check-token-is-invalid` error is App Check, enforced on Authentication in the Firebase
+    project, turning the site's token away. The fix is in the console; [firebase/README.md](firebase/README.md) has the
+    steps.
+  - The game now retries once with a fresh token and explains the failure in plain words.
+  - It supports a reCAPTCHA v3 key as well as Enterprise.
+  - Creating an email account with no session yet now creates it, instead of trying to sign in to it.
+- **The results screen** gives Morty room: hats, wings and auras are no longer cut off square.
+- **The portal is a rupture, not a black circle.**
+  - It lenses and magnifies the scenery round its writhing rim, falls away inward in layers, pulls motes in, and lights
+    the ground.
+  - Through it, the camera is pulled into the last frame of the old place, then accelerates down a curving rift: walls
+    in layers at different depths and speeds, haze, near and far streaks.
+  - The real next place appears tiny far ahead and grows until it fills the frame, and the camera comes out behind
+    Morty.
+- **Water is painted**, not drawn in lines:
+  - a watercolour base with depth;
+  - broad uneven swells, and tapered highlights on the crests;
+  - the moon broken across it;
+  - two sheens that drift against each other;
+  - splash rings as broken painted arcs.
+
+## New in v54: a world with depth, music you can see, and a way on through a portal
+
+- **Fixes.**
+  - A ghost's glow is soft all round up close (it used to be cut off square by its drawing's edges).
+  - The act card and a power-up card coming up together stack instead of overlapping.
+  - The ring has no dark halo round it or dark rim inside it: a soft glow in its own colour instead.
+- **Signature shots** focus instead of blacking out:
+  - the picture behind Morty softens a touch while he stays sharp;
+  - a thin soft ring and a faint vignette;
+  - under half a second, and nothing is darkened.
+- **Power-up cards.** Each carried prop is a card:
+  - the prop in its own frame, nothing clipped;
+  - a separate capsule gauge of the throws left that drains smoothly, pulses at a quarter and faster on the last throw;
+  - ×n for its uses;
+  - no gauge for one that lasts the run.
+- **The Raven King is angry, not sad.**
+  - Heavy lids slope down to the middle and the brows press down with a furrow between them.
+  - A front-on beak whose lower half hinges down over a dark mouth.
+  - Every caw goes squeeze, snap open, hold, then snaps shut with an overshoot.
+  - Knocked out, his face breaks into shock.
+- **Targets ride beside the ring** on iron arms, 1.25–1.6× its drawn size out, instead of waiting in the corners. The
+  arms swing upright as the ring nears a screen edge, so targets stay on screen and in reach. They squash and stretch a
+  little and flash when hit.
+- **The Pumpkin King (and every boss's lair) reveals himself.**
+  - Far off, a small dark shape in the haze; then his colour; then his crown.
+  - Full size only as you arrive.
+  - Nothing stands in front of him.
+- **The land is a field.**
+  - Clusters of the zone's scenery (copses, knots of stones, patches) out across the land, with open stretches between.
+  - Big dark masses far out.
+  - Low dressing by the lane, and flat detail (grass, pebbles, twigs, leaves) across it.
+  - A frame of big trees round each boss's ground.
+  - The extra pieces are the first to go when a phone is busy.
+- **The world moves to the music.**
+  - A musical clock follows the actual recording through each loop's beat map. Every kind of scenery has its own
+    rhythm, and nothing moves on every beat.
+  - Songs hand over on the bar, and bosses come in on the beat.
+  - A boss's fight adds a drum under half his health.
+  - The music holds for the knockout.
+- **The gravedigger digs like a man with a shovel.**
+  - Eight phases with their own timing.
+  - A shovel on a spring that lags and overshoots.
+  - A puff at contact, and earth that flies, spins and lands on his mound.
+  - Heavy, tired, stuck and double digs now and then. A bar to each dig.
+- **Portals.** When the end boss goes down, the stage empties and a black portal opens. Throw Morty through it and the
+  camera follows him down the rift to the next place. The route is the boss, Can Alley, then the next map. A miss at a
+  portal costs nothing.
+- **New power-ups**, one a map from map 2: Lucky Skull, Ricochet, Heavy Skull, Time Bone and Combo Bone, plus the
+  Chaos Skull in Adventure+. Six **synergies** (Pinball, Phantom Eye, Slow Burn, Charmed, Warp Speed, Doom Roll) pay
+  half as much again.
+- **Docs.**
+  - [docs/ASSET-BIBLE.md](docs/ASSET-BIBLE.md): how an asset is constructed, and the checklist.
+  - [docs/WORLD-SYSTEMS.md](docs/WORLD-SYSTEMS.md): the clock, the scenery, the reveal, the portals and the power-ups,
+    and what isn't done yet.
+- **A new run starts at the start of the track at once.** It used to keep the last run's place for a frame.
+
+## New in v53: settings that work, menus that scroll sideways, a world that holds together
+
+- **Sign-in.** A returning player stayed signed in to Google, Apple or email only until the next load: the game asked Firebase for the user before it had restored the session, and started a new anonymous one over it. It now waits for the saved session.
+  - Phones, installed apps and in-app browsers sign in by redirect, not a popup that gets blocked.
+  - A failure shows its reason.
+  - A downloaded copy says plainly that sign-in needs the website.
+- **Settings.**
+  - Sign-in buttons are centred.
+  - Notifications always switch: on a device that won't show them, the reminders appear in the game instead, and Android goes through the service worker.
+  - The promo code field is wide and the button fits its word.
+  - Save codes (copy and load) moved from the profile to Account & General; the profile's sign-in button is gone.
+  - Support and credits come after Your data.
+  - A Medium text size.
+  - The category buttons fill the screen.
+- **Menus.**
+  - The Black Ring's shards are drawn under the profile's fragment count.
+  - The Codex is a category menu and a row of book pages.
+  - Achievements run in two sideways rows a kind, each marked Easy, Medium, Hard or Legendary by what it pays.
+  - The Cart's shelves are single sideways rows.
+  - The bones and Souls boxes are smaller and one size everywhere.
+  - Challenges fit a small phone without scrolling.
+  - Pause lists Profile above Settings.
+  - The leaderboard's modes are four: Adventure (a menu with Adventure+), Arcade, Boss Rush, and all eight mini-games in a menu. Adventure+ and each mini-game have their own board, server included.
+- **The world.**
+  - The map's title card is fully opaque.
+  - Skeletons and zombies stay crisp up close: each drawing is kept at 1×, 2×, 4× and 8×.
+  - The cat is passed by as the world travels instead of riding along.
+  - Anything walking between the ring and the camera passes in front of the ring and its pole, with its shadow on the ground at its feet.
+- **The opening.** The studio logo fades out. While the curtains are shut, only the lettering stands in front of them; the menu is behind and shows as they part.
+- **The Raven King** beats his wings slower and unevenly: a hold at the top, a strong downstroke, a slower recovery. His whole body bobs a little a moment after each downstroke, and the ring a moment later and a little more. In a wind he leans into it and his wing feathers stream.
+- **Wind.** A make that only went in because you aimed off the ring and let the crosswind bend it through is a **Wind Curve**: +150, or +300 in a strong wind.
+- **Water.** A skull that comes down in open water goes in:
+  - it keeps its momentum and the water bleeds it away;
+  - gravity fades to about a quarter, with a little buoyancy;
+  - the spin dies and its heading lags its velocity;
+  - it leaves a bubble trail.
+- **Mini-games** are carnival booths in the menu, each with an awning in its own colours and its verb: React, Smash, Reach, Time, Place, Compensate, Survive, Synchronize.
+- **A play-test key** (a promo code that opens everything: every look, map and mode, and bones). The build carries only a PBKDF2-SHA-256 digest of it (random salt, 310,000 rounds), never the code. `python3 tools/promo.py --master` replaces it.
+
+## New in v52: knockouts timed, saves audited, Morty's sheet
+
+- **Knockout timing.** The boss's defeat now plays before the reward, not under it:
+  - the hold is 5 drawings on an end boss and 3½ on a mini;
+  - there's one white flash, then one pulse of the boss's colour (it was four bright blinks in under half a second);
+  - the bonus, the fanfare and the map-clear card wait until the defeat has played (about 1.2–1.35 s in; they used to land at 0.27 s, on top of it);
+  - the defeat moves a drawing at a time, like every other character.
+
+  With reduced motion, every defeat is a gentle sink-and-fade. Leaving mid-knockout no longer drops a crown onto the title screen. The whole budget is in `07r_bossdeath.js` and the Notion spec.
+- **Saves.** `tools/persistence.mjs` plays the real build in fresh browsers: first and second launch, a save from every schema, a save cut off mid-write, a code imported three times, storage blocked, storage full mid-run. All 37 checks pass, and it runs in CI. It found that a save code dated in the future kept its bone balance "newest", so a save's date can't be later than now any more.
+- **Regression.** `tools/e2e.mjs` plays a whole session by hand (real taps and drags, in real time, with and without reduced motion): 44 checks, in CI.
+- **Performance.** `tools/perf.mjs` plays on a 3×-DPI phone-sized screen with the CPU slowed 4×. It records frame pacing per scene (title, all eight maps, a boss, a knockout, a burning ring, Adventure+, rotating the phone, reduced motion), input latency, and memory over a long session. The results are in [docs/PERF-AUDIT.md](docs/PERF-AUDIT.md).
+- **Morty's sheet.** `tools/angle-sheet.mjs` exports the front view and all 16 expressions from the game's own rig, plus a landmark sheet and `landmarks.json`, into [docs/art/morty](docs/art/morty). The turned views (¼ to side) don't exist in the game; they need an illustrator.
+
+## New in v51: a spotlit opening, Adventure+, boss knockouts with a punchline, water that reflects
+
+- **The opening.** After the studio logo, the real title screen sits in the dark behind closed curtains, the lettering in front of them. Two stage lights in the bottom corners click on, hunt about the stage, find SKULL TOSS one after the other and hold on it; the band hits, the curtains are pulled open (each pivots from its top outer corner, bunches at its edge, overshoots and settles), and the lights switch off and slide out of the corners. The buttons work throughout, and a tap skips ahead.
+- **Adventure+** opens once the Adventure is finished (the reel breaks: *"You've done this before."*). The same eight maps, climbing from about 1.25× to 2× — a quicker, smaller ring that fakes you out, decoy rings from map 3, a crosswind from map 2, a skull that cracks on the rim (a miss while cracked costs two), quicker bosses — with Speed Toss, Trick Shot and Perfect Map bonuses, and a darker, damaged print.
+- **Boss knockouts.** Every boss goes down its own way: a hit-stop and white flash, a pulse of its colour, a beat of realization, the anticipation, then one of ten defeats (collapse, launch, deflate, spin-out, accordion, shatter, smoke, the ground giving way, springing away, a slow fall back), debris in its own material, its own stamped word (PLUCKED!, SMASHED!, TIMBER!, CUT!…) and a final gag a beat later (the Crow King's crown drops onto the ring).
+- **The throw.** The last miss stays on the stage as faint ink dots (a red cross where it passed the ring, if it went close) until a make wipes it. The pull buzzes at each quarter of the draw. The flight is predicted with the game's own physics from release (and every frame after), so a make on its way starts the world travelling before it lands, and a miss lets it settle back. The Crow King (and the Bat Baron and the Owl) keep to their paths while the ring they carry bobs beneath them in time with their wingbeats.
+- **Water.** On the Drowned Theater and the Black Marsh, the ring, its post, the skull, the bosses and the scenery are mirrored in the water (never on the boardwalk), wavering; a skull that lands in the water sets off ripples.
+- **Smaller things.** A finished challenge drops in where the achievements do. Launchers and bands show on the Vault's pedestal (Morty sits in the launcher, drawn back). The Spoken voice is cast to Morty's brief ([docs/VOICE.md](docs/VOICE.md)).
+- **Under the hood.** `?collisions` (or `SkullToss.debug.collisions(true)`) shows every hit test, colour-coded. The run's state is a checked machine: a move it doesn't know is noted, never thrown. Failures the game shrugs off are noted by category (`SkullToss.debug.warnings()`). Saves are hardened against garbage (and Diamond mastery claims now survive a reload).
+
+## New in v50: Settings by category, four more mini-games, masks, and a lot of fixes
+
+- **Play.** The map title card is full size again, and the film countdown is back: 3, 2, 1, then it flickers, glitches and burns away into the map. Hitting a bullseye is no longer a miss (and new bullseyes only come after a make). The ring's fire is drawn in front of the ring, WebGL fire included when paused. Popups keep clear of the ring. Only the clock map hangs its ring. The ring's wings are bigger, and the thick poles are slimmer.
+- **Four new mini-games:** Perfect Pitch (ten throws, only clean makes count), Sudden Death (one skull, a ring that speeds up), Gale Force (a gale that turns every throw) and Swing Time (thirty seconds, a ring that swings wider).
+- **Settings** shows its five categories; one opens its settings. The new **Account & General** holds notifications (daily rewards, challenges ending, events and seasons), account linking (Google, Apple, Facebook and a Kamausi email account), promo codes, support and credits, and your data.
+- **Profile:** name and bio beside the picture, a pencil to edit them (the eight pictures, name, bio), the last five runs, Ring fragments beside Morty's bones, level chips in two rows of three, every stat folded under **See all stats**, and Google sign-in at the bottom.
+- **Vault:** 21 shelves in three rows of seven, a new **Masks** shelf (Paper Bag, Goalie, Masquerade, Luchador, Plague Doctor, Bedsheet Ghost), an Equip button on the chosen card instead of the try-on stage, plain-text unlock notes, and outfit slots that only save when you press Save look. Glasses follow Morty's eyes, moustaches sit above his top teeth, teeth are shaded, and hair has sheen and strands.
+- **Curio Cart:** four shelves of seven (four new exclusives: the Gilded Venetian mask, a Merry-Go-Round hat, a Ferris Wheel ring and a Totem Pole), your bones beside your Souls, and Mort's arm behind the counter.
+- **Leaderboard:** All-time, a Daily/Weekly/Monthly drop-down and This device in one row; the top ten fit, and **See more** opens the top hundred.
+- **Challenges:** a fourth tab drops down **Seasonal** and **Events**. **Mastery:** a Diamond tier on everything, and Mini-games and Power-ups parts. **Codex:** Areas (each map's four acts) and Mini-bosses, in three rows of four. **Achievements** are cards.
+- **Look:** a slimmer title menu, the crack on the left of buttons, no skull cursor on a long press, the Director's Challenge easier to read, tree crowns drawn like the bushes, and lit, shaded wanderers, bats, crows and the cat.
+
+## New in v49: a tidier title, the Closet, WebGL fire, corner bullseyes and Sign in with Google
+
+- **Every map's scenery is its own.** 42 new SVG drawings, six a map from the Gilded Graveyard on:
+  - **The Gilded Graveyard:** gates, mausoleums, weeping angels, willows, iron railings and gas lamps.
+  - **The Whistling Woods:** pines, hollow logs, fairy rings, an owl's oak, great roots and ferns.
+  - **The Drowned Theater:** half-sunk seats, opera boxes, a marquee, jester poles, stage lights and kelp.
+  - **The Black Marsh:** moss-hung cypresses, cypress knees, stilt shacks, dock posts, lily pads and cattails.
+  - **The Bone Desert:** saguaros, mesas, skull posts, a wagon wreck, boot-hill graves and tumbleweed.
+  - **The Clockwork Caves:** crystals, brass gears, mine carts, stalagmites, a pendulum and mine lamps.
+  - **The Black Abyss:** giant film reels, film strips, spotlights, chained pillars, bridge posts and a director's chair.
+
+  Each map's zones now use them. The props that react when a throw lands near them react the scenery's own way.
+- **The title.**
+  - Settings, Leaderboard (it says so now), Profile, Achievements, Codex and Mastery sit in two rows of three.
+  - The logo is bigger.
+  - The studio logo and the curtains open slower and smoother.
+- **Challenges.** The set bonus is a slim strip at the top, above the countdown and the streak.
+- **Play sheet.** The Director's Challenge comes after Practice and Boss Rush.
+- **Settings are in sections:** Audio, Graphics, Gameplay, Accessibility, and Account & data.
+  - The Sound set option is gone.
+  - So is the synthesised music that played for a moment before your recorded music; only your music plays now.
+- **Sign in with Google** (Settings → Account & data, and the Profile's save card).
+  - Your anonymous account is linked to Google: the same id and the same save, now on any device you sign in on.
+  - If your Google account already has a save, this device's progress is merged into it.
+  - It needs the Google provider switched on in the Firebase console (Authentication → Sign-in method → Google).
+- **Profile pictures.** Eight pictures, each shown as itself, all of them selectable.
+- **The Vault.**
+  - A **Closet** drop-down holds Surprise me (now on the left), **four** outfit slots, Save look and the shelves. Picking a shelf folds it away.
+  - The pedestal's label says **Preview**.
+  - The Wizard Mort shelf is gone.
+  - Clear badges clears them at once, with no question.
+- **Souls.**
+  - **200 Souls** the first time you play (once per account, from the server).
+  - The Mystery Coffin opens for **1,200 bones** as well as 60 Souls.
+  - Back from the Soul Shop goes to the Curio Cart.
+  - The daily free Souls show a **countdown** to the next handful.
+  - **The Soul packs** follow the industry's tiers:
+
+    | Price | Souls |
+    |---|---|
+    | $0.99 | 100 |
+    | $4.99 | 500 |
+    | $9.99 | 1,100 (+10%) |
+    | $19.99 | 2,300 (+15%) |
+    | $49.99 | 6,000 (+20%) |
+    | $99.99 | 13,000 (+30%) |
+
+    See [platforms/README.md](platforms/README.md).
+- **Targets are bullseyes, in the corners.**
+  - Up high or down low, off to either side, never over the ring, even on a narrow phone.
+  - A throw aimed straight at one hits it for points and bones, but the ring's miss still costs its skull.
+  - Gold ones are gold; decoys carry a question mark.
+  - (The Target Gallery mini-game keeps its targets behind the ring: that's its game.)
+- **Every ring stands on its pole.** No more branches, arches, ropes, gears, chains or hands.
+- **The reel's countdown** plays after the map's title card, straight into play.
+- **Quieter popups.**
+  - The title cards are a see-through panel over the picture, not the whole screen.
+  - The act and boss cards are smaller and see-through.
+  - The comic-book words are smaller and quicker.
+  - Mid-run achievements are a slim strip.
+- **WebGL fire.**
+  - With GPU effects on, the burning ring, the torches, flaming skulls, auras and hair, and the Cursed skull's green flames are all drawn on the GPU: hundreds of soft flames that cool from white-hot to red as they rise.
+  - The Dynamite's KABOOM is real smoke instead of a drawn cloud.
+  - With GPU effects off, or no WebGL, the 2D fire stays.
+- **The results screen.**
+  - Watch replay, Share, Leaders and Shop are one row of four.
+  - The whole screen fits without scrolling; on a short screen it shrinks just enough.
+
+## New in v48: every map travels, Morty gets his bones back, and a Challenge Stage between maps
+
+- **All eight maps travel now** ([docs/TRAVEL.md](docs/TRAVEL.md)). What the Crow Hollow pilot did, every map does:
+  - its scenery comes toward Morty a step a make, slows as a boss comes up, and stands still through each fight;
+  - it has five zones of its own, each with its own colour, fog, tree line and near edge, and its own birds (bats in the Gilded Graveyard, crows elsewhere) flushed as you go;
+  - its end boss waits on the horizon, asleep in a lair of his own, until he wakes. There are seven new lair SVGs, one for each map after the Hollow: Count Crookula's crypt, Old Marrowroot's stump, the Ringmaster's big top, Madame Muck's parlour, the Undertaker's grave mound, the Clockwork King's tower and the Reel Reaper's projector.
+
+  The painted props each map already had (angels, urns, tents, cacti, gears, film cans…) line the road too. The build checks every map's track against the throw corridor, and so does the spec. Some detail lines in the Hollow's SVGs, hidden by a stray class, now show.
+- **Morty gets his body back, section by section** ([docs/BODY_AND_CROSSING.md](docs/BODY_AND_CROSSING.md)). Each of the first seven end bosses gives one back, in order: his **Left Arm**, **Right Arm**, **Ribs**, **Spine**, **Pelvis**, **Left Leg** and **Right Leg**.
+  - When the end boss goes down, the section flies home and snaps on, with a card to say which.
+  - It stays his, and the Profile shows him with what he has in bone and what's still missing pencilled in.
+  - The eighth boss gives back no bone: his shard closes the Black Ring.
+- **The Challenge Stage: the crossing into the next map.** After the shard (and Can Alley, if you play it) comes the road to the next map, ten throws long.
+  - Every throw carries Morty a step along it, through the next map's own scenery.
+  - A ring waits somewhere new each time, smaller as the road goes on. Each ring through pays bones, and the gold ones (the fifth and the tenth) pay more.
+  - Misses are free, and nothing can end the run here.
+  - All ten is a **clean crossing**: a bonus, and a line on your profile.
+  - At the tenth throw the road arrives exactly where the map begins, and its title card rolls.
+
+  The positions come from the run's dice, so a replay sees the same ones.
+
+  The new order after an end boss:
+
+  > end boss → body section → Black Ring shard → Can Alley (optional) → crossing → next map
+
+  A reload mid-crossing picks up at the next map's start.
+- **New stats:** crossings, clean crossings, and bones back in place.
+
+## New in v47: 80 hits a map, a world that travels, and a GPU on top
+
+- **Every map is 80 hits now, in ten-hit sections** (`src/maps/blueprint.json`: `structure`). Something changes every ten hits:
+
+  | Hits | What happens |
+  |---|---|
+  | 1–30 | **Acts I–III**, each with its own name on a card as it begins. Crow Hollow's are *The Hollow*, *Haunted Farm* and *Harvest Grove*. |
+  | 31–40 | **The mini-boss.** Ten hits on him, and a perfect is one hit too (it pays double instead). |
+  | 40 | **He drops the ring and it breaks loose.** The first throw through it as it flies catches it. |
+  | 41–50 | **The approach.** Crow Hollow's is the Pumpkin Field. |
+  | 51–80 | **The end boss, in three phases of ten**, each harder, with a card between them. The Pumpkin King's phases are **The Eyes** (his eyes are the targets, and a poke is a hit), **The Roll** (his head rolls round the arena) and **The Mouth** (his eyes screw shut, and only a throw down his throat hurts him). |
+  | 80 | He's down: the body part, the Black Ring shard, Can Alley if you want it, and the next map. |
+
+  The progress bar shows the whole map, with the Crow King at 30, the King at 50 and the shard at 80, and the end boss's bar shows his three phases. The other end bosses climb three phases too, faster and angrier each time. Boss Rush keeps its short fights. Obstacles now come in on the acts (Act II, Act III, then the approach). Replays move to version 2, since a replay recorded before plays out differently.
+- **Crow Hollow travels** (the pilot; [docs/TRAVEL.md](docs/TRAVEL.md)).
+  - **The scenery comes toward Morty.** Every make before a boss carries the camera six metres on. The trees, the farmhouse, the barn, the corn, the fences and the scarecrows come toward Morty, grow, pass the edge of the frame and are gone. New scenery comes up out of the distance.
+  - **Nothing moves while you aim.** The last steps before each boss are shorter, so the world slows and settles as he arrives, and it stands still through each fight.
+  - **The zones.** The Hollow gives way to the Haunted Farm, then the Harvest Grove, then crow territory, then the Pumpkin Field. Each has its own colour and fog, and the crows come up out of the trees as you near their King.
+  - **The destination.** The Pumpkin King lies asleep on the horizon from the Harvest Grove on, nearer and nearer, until he wakes.
+  - **The art.** All of it is SVG (`src/art/travel`, 15 assets), drawn from sprites sized to how far off it is, and as crisp vectors up close.
+  - **Always where the run is.** Where the world stands comes from the hits alone, so a continue, a reload or a replay finds it exactly there.
+  - **Looks only.** The build refuses travel scenery that collides, and none of it stands in the throw lane.
+- **A GPU effects layer** ([docs/GPU.md](docs/GPU.md)). A WebGL canvas, screen-blended over the game, adds:
+  - **GPU particles**: sparks off every make and clank, embers off a burning ring, a K.O.'s fireworks, a power-up's sparkle, and each map's own air (fireflies, gold dust, wisps, motes). Thousands at once, flown entirely in the shader.
+  - **Light**: breathing pools of light from lanterns, lit windows, jack-o'-lanterns, the burning ring, the Pumpkin King's eyes and the moon, and a flash of light at every big contact.
+  - **Glow**: a bloom pass on the bright parts of the picture.
+
+  Settings → **GPU effects: Full, Lite** (no bloom; the default on a phone) **or Off**. With no WebGL, the game looks just as it did. The layer never touches a throw.
+
+## New in v46: the studio logo, a wizard at the Cart, and Mini Games on their own card
+
+- **Launch:** the Kamausi logo (`src/art/logo/logo.webp`) fades in on a black screen, holds, and fades out; the black fades away on the title with its red curtains closed, and they open on the lettering and the buttons. A tap skips ahead.
+- **The tagline** is now *The Adventure of Mortimer Bones*, in capitals.
+- **Mort, who keeps the Curio Cart, is a wizard:** a starry robe, a crooked wizard's hat, a wispy beard, and a wand that sparks when you buy something.
+- **Mini Games** has its own card on the Play sheet, open from the start: Curtain Call, Longshot, Target Gallery and **Can Alley** (the bonus round, played on its own, with its own record; its carnival prizes stay the Adventure's). Practice and Boss Rush stay under *More ways to play*.
+- **The High contrast setting is gone.** The ring keeps its own dark backing and rim light on every map.
+
+## New in v45: fire, cans, a quieter Vault and Souls at the Cart
+
+**Launch and title.** A logo card (`src/art/logo/logo.png`, `.webp` or `.svg` if present; otherwise a "Kamausi presents" card), then the red curtains open on the title. The buttons sit inside the curtains; the tagline is in capitals; bones aren't shown on the title. Menu buttons lose the wood grain; the score uses the title's lettering, bolder, as do the combo and impact words. Rarity colours: Stock cream, Featured blue, Special purple, Lost gold.
+
+**Play.**
+- **The ring catches fire** at six in a row (×3.5), burns hotter up to the ×6 cap, and a miss puts it out. The flames flare from behind the band, never over the hole.
+- **Power-ups, to the drop rules as written:** 2% a hit; score milestones 2,000 apart on a map's first stage, the gap ×1.35 each stage after; at most four drops a stage (stage 1 › mini-boss › stage 2 › boss: four in each stage); and a **shuffled cycle**, every prop once before any comes again, in a fresh order each time round. The grab takes in the whole drawn prop, up to nine-tenths of the hole. What a prop does now shows in the middle of the screen.
+- **Can Alley:** after each end boss but the last, an optional bonus round. Ten cans stacked 4-3-2-1 just behind a still ring, 25 seconds, misses free; the skull knocks one can a throw and everything resting on it falls too. 5 bones a can, 100 + 25 × map for the lot, and the first clear after each map wins that map's carnival prize (Prize Tickets, Midway Confetti, RINGER!, Marquee Bulbs, Can Alley Champ, Big Top, the Tin-Can Topper).
+- Lightning cracks with the flash and rumbles after it, with no click at the end. No dashed line under the aim's crossing point.
+
+**Results.** The headstone fits its text, the name and Morty are bigger, and the progress bar shows your real balance against the next thing you're saving for.
+
+**The Vault.** The shelves are a grid of tabs, each with a bubble counting what's new on it (looking at an item clears it; *Clear badges* asks, then clears them all). The pedestal stays in view: only the items scroll. Shelves run Stock → Lost under rarity headings; a locked item says whether it's bought with **bones**, **earned**, or either. Tapping any item puts it on the pedestal, large, before you wear or buy it. Two new shelves: **Glasses** (twelve) and **Ring wings** (the wings the ring sprouts after the mini-boss: the bat membrane, or any of Morty's own wing styles; four come from the mini-bosses).
+
+**The Curio Cart takes Souls only.** Its 24 exclusives, shelf by shelf; a deal of the day at a quarter off; and the Mystery Coffin for 60 Souls, which opens on a row of coffins sliding right to left until one stops and flies open. Bones stay the Vault's currency. Souls come from packs and the free daily handful, and need the Cloud Functions (see firebase/README.md): until they're deployed the Cart can be browsed but not bought from.
+
+**Achievements, ranks, stats, challenges.** 140 achievements (from 44), in sections. Twenty-one ranks, the last at 50,000 makes (it was 1,200). More Profile stats: swishes, top multiplier, rings set on fire, each power-up's count, Can Alley, modes and challenge sets. Claiming all three of a period's challenges pays a set bonus (150 / 600 / 2,500 bones).
+
+**The leaderboard.** A board for each scored way to play (Adventure, Arcade, Boss Rush, Curtain Call, Longshot, Target Gallery), checked by the server like the Adventure's; a players-online count; and tapping a headstone opens that player's card (picture, bio, rank, level, achievements), read-only.
+
+## New in v44: the corrected roadmap, rebuilt around the throw
+
+The maps are playable environments first and themed backgrounds second.
+
+- **The Spatial & Environmental Blueprint is a gate** ([docs/SPATIAL_BLUEPRINT.md](docs/SPATIAL_BLUEPRINT.md)). `src/maps/blueprint.json` defines the gameplay planes, the camera (base, aim, flight, impact, spectacle, and a ring-safe box), parallax, the ring's anchors, the reactions, the ambient budget, lighting, the shadow system and occlusion. Every map carries a **Map Production Sheet** (concept, plane, launcher, ring/target/hazard zones, corridor, camera bounds, parallax, interactions, ambient, lighting, arenas, transition, reward), and the build refuses a map whose sheet is missing a part or leaves the blueprint.
+- **Eight new maps, theme following mechanic:** Crow Hollow (the throw), the Gilded Graveyard (environmental interaction: urns bounce the skull), the Whistling Woods (trajectory and deception: wind, gusting logs, decoys), the Drowned Theater (timing: revolving flats, a ghost scrim), the Black Marsh (environmental hazards: thorns, a crusher, fog), the Bone Desert (distance and precision: a further, smaller ring, cannons), the Clockwork Caves (mechanical timing: a lodestone, pistons, the pendulum) and the Black Abyss (everything, and the last shard).
+- **The ring belongs to the map:** it hangs from the oak's branch, a gilded arch, a signpost, a theatre's fly rope, a gear rail or a chain out of the dark, stands on a mooring post, or is held up by a giant skeleton hand. Knock it and its anchor swings; when it grows wings the rope is left swinging.
+- **The environment answers:** props move, rotate, bend, crack, fall, squeak or shake when the skull lands by them, each map its own way. Each map has a key light: shadows fall away from it, the ring gets a backing and a rim so it reads on any background, and in a boss fight the scenery dims and a spot finds the ring. The skull's shadow shrinks, fades and slides with height. No line joins the ring to its shadow.
+- **Eight obstacles** (bumper, rotating bar, spikes, cannon, fan, lodestone, crusher, ghost barrier), each with a footprint, a collision volume, a tell and a sound, brought in on the map's beats. The aim guide bends with fans and lodestones.
+- **Nine targets:** standard, swinging, runaway, pop-up, shielded, split, decoy (hung in front of the ring: hitting it is a miss), golden and secret.
+- **Tiers have names:** I The Toss, II The Distraction, III The Hazard, IV The Puzzle, V The Chaos, VI The Secrets.
+- **Progression:** end boss → a body-part reward (hair, facial hair or wings) → a shard of the **Black Ring** → the mini-game (the encore) → the next map. With the eighth shard the Black Ring is whole and Morty becomes **Wizard Mort**.
+- **The Pumpkin King:** his mouth is the ring and his eyes are targets. Poke both eyes shut and he's blind: no seeds, a wider mouth, and every throw down it counts double.
+- **The end bosses bring their map's machinery into the fight** (the Count's urns circle with him, the Clock King's crushers stamp on his tick, and so on).
+- **Power-ups:** 2% a hit, scaled by stage; score milestones from 2,000 points; pity; at most four a stage; weighted, no repeats, nothing you're carrying or just lost.
+- **New Vault slots:** Hair, Facial hair, Wings, Launchers and Wizard Mort, with the Vault's tabs grouped Head, Face, Hair, Facial hair, Wings, Effects, Skull, Ring, Launcher, Special, Wizard Mort.
+- **Profile picture and bio**, and **Story is now the Adventure**.
+- Saves move to schema 4: Morty's old pieces become the matching shards, and progress carries over map for map.
+
+## New in v43: Google Analytics, behind the same yes
+
+- **The Firebase console's daily players and retention charts** now fill in. Google Analytics gets the game's cut-down play events, on the same terms as the rest of its play data:
+  - it's loaded only after the player says yes to sharing play data, so there's no cookie before that;
+  - advertising features are off;
+  - a no stops it at once.
+- **To turn it on,** put the web app's `measurementId` in `src/firebase.config.json`. Details are in [docs/ANALYTICS.md](docs/ANALYTICS.md).
+- With only Google Analytics set up (no Cloud Functions yet), the game still asks, and sends to Google alone.
+
+## New in v42: seasons, starting with the Midnight Matinee
+
+Story ends at map 8. Seasons are what comes after, a few weeks at a time. **Season One, the Midnight Matinee**, runs from 1 October to 1 December 2026: the studio's Halloween programme, shown at midnight to a house full of ghosts. A **Season** chip on the title opens it:
+
+- **The Season Ticket.** Twenty stubs, one every 250 season experience. Season experience is what a run earns in the career (double on the Feature). Each stub pays bones or a look, claimed by hand.
+- **The Premium Ticket.** Bought once with Souls, it pays a second reward on half the stubs, including the Harvest Moon skull. Looks and bones only: nothing that helps a throw.
+- **Six season notes.** Perfects, bonus targets, bosses, signature shots, the Feature and hits, each paying season experience once.
+- **Season looks.** The Harvest Moon skull, the Candy Corn ring, the Harvest Ribbon trail, the Matinee Stripe band, the Lantern Glow aim line, and two titles. They're earned on the Ticket, this season only. Afterwards the Vault shows them only to whoever earned them.
+- **The Feature: the Midnight Matinee.** Pumpkin Patch Hollow after dark, with the Night Shoot's fog and twice the bonus targets, on Arcade's rules. It's there only while the season's on. Its replays keep its rules afterwards.
+- **After the season,** the Ticket stays open a week to claim what's been earned. Then what's unclaimed expires.
+- **The live config** can open a season early or extend it (`season.id: "s1"`), stop it (`"off"`), or take the Feature away (`modes.off`). Writing the next season is set out in [docs/SEASONS.md](docs/SEASONS.md).
+- **Fixed:** the Director's Challenge's progress bar counted down to a Story boss that never comes. It shows the run's clock and the map now, as the Feature's does.
+
+## New in v41: the full QA pass, and a launch candidate
+
+- **A static check of the whole game** (`node tools/lint.mjs`). It lints all 66 parts as one script, against the browser's own globals. It found the arcade clock's `progArc` used but never declared (it worked only because browsers make element ids global), a duplicate test hook, and dead code, now gone.
+- **A device matrix** (`node tools/matrix.mjs`). It runs eleven sizes, from a 320-px phone through tablets, a phone on its side, the Steam Deck and a laptop to an ultrawide screen. Every sheet and a run in play are checked for:
+  - sideways scrolling, clipped text, and anything off the screen;
+  - touch targets under 40 px, and controls with no name;
+  - a HUD or play field that doesn't fit.
+
+  It found the Vault running off a 320-px phone, and switches, tabs and outfit slots small for fingers. All eleven sizes pass now ([docs/QA-MATRIX.md](docs/QA-MATRIX.md)).
+- **A soak test** (`node tools/soak.mjs`). A bot plays every mode, with continues, title cards and mischief on:
+  - after every throw, nothing may be NaN and lives stay in range;
+  - after every run, the save survives a save code, and a replay must reach the same score.
+
+  It found **replays on the balloon map drifting**: the balloons swayed on the absolute clock, so a replay watched later saw them elsewhere. They sway on the run's own time now, and a new check holds it there.
+- **A content audit** (`T.contentAudit()` in the dev build). Every map's bosses exist and appear once, and each end boss has one piece. Every boss, power-up, hazard, target, shot, mode, secret, document, twist and note has its words. Achievements count stats the game keeps, and every challenge has wording and pay.
+- **A persistence audit** (`node tools/persistence.mjs`, v52). Each case opens the game in a fresh browser with real storage:
+  - a first launch and a second launch;
+  - a save from every schema (1 to 4, and a newer build's 9), loaded, played and saved over;
+  - a save cut off mid-write, with and without its backup;
+  - one save code imported three times, an older code over newer progress, and a code dated years ahead;
+  - a browser that blocks storage entirely, and one whose storage fills up mid-run.
+
+  It found that **a save code dated in the future kept its bone balance "newest"** until that date came round, so spending on another device could be undone by a cloud merge. A save's date can't be later than now any more.
+- **An end-to-end regression** (`node tools/e2e.mjs`, v52). A player's session in real time, with real taps and drags on a phone-sized touch screen:
+  - every menu sheet in and out;
+  - Play → Adventure and six hand-aimed throws;
+  - pause and resume;
+  - the mini-boss and end boss knocked out, each reward paid once;
+  - on to map 2, and a turn of the phone;
+  - misses to the results, Again, and Quit (two taps) → Menu.
+
+  At every step: no page errors, nothing left over the play field, no untranslated string. It runs twice, once with reduced motion.
+- **CI runs all of it** on every push: build, lint, spec, server tests, matrix, soak, the persistence audit, the end-to-end regression and the web package.
+- **The QA plan** ([docs/QA.md](docs/QA.md)): the automated layers, a manual pass by device, browser and area, severities, and what makes a launch candidate. **The debug tools** ([docs/DEBUG.md](docs/DEBUG.md)): every item on the roadmap's list, and where to find it.
+
+## New in v40: ready for the web, the app stores and Steam
+
+- **One build, every platform.** The game works out where it's running (a browser, the iOS or Android app, or the desktop app), and handles each platform's differences itself (`src/js/03e_platform.js`):
+  - **Haptics:** the phone's own haptic engine in the apps (iPhones have no browser vibration).
+  - **The background:** leaving the app mid-run pauses and keeps the run.
+  - **Android's back button:** closes a sheet, pauses, resumes, steps back to the title, and only then leaves.
+  - **Full screen:** a switch in Settings where the browser allows it, and F11 on the desktop.
+  - **Quit:** a Quit button on the desktop's title.
+  - **Steam achievements:** reached as the game's own are.
+  - **Quality:** a first guess at the quality tier on low-end or software-rendered devices.
+- **Soul packs through the app stores.** In the apps, packs are bought with the App Store's and Google Play's own purchases, priced in the player's currency. The server credits each one before it's finished. One the app never saw through (a crash, a lost connection) is credited at the next launch, and never twice.
+- **Rewarded reels in the apps.** AdMob, only when the player chooses one for another skull, non-personalised, with Google's consent form where the law asks. `kill.ads` in the live config turns them off.
+- **An installable web app.** `python3 tools/package.py web` makes `dist/web`: the page with a manifest, icons and a service worker, so it installs to a home screen and plays offline. Firebase Hosting serves it (`firebase deploy --only hosting`).
+- **The shells.** `platforms/capacitor` (iOS and Android) and `platforms/electron` (Windows, macOS, Linux, Steam Deck, with Steam through steamworks.js), each a `npm install` away. Everything is set out step by step in [platforms/README.md](platforms/README.md).
+- **Store art, drawn by the game.** `node tools/store-assets.mjs` makes the app icons, splash screens, App Store / Google Play / Steam screenshots and Steam's capsules.
+- **Store paperwork.** The listing copy ([store/listing.md](store/listing.md)), a draft privacy policy ([store/privacy-policy.md](store/privacy-policy.md)) and a release checklist for each store ([store/CHECKLIST.md](store/CHECKLIST.md)).
+- **Fixed:** the Director's Challenge card's last line (stars, and the countdown) picked up the title's ink outline, which turned it into black blots.
+
+## New in v39: play analytics with consent, a checked economy, and live-ops safety
+
+- **Play analytics, only with a yes.**
+  - After your first run, the title asks once whether to share anonymous play data. Settings → **Share play data** changes it any time, and **What's sent** lists exactly what goes.
+  - A browser's Global Privacy Control or Do Not Track counts as a no, with no question. Without a server there's no question either.
+  - What's sent is a short, fixed list: how each run went, the first time you do each thing (a new-player funnel), bosses, power-ups, continues, looks bought and worn, challenges claimed, and errors. Never your name, your save or anything you type.
+  - The server keeps it 30 days, and adds up daily counts with no ids. The full list and the rules are in [docs/ANALYTICS.md](docs/ANALYTICS.md).
+- **Errors are caught.** Anything uncaught is kept for the session (`SkullToss.errors()` in the console) and, with consent, reported.
+- **The economy audit.** `SkullToss.economy()` checks the catalog: no duplicate ids, prices that climb with rarity, the Soul looks exactly the server's, and pacing in range. It found the career title Headliner sharing an id with the 40-hit Headliner; the level-10 title is now **Top of the Bill**. See [docs/ECONOMY.md](docs/ECONOMY.md).
+- **Refunds.** A refunded Soul pack takes its Souls back. What's already spent becomes **owed**, paid off by the next Souls, and the Soul Shop says so. Google Play and App Store refund notices are wired to the server.
+- **Support's tools.** `firebase/functions/tools/admin.js` can grant Souls with a reason, refund by hand, reverse any one ledger entry (the economy's rollback), and print the day's funnel.
+- **Live-ops safety,** all in `config/live`:
+  - Events can be **scheduled** (`event.from`, `event.until`), and start and end on their own.
+  - A **mode can be taken off** the Play sheet (`modes.off`).
+  - A **maintenance** line can be shown.
+  - Builds older than **`build.min`** are asked to reload; the server refuses their Soul and board writes.
+  - Kill switches for Souls, the board and analytics now **hold on the server too**.
+- **Recover progress.** Once a day the game keeps a copy of your progress, the last three days' worth. Settings → **Recover progress** merges one back in. It can only add: the best of both is kept, and your bones balance stays as it is now.
+- **A build number** (`src/version.json`, now 39) rides on every server call. `SkullToss.version()` shows it.
+
+## New in v38: the Director's Challenge
+
+Every week H.K., head of production, sends down a note on studio paper. It's pinned to the top of the Play sheet.
+
+- **One map, one twist, one seed.** They're the same for everyone that week, chosen from the week itself, so every player gets the same run to beat. Anyone can take it, whatever they've reached in Story: he lends you the reel.
+- **How it plays.** It plays like Arcade: no bosses, three skulls, no continues, and the ring goes 3D at 25 hits. The twist goes on top:
+  - **Double Wind:** wind on any map, twice as strong.
+  - **The Cursed Reel:** the Cursed Skull all run, so score is ×3 and the ring is quicker.
+  - **The Shrinking Ring:** the ring gets a little smaller with every make.
+  - **Night Shoot:** the bayou's fog, on any map.
+  - **Rush Hour:** the ring runs 30% quicker.
+  - **Bonus Bonanza:** twice the bonus targets.
+- **Three notes.** Each is something he'd like to see on film: a score, perfects, a combo, bonus targets, hits, or signature shots. Each note you meet is a star for the week. The first time, the stars pay 100, 200 and 400 bones. The headstone shows which notes you met, and the card keeps your stars and the week's best score.
+- **A new note on Monday** (UTC, as the weekly board). The card counts down to it.
+- **Replays** of a Director's run carry its note, so a replay watched next week still plays last week's twist.
+
+## New in v37: challenges on a live rotation, and a daily streak
+
+- **New kinds of challenge**, daily, weekly and monthly: make signature shots, hit bonus targets, and play Boss Rush or the mini-games.
+- **Live config.** The rotation now follows it (`config/live` in Firestore; see [firebase/README.md](firebase/README.md)). Kinds can be taken out of the rotation, and an event can raise every challenge's pay. The same day still picks the same goals for everyone.
+- **Other flags** in the same config: an event banner under the title, how often the print misbehaves, and **kill switches** that close the Soul Shop, stop posting to the board, or hide sharing, for anything that has to be turned off in a hurry. The last values seen are kept for offline play.
+- **The daily streak.** The first run of each day extends it, or starts it again after a day missed. It pays 20 bones for each day of the streak, up to a week's worth (140). It shows on the Challenges sheet and the headstone.
+
+## New in v36: the Diegetic Arcade
+
+Arcade mode is now a place: a haunted penny arcade.
+
+- **Cabinets.** Every map you've reached is a cabinet, with its name in lights on the marquee, its top three scores glowing on the screen, and a coin slot that says INSERT BONE. A map you haven't reached in Story is **Out of Order**.
+- **High scores.** Finish a run good enough for that cabinet's **top five**, and the headstone asks for three initials, the old way: ▲ and ▼ on each letter, or type them. It starts from your headstone name (Ada Lovelace → ALO) or the initials you used last.
+- **Where the tables live.** They're kept on your profile and merged across devices. The best score and longest run per map sit beside them as before.
+
+## New in v35: cartoon replays, and sharing them
+
+- **Watch replay** on the headstone plays the run you just had back, throw for throw.
+  - **How it works.** The simulation is fixed-step and seeded, so a run is its seed plus what you did and when: each throw (where it was aimed), each skipped card, each continue taken or turned down, and ending the run. Each is stamped with the step it happened on, counted in game time, so a freeze frame never shifts it.
+  - **Settings that travel with it.** The few settings that change the simulation go with the replay: title cards, mischief, the countdown leader, the hang a miss takes under reduced motion, Practice's options and Boss Rush's list.
+  - **Watching.** A **Replay** badge sits under the score, with 1×, 2× and 4× speed and a way out (✕, or Esc).
+  - **Safe to watch.** A replay plays on a copy of your profile, so watching changes nothing of yours, never posts to the board, and never touches a run you could resume.
+- **Share** puts the run in a link (`…#replay=…`) using the system's share sheet, or copies it where there isn't one. Opening the link offers **Watch the shared replay** on the title screen, and it's the same run.
+- With a server, a Story run's recording now goes to `submitRun` with it, kept for audit beside the run.
+
+## New in v34: a leaderboard the server checks
+
+With a Firebase server, the leaderboard is **written only by the server**.
+
+- **Posting.** A finished Story run goes to the `submitRun` function, which checks it first (`firebase/functions/shared/runs.js`).
+- **The checks.** The score has a ceiling set by what the run says it did (every make at the richest combo, stage and power-ups; every boss, target and signature shot at its most). The other numbers must agree with each other: hits against throws, perfects against hits, bosses and pieces against the map reached. The clock has to allow the throws.
+- **What's refused.** A run that used a continue never posts. A player can't send a run more than once every 15 seconds.
+- **What's kept.** Every run sent is kept for audit. The best goes on the board, and on a new **This week** board (weeks run Monday to Sunday).
+- **What the board shows.** A rival line names the headstone just above yours ("Beat it to pass them"). The best-run record now keeps throws, time, perfects, bosses, targets, signature shots and pieces, which is what the server checks.
+
+Without a server (a claude.ai-published page) the board works as before. The Firestore rules now refuse any write to the board from the page. `firebase/functions/test/runs.test.js` covers the checks, the posting and the rate limit.
+
+## New in v33: sound sets, motifs and stings
+
+- **Sound sets** (Settings → Sound set) reshape every synthesised sound effect as it's made. The music and the graveyard's ambience stay as they are.
+  - **Classic:** the cartoon foley as it was.
+  - **Vintage:** a worn optical soundtrack, dulled and wavering.
+  - **Spooky:** a haunted organ, lower and longer, in a bigger room.
+  - **Chiptune:** everything a square wave, and quicker.
+  - **Kazoo:** a kazoo band, buzzing through paper.
+- **Motifs.** Each of the sixteen bosses walks on to its own short phrase, and each reel's title card has one, all played in your sound set.
+- **Stings.** A signature shot's flourish rises with its rarity: one more note for each step.
+
+## New in v32: the Shot Book and mastery
+
+A **Mastery** chip on the title screen shows what there is to get good at, and what getting good pays. Each tier pays its bones once, claimed by hand. The chip shows a pip when something is waiting.
+
+| Tab | Tiers | Pays |
+|---|---|---|
+| **Shots** (the Shot Book) | each signature shot: Bronze (made once), Silver (10) and Gold (25) | 100, 300 and 750 bones |
+| **Maps** | three stars a map: its end boss down, its end boss down without a miss, and 100 makes there | 150 bones a star |
+| **Bosses** | each of the sixteen: beaten once, 5 times and 20 times | 100, 250 and 500 bones |
+
+Gold on all twelve shots earns the **Shot Doctor** title. The profile now also records makes per map and which end bosses fell without a miss.
+
+## New in v31: career levels, the profile card and a log of runs
+
+- **Experience.** Every real run earns it. Practice earns none, because it plays on a copy of your profile.
+
+  | What you did | XP |
+  |---|---|
+  | A hit | 1 |
+  | A perfect | 2 |
+  | A boss | 25 |
+  | A piece of Morty | 50 |
+  | A signature shot | 10 |
+  | A bonus target | 3 |
+  | Every 5,000 points | 1 |
+  | Finishing the story | 300 |
+
+- **Fifty career levels** on a curve that asks a little more each time. Each level pays 25 bones × the level. Levels 5, 10, 20, 30, 40 and 50 bring a title: Understudy, Top of the Bill, Matinee Idol, Box Office Draw, Picture-Palace Legend, and Mortimer's Equal. The headstone shows the experience a run earned and any level gained. The rank (by makes) stays as it was: the level says how much you've played, the rank how well.
+- **The Profile** opens on a career card: your level in a medallion, experience to the next level, your title, and the highlights (best score, story clears, Morty's pieces, signature shots, Codex entries and secrets). Under the stats are your **last ten runs**: mode, map, score, hits, the experience each earned, and when.
+
+## New in v30: Souls, the Soul Shop, and a Firebase server
+
+**Souls** are the premium currency, and they belong to the server:
+
+- **Where they live.** The balance and what it has bought live in Firestore (`wallets/<uid>`) and only Cloud Functions can change them. They're never on the profile, in a save code or in the cloud save.
+- **Getting them.** A free daily handful (10, once per UTC day by the server's clock), and Soul packs (100, 550, 1,200) bought in a store. A pack is credited only after the store confirms the receipt, and never twice.
+- **Spending them.** The **Soul Shop** (a door in the Curio Cart, or from a Soul item in the Vault) sells two four-piece sets, the Soul set and the Aurora set, each a skull, a ring, a trail and a band. The server charges its own prices, from `firebase/functions/shared/economy.js`, whatever the caller asks.
+- **Without a server.** The Soul Shop says so, Soul items stay locked, and nothing else in the game minds. Bones still buy everything else.
+
+**The Firebase server** (`firebase/`, see [firebase/README.md](firebase/README.md)). Put your web app's config in `src/firebase.config.json` and rebuild. The game then loads the Firebase SDK, signs the player in anonymously, keeps the cloud save in Firestore, and calls Cloud Functions for Souls:
+
+- `wallet`, `buyWithSouls`, `claimDailySouls` and `redeemPurchase`;
+- Firestore rules under which the client writes only its own save;
+- a ledger of every change to a balance;
+- a receipt check per store, left for your own store credentials.
+
+The handlers are plain JavaScript shared with the game's build. The dev build stands them up in the page, so the spec drives the real server logic. `cd firebase/functions && npm test` runs them against an in-memory database, and CI runs that too. Without a config the game behaves as before, and a claude.ai-published page still uses its host for saves and the board.
+
+**The spec runner** now queues its tests and runs them in order, and a test may be async (the server's calls are). [docs/ECONOMY.md](docs/ECONOMY.md) reviews both currencies: sources, sinks, and what a save code can and can't do.
+
+## New in v29: bands, outfits and Surprise me
+
+- **Bands.** A new Vault shelf of eight slingshot bands, strung on the launcher in play: Rubber Band (yours from the start), Licorice Whip, Bone Twine, Candy Cane (striped), Jester's Ribbon, Gilded Cord (with a shine), Ectoplasm (glowing; the prize for finishing the story) and Barbed Wire (Hall of Shame: 300 misses). The Vault now holds 372 items.
+- **Outfits.** Three saved looks in the Vault. Tap an empty slot (or **Save look**) to keep what Morty's wearing; tap a filled one to put it all back on. An outfit never puts on something you no longer own.
+- **Surprise me.** Something of yours from every shelf, picked at random.
+- **Renamed items.** A renamed Vault item still belongs to you: owned items migrate by ID, as equipped ones already did.
+- **Item goals.** They now say "Beat 3 mini-bosses", "Beat an end boss" and "Reach map 5" where they still named the Crow King, the Pumpkin King and stages.
+
+## New in v28: the cartoon misbehaves, and nine secrets
+
+**The old print acts up.** It has been through a fire, and now and then, between throws in Story and Arcade, it misbehaves:
+
+- **Jam:** the picture shudders and holds while a burn bubbles through the film, then it runs on.
+- **Slip:** the frame slips and rolls back down into the gate, the frame line showing.
+- **The animator's hand:** a white glove (four fingers, as the style sheet required) reaches in and pats Morty.
+- **Wrong reel:** half a second of another reel's title card, stamped WRONG REEL!
+- **Fourth wall:** Morty turns to the camera and says something he shouldn't.
+- **Ink blot:** a blot lands on the lens and slides off.
+
+It never happens mid-flight, in a boss fight or a cut-scene, or in a run's first five throws. The Mischief Director allows at most one a map (one every forty throws in Arcade). All of it is picture only and never touches a throw. **Settings → Mischief** turns it off. Reduced motion leaves out the slip and the wrong reel, and the Flashes setting dims the burn.
+
+**Nine secrets**, which the game never mentions. Each pays 150 bones once and goes in a new **Secrets** tab in the Codex, which gives a cryptic hint for each one still hidden. None can be found in Practice. (One of them is an old projector's code that brings the Two-Strip Color reel out of the Vault.)
+
+## New in v27: the Codex and the Production Archive
+
+A new **Codex** chip on the title screen opens everything you've met, written up, in 66 entries:
+
+- the eight maps, from their premise and what's odd about each;
+- the sixteen bosses, each with a line of history, their tell, and how often you've beaten them;
+- Morty's eight pieces and who was holding each;
+- the seven power-ups;
+- each map's hazard: bats, wind, falling bones, fog, balloons, the pendulum and the Final Reel's jump cuts;
+- each map's bonus target;
+- the twelve signature shots, with how often you've made each.
+
+An entry is **???** until you meet the thing in play, with a word on how to find it.
+
+- **How entries fill in.** Maps, pieces and shots come from your progress. Bosses, power-ups, hazards and targets are noted the first time they turn up (`profile.met`), with a toast.
+- **Practice.** What you see there still goes in the Codex: it records what you know, not what you've scored.
+
+**The Production Archive** is the Codex's last tab: the studio's paperwork from 1933, twelve documents unsealed as the story goes on. It runs from the first production memo and Morty's model sheet, through the censor's letter, the payroll ledger and the newspaper clipping about the fire, to the restoration report you unseal by finishing the story.
+
+## New in v26: more ways to play
+
+**Play** now offers five more ways to play under Story and Arcade:
+
+- **Practice.** Any map you've reached, as long as you like. Misses are free and nothing counts: the run plays on a copy of your profile, so no stat, bone, challenge or medal moves (the Vault is closed from its pause menu for the same reason). Pick the ring (Still, Slow or Full), its path (Flat or the 3D half), and hazards on or off.
+- **Boss Rush.** Every boss you've beaten, back to back: three skulls, one more after each end boss. The record is bosses beaten.
+- **Curtain Call** (mini-game). Twenty seconds on the clock and a quick ring: as many makes as you can. Misses are free.
+- **Longshot** (mini-game). A still ring that backs off 0.4 m (and drifts sideways) after every make. Misses cost skulls. The record is the farthest make.
+- **Target Gallery** (mini-game). Ten throws through a still ring at five targets hanging behind it, each on a line you can throw through the hole.
+
+Boss Rush and the mini-games open once you've put an end boss down. Each keeps its own record, shown on its tile and on its headstone. The leaderboard, continues and resuming a run stay Story's and Arcade's. The mini-games have no hazards: no wind, bats or bones.
+
+**Can Alley (v45; it replaced the encore).** After every end boss but the last, the Adventure offers a bonus round before the next reel: ten cans behind a still ring, 25 seconds, misses free, 5 bones a can and a prize for clearing them all. You can skip it.
+
+## New in v25: signature shots and the cartoon camera
+
+**Twelve signature shots.** Some makes deserve a name. A make is judged as it goes through the ring:
+
+| Shot | What it takes | Rarity |
+|---|---|---|
+| Knockout Blow | A perfect that puts a boss down | 5 |
+| Buzzer Beater | A perfect on your last skull | 5 |
+| Hat Trick | Three perfects running | 4 |
+| Two for One | A make that flies on into a bonus target | 4 |
+| Thread the Needle | A make that passes within 45 cm of a bat, bone, balloon, pendulum or seed | 4 |
+| Dead Centre | A perfect in the middle 30% of the perfect window | 3 |
+| Long Bomb | A make through a ring 7.6 m out or more | 3 |
+| Wind Rider | A make the wind carried 60 cm or more | 3 |
+| Leading Man | A make that led a moving ring 1.4 m or more | 2 |
+| Point Blank | A make through a ring 5 m out or less | 2 |
+| Top Corner | A make through a ring at the edge of the ring's space | 2 |
+| Phantom | A Ghost Toss that phased through the rim | 2 |
+
+Each pays 150 points × its rarity × the stage multiplier. Its name comes up over the lane. A throw can earn several: the rarest takes the card and the rest are counted under it ("and 1 more"). The first of each gets a toast, Morty has a line for them, and the Profile lists all twelve, what each takes and how often you've made it (the Shot Book will build on this).
+
+**The cartoon camera.** Moves the rostrum camera can't make, done on the whole painted frame so the HUD stays level:
+
+- **Crash zoom:** the frame punches in and springs back (Long Bomb, Dead Centre, Two for One…).
+- **Whip pan:** a fast slide with the picture smeared (Leading Man, Wind Rider, Thread the Needle, Top Corner).
+- **Dutch tilt:** the frame leans for a beat as a boss walks on.
+- **Hold:** the reel stops for half a second and an iris spot closes round the ring, then opens (Knockout Blow, Buzzer Beater, Hat Trick).
+
+Camera: Gentle halves them. Still (or reduced motion) leaves them out; the hold still holds, without the iris.
+
+Also: the Profile's boss stats now count all the mini-bosses and end bosses, plus Morty's pieces and story clears.
+
+## New in v24: Morty has a personality, and every word has an ID
+
+**Morty talks more, and to the point.** His 151 lines are dealt from pools like cards: shuffled, and no line comes round again until the whole pool has been said.
+
+- **Mood.** What he says when you grab him depends on his mood: cocky on a streak, nervous on the last skull, grumpy after misses, odd when cursed.
+- **Big moments always get a line:** each of the sixteen bosses walking on, a boss going down, each of his eight pieces coming back, a new reel starting, the offer of one more skull (and taking it), a resumed run, and THE END.
+- **Small moments wait their turn:** a perfect, a near miss, a knock from a bat or a bone, a streak of five, the last skull, a power-up. They roll the dice and wait out a five-second cooldown.
+- **Stalling.** Leave him in the pouch for twelve seconds and he nags you, once per lull.
+
+**Every word has an ID** (groundwork for other languages; see [docs/LOCALIZATION.md](docs/LOCALIZATION.md)).
+
+- **Where the text lives.** The code's text is in `src/strings/en.json`. The markup keeps its English and marks it `data-t="ui.…"`.
+- **What the build checks.** It refuses an ID that's used but missing, one that's defined but never used, and a translation whose placeholders don't match.
+- **Adding a language.** Drop `src/strings/fr.json` in and **Settings → Language** appears.
+- **Testing text length.** `?lang=pseudo` accents and pads every string by a third to show what won't fit. The spec checks the menus, Settings and the continue box for overflow that way; long labels now wrap inside their buttons.
+- **Recorded voice.** Morty's line IDs are voice-line IDs: a recording saved as `src/sfx/vo.<id>.mp3` replaces the mumble for that line.
+
+## New in v23: the reel's own cards
+
+Skull Toss is a restored 1933 cartoon, and now it opens like one:
+
+- **The countdown leader.** 3, 2, 1 on grey film, the sweep going round and a tick on each number. It plays once a session, before your first Story run.
+- **Main title cards.** Each reel gets one: *A Morty Bones Cartoon*, **Reel Three of Eight**, the map's name, its premise and what's odd about its ring. Morty peeks up from the corner. Arcade runs open on the map's card with no leader.
+- **The intermission.** After Reel Four the picture stops: *Stretch your bones!*, with your score, hits and pieces so far.
+- **THE END.** After Reel Eight's boss falls, *The End* comes up with Morty whole again, top hat and all. He winks, and the iris closes on him and opens on the headstone.
+- **Changeover cues.** Between reels, the round mark that told a projectionist to switch machines flashes twice in the top corner, as on a real print.
+
+A card holds the throw like any cut-scene. A tap, Space, Enter or the pad's A button skips it. **Settings → Title cards** picks Full (leader and cards), Short (a brief card, no leader) or Off (the old small stage card). Resuming a run skips the cards.
+
+Fixed: the film's flicker had stopped drawing in v15. It's back, still scaled by the Flashes setting.
+
+## New in v22: one more skull, and runs that survive a reload
+
+When the last skull goes, the run doesn't have to end. **One more skull?** comes up over the picture with an eight-second clock, and Morty's ghost waits in the empty pouch:
+
+- **Spend bones:** 200 the first time, then 400, then 800.
+- **Watch a short reel,** where the build has an ad provider. The web build has none; the native shells plug one in (`Ads` in `07g_continue.js`). The clock stops while the reel plays.
+- **No thanks,** Esc, or the clock running out ends the run as before.
+
+A continue gives back one skull and nothing else: the score stays, and the combo was already broken by the miss. You get one continue per map and three per Story run, or one per Arcade run. A run that used a continue still counts for your own best, but never goes on the leaderboard.
+
+**Runs survive a reload.** The run is kept in this browser as each throw settles, when a continue is offered and when the page is hidden. If the phone reclaims the page (during an ad, say), the title screen offers **Resume run** for up to a day. A run caught in a boss fight comes back at the start of that fight. A run that was waiting on a continue comes back to the offer. A finished run leaves nothing to resume.
+
+## New in v21: power-ups turn up at random, fairly
+
+Power-ups no longer come at fixed hits. The **Power-Up Director** rolls after every make:
+
+- The chance is 14% × the tier's power rate.
+- Every make without one raises the odds by 4.5%, and one is certain by the eleventh.
+- Never more than three in half a map (except in Arcade's endless second half).
+- None before the fourth hit of a half.
+- Never one of the last two props again.
+- A prop you're already carrying is less likely.
+- The Cursed Skull only turns up in a second half.
+- The same prop again refreshes its throws rather than doubling. Different props stack: Cursed Skull and BONK Blast multiply to ×9.
+
+The dice are the run's seeded stream, so a replay rolls the same props. End bosses still leave their Ghost Toss at two-thirds and one-third health.
+
+## New in v20: sixteen bosses
+
+Every map has its own mini-boss and its own end boss. Each end boss holds one of Morty's pieces, and each boss has its own way of moving the ring, its own tell and its own hint.
+
+| Map | Mini-boss (carries the ring) | End boss (attacks) | Holding |
+|---|---|---|---|
+| Moonshine Cemetery | The Crow King: swoops between perches, caws first | The Undertaker: swings the ring round on his shovel rope, flings clods of dirt | Top Hat |
+| The Crooked Crypts | The Bat Baron: dives high and low, screeches first | Count Crookula: spins the ring round a circle by his spell (and turns it about), sends bats | Bow Tie |
+| Pumpkin Patch Hollow | Old Tattersack: the ring swings from his arm, with a big lurch every third sway | The Pumpkin King: the vine and the seeds | White Gloves |
+| The Bone Orchard | The Bone Owl: hops between trees, two hoots first | Old Marrowroot: the ring swings from a branch, and bones drop from above | Cane |
+| The Drowned Bayou | Ferryman Gator: balances it on his snout, dives and surfaces elsewhere (bubbles first) | Madame Muck: the ring hops the lily pads, mud spat down the lane | Spats |
+| The Carnival | Jack-in-the-Box: the box slides, the crank winds, POP | The Ringmaster: the ring leaps round a circle, juggling pins thrown | Whistle |
+| The Clockwork Belfry | The Cuckoo: ticks the ring round its clock, now and then backwards | The Clockwork King: a clock hand ticking round, gears flung | Pocket Watch |
+| The Final Reel | The Projectionist: cuts the ring between frames, the flicker first | The Reel Reaper: cuts between frames, then circles when he's hurt; throws film frames | Shadow |
+
+The framework (`07f_bosses.js`) builds a boss from a carrier, an optional attack and a drawing. The carriers are perch, loop, sway, circle, surface, orbit, bounce and jump. Every attack is told first, and every end boss gets angrier at half health and leaves a Ghost Toss at two-thirds and one-third health. The Crow King and the Pumpkin King keep their original hand-tuned code.
+
+## New in v19: every map plays differently
+
+- **Map = environment, Tier = intensity.** Six tiers (`src/maps/tiers.json`) set the ring's speed and size, how often a hazard comes, how many bonus targets hang behind the ring, and how generous the perfect window is. Each map runs one tier before its mini-boss and another after. Map 1 runs tiers I and II, so it plays exactly as before. Arcade climbs a tier every 25 hits past 50.
+- **The Ring Path Director.** The first half of a map slides. After the mini-boss, the map's own path takes over:
+  - most maps: a triangle through depth
+  - the Carnival: the carousel, a wide circle through depth
+  - the Final Reel: jump cuts. The ring holds on a corner, the film flickers, and it cuts to the next.
+  
+  Static, vertical, diagonal and figure-8 paths are ready for modes and challenges. The spec keeps every path inside the ring's playable space.
+- **Each map's mechanic:**
+  - **Pumpkin Patch Hollow: wind.** It changes every throw and pushes the skull sideways in flight. The HUD shows its strength and direction, and the guide bends with it.
+  - **The Crooked Crypts: bats.** Every few throws a bat screeches, then crosses the lane.
+  - **The Bone Orchard: falling bones.** A shadow grows, then a bone drops.
+  - **The Drowned Bayou: fog.** Fog banks roll over the ring, but its reflection on the water still shows where it is.
+  - **The Carnival: balloons** drift up through the lane.
+  - **The Clockwork Belfry: the pendulum.** It swings across the lane and ticks at each end.
+  
+  Anything solid knocks the skull out of the air, and Ghost Toss slips through it. Only the wind keeps blowing during a boss fight.
+- **Bonus targets.** From tier II on, one to three targets hang behind the ring: a wisp, a brazier, a jack-o'-lantern, a bone-fruit, a frog on a lily pad, a gallery duck, a bell or a film can. A make that flies on through one pays 200 points × the stage, plus 3 bones.
+- **One seeded stream** decides everything random in a run's play. The same seed and the same throws make the same run, which replays and score checks will rely on.
+
+## New in v16–v18: eight maps, and a story with an ending
+
+- **Eight maps.** Moonshine Cemetery, The Crooked Crypts, Pumpkin Patch Hollow, The Bone Orchard, The Drowned Bayou, The Carnival of Lost Souls, The Clockwork Belfry and The Final Reel. Each is its own place, not a colour wash over the graveyard:
+  - its own sky and moon (crescent, a low harvest moon, a picture-house screen)
+  - its own skyline (crooked mausoleums, a barn and a turning windmill, cypress and a drowned steeple, big tops and a turning Ferris wheel, rooftops under a clock tower that keeps its own time, theatre boxes)
+  - its own lane (flagstones, furrows, a bone-edged path, a boardwalk over water, sawdust, cobbles, the aisle carpet)
+  - its own props (sarcophagi and torches, pumpkins, jack-o'-lanterns and scarecrows, bone trees, cypress and lily pads, tents and carousel horses, lampposts and gargoyles, rows of velvet seats)
+  - its own foreground frame, weather (mist, falling leaves, spores, fireflies, confetti, rain, the projector's dusty beam), wanderers and sky life
+- **The story ends.** Story runs through the eight maps in order, each with a mini-boss at 25 hits and an end boss at 50. It no longer loops. Every end boss is holding one of Morty's missing pieces: Top Hat, Bow Tie, White Gloves, Cane, Spats, Whistle, Pocket Watch and Shadow. Beat the eighth and the reel ends: THE END, Morty whole again, and the headstone says *The end!* instead of *Here lies…*
+- **Arcade opens a map once Story has reached it.** Map 1 is always open. Locked maps are listed with how to open them.
+- **Maps are data** (`src/maps/*.json`). The build checks each one against the [spatial blueprint](docs/SPATIAL_BLUEPRINT.md) and the registry of what the code can draw: the ring's triangle has to stay in the playable space, no pattern may loop a corner onto itself, every painter it names must exist, and no two maps may share a boss or a piece. The [stage bible](docs/STAGE_BIBLE.md) is generated from the same files.
+- **Canon.** The Story card, the progress bar, the stage cards and the achievements all speak of maps, mini-bosses and end bosses now. New achievements: Half the Reel, The Whole Reel (finish the story), A Piece of Morty, Piece by Piece, Boss Hunter and Boss Slayer.
+- **Save schema 3.** A v12 save's "stage 5 and beyond" was map 1 again, faster. It now means map 5, which that player had earned by clearing the four old maps. Anyone who already had The Whole Reel keeps it as Half the Reel, so the new Whole Reel can still be earned.
+
+## New in v15: accessibility and the performance budget
+
+- **Flashes: Full, Reduced or Off** (Settings). Reduced swaps every camera flash for one soft one and dims lightning and the film's flicker. Off removes them. A device that asks for reduced motion starts on Reduced.
+- **High contrast.** An inked, pale-yellow halo lifts the ring and Morty off the scenery, and dim text and lines are brightened.
+- **Text size: Normal or Large.** Large zooms the menus, sheets and HUD by 15%.
+- **Keyboard focus stays inside an open sheet,** and the new radio rows move with the arrow keys.
+- **A performance budget** (`PERF` in `01_data.js`, [docs/PERFORMANCE.md](docs/PERFORMANCE.md)). Particles, comic bursts and contact stars are capped. The spec checks the cost of a game step and the page's element count, and the build refuses a light page over 2,600 KB.
+- **A small UI kit** (`09_ui_kit.js`) that the new screens are built from.
+
+See [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) for everything the game does for access.
+
+## New in v14: the foundation pass
+
+This is the first code pass on the V14 gate from the [roadmap audit](../docs/skull-toss/ROADMAP_V14_AUDIT.md). The game plays and looks the same. All 103 earlier checks still pass, and 6 new ones cover what changed.
+
+- **The release build no longer carries the test hooks.** Until now, anyone could open the browser console and set their bones or stats, or post any score to the leaderboard. `python3 src/build.py` now leaves those hooks out. `python3 src/build.py --dev` puts them back, as `index-dev.html`, for the spec. The published build refuses `--dev`. Every build keeps the visual debug overlay and its console switches, which can't change a score or a save.
+- **The leaderboard posts runs, not numbers.** Your board entry is now your best Story run actually played to its end. A save code still carries your stats, best score and unlocks, but never a leaderboard run, so a hand-edited code can't put a score on the board. The board only takes runs finished from v14 on. An entry already on the board stays until a better run replaces it.
+- **Saves have a schema number.** The profile is now schema 2. An older save, whether on this device, in the cloud or in a code, steps through the migrations in order when it loads, so it reaches today's shape the same way wherever it comes from. A code from a newer build is refused rather than half-read.
+- **A save that won't read no longer starts you over.** The game keeps a copy of the last profile and cosmetics that loaded cleanly. If the main copy is ever cut off or garbled, it loads that copy instead and keeps the broken text aside.
+- **A fixed step.** The game now moves in fixed 1/240 s steps however fast the screen refreshes, the same step the spec uses. A throw lands the same way at 60, 90, 120 or 144 Hz. Replays and shot checks will need this later. Gameplay itself uses no randomness; only particles and camera jolts do.
+- **Gamepad.** Pull the left stick down to draw the band, then press A (or the right trigger) to let go. The stick works exactly like dragging with a finger: sideways steers, and left throws right. B lets the band go slack, and so does letting the stick spring back. Start pauses and resumes. The menus still need a pointer or the keyboard.
+- **A play log on the device.** For playtests, a small log records runs starting and ending, every throw's result, bosses and power-ups. The log is gone on reload. Read it from the console with `SkullToss.telemetry()`. (From v39 a cut-down copy can be sent, with the player's consent: see [docs/ANALYTICS.md](docs/ANALYTICS.md).)
+
+Still open, waiting on decisions in the audit:
+- The Story card and two achievements still say "four stages". That's still true of this build.
+- Where a server would check scores.
+
+A hand-edited save code can still raise your own bones, stats and unlocks. That stays a soft-currency problem until Souls exist and balances live on a server.
+
+## New in v12: Story and Arcade, achievements, longer challenges
+
+- **The skull has a name: Mortimer "Morty" Bones.** The game calls him Morty wherever it talks about him as a character (Settings → Morty's voice, the Vault and Cart notes, the Pumpkin King's card, the Bonk achievements, the grab goals and your profile), and he has four new grab lines that introduce himself. Where "skull" means a life, a look or a name (skulls left, the Skull shelf, Skull Rush, the Skull Vault), it stays.
+- **Two modes.** **PLAY** now asks which:
+  - **Story** is the game as it was: four stages, a Crow King and a Pumpkin King in each.
+  - **Arcade** lets you pick any of the four maps. There are no bosses and no end. At 25 hits the ring shakes loose and flies through depth for good, and after 50 hits it keeps winding up (6% quicker every 10 hits, up to 60%). A few extra power-ups turn up late on. A clock at the foot of the screen races your longest run on that map; once you pass it the bar turns gold and says **new best!** Every map keeps its own best score and longest run, and **Toss again** replays the same map. Arcade runs don't touch your Story best or the leaderboard.
+- **The maps look like different places.** Each map has its own colour grade washed over the graveyard: Moonshine Cemetery as it was, a violet Crooked Crypts, an orange Pumpkin Patch Hollow and a green Bone Orchard. Story mode changes with them as you reach each stage.
+- **GAME OVER.** When the last skull goes, the words GAME OVER bounce in letter by letter over the picture and hold for a moment before the headstone. Ending a run from the pause menu skips them.
+- **Results.** The bones you earned now sit in the top-right corner of the progress panel, above the bar.
+- **No more path hints.** The chalked triangle, the line traced in the air, the pulsing next corner and the Crow King's ghost ring at his next perch are all gone. The ring's shadow stays, so you can still judge depth (the dotted plumb line down to it went in v43: the shadow alone reads), but where it goes next is yours to read.
+- **Power-ups are easier to grab.** The grab zone is now the prop you can see, bob and all: if the skull clips the drawing as it passes through the ring, the power-up is yours.
+- **Weekly and monthly challenges.** Challenges now come in three tabs, **Daily**, **Weekly** and **Monthly**, three of each. Weeks run Monday to Sunday and months from the 1st. A weekly goal always pays more than a daily one of the same kind, and a monthly more than a weekly; every throw counts toward all three at once. There's a new kind of goal too: survive a set time in one Arcade run.
+- **Achievements.** 39 of them, from First Toss to Night Owl, covering tossing, Story, Arcade, power-ups, mishaps and the collection. Each pays its bones once, the moment you reach it. A gold medal drops in with its own jingle: at the top of the screen on the menus, and just under the score mid-run, so your skulls and score stay in sight. The **Achievements** sheet (on the title screen) lists them all, with a progress bar on every one still locked.
+- **New music.** The pause menu and the Curio Cart each have their own loop, and hand the act's music back when you leave.
+- **Recorded sound effects.** Grabbing a power-up, buying something (in the Vault or at the Cart) and unlocking an achievement now play your recordings. If one can't be decoded, the old synthesised sound plays instead.
+- **The title screen.** The tagline just says *A lost cartoon from 1933*. The skull in the title now has room to spill past its letter, so an aura shows in full: the part behind the skull sits behind the lettering, and the part in front sits in front of it.
+- **The HUD.** The score is now in Bebas Neue, like every other number in the game. It sits in the centre with the hits under it and your best under those. The skulls and the combo meter are smaller.
+
+## New: Visual Foundation v2: poses, the shot director and sound on the beat
+
+Every throw now plays as one short scene, timed from a single timeline. The game still decides what happened (no score, hit or flight path changed, and every earlier check still passes); the new **shot director** decides when each part of it is seen and heard.
+
+- **Anticipation at full draw.** Pull all the way back and the skull squints, sets its teeth and shivers, with little strain lines flicking off the cranium, and the band groans once. It still keeps its shape in the pouch: the shiver moves the whole skull, and the slingshot's fork trembles instead.
+- **Smear drawings.** For two drawings after you let go, the skull is a streak: a tapered tail of its own colour with dry-brush lines through it, thinning on the second drawing (three with Skull Rush). The whoosh lands on the first smear drawing.
+- **Contacts land on the frame.** The release and every contact start a fresh drawing the moment they happen, and the 24s run on from there.
+- **A contact drawing.** Rim hits, bonks, ground hits, boss hits and knockouts throw a cartoon impact star: a solid star, then the star bursting into a jagged ring, then its rays flying off. It sits over the ring it hit and behind the skull that hit it. A knockout's is five drawings long and dwarfs a rim's.
+- **The rebound.** After a hit the skull holds its contact drawing for two drawings (eyes screwed shut on a bonk), then rebounds into the look the result calls for: star eyes, a grin, a puzzled rim-in, or dizzy spirals.
+- **A pose library.** Every drawing the skull can show is one entry: idle, aim, anticipation, launch, smear, flight, impact, rebound, perfect, hit, miss, confused, dizzy, boss hit (a wink and a cackle), boss defeat (eyes shut in glee) and death (X eyes). Slow poses are drawn on twos, action on ones.
+- **FX direction.** Every moment has a recipe, and its weight sets how big it looks: launch .42, miss .58, hit .72, perfect 1.00, boss hit 1.05, boss defeat 1.35. The camera jolt, the contact star, the flash and the dust scale with it; the skull's squash still follows only how hard it physically hit. Every recipe runs on the same timeline: the burst on contact, the flash two drawings later, the dust at .14 s, the settle at 70% of the recipe. Boss hits and knockouts get bigger screen flashes than a perfect.
+- **Sound on the beat.** The sounds sit on the same timeline as the drawings: the creak at full draw, the snap, the whoosh on the smear, the contact, a short crack sized by the moment, the score sting three drawings after the contact (as the score pops), the boing on the rebound, and a small plop as the next skull drops into the pouch. No sound can play twice for one moment.
+- **Boss and power-up states.** The bosses now have visual states too (coming in, holding still, winding up, hurt, down), and the active power-ups are tracked alongside them. The debug overlay shows both.
+- **Busy devices lose effects before pixels.** If a phone can't keep up, the game now cuts particles, dust and film grain first (down to half), and only then lowers the resolution. Input, physics, timing and the characters' drawings are never touched.
+
+## New: Visual Foundation v1
+
+The picture is now its own system, separate from the game. Gameplay runs every frame, stays exact and never waits for the art. It tells the **visual system** what happened (a throw, a hit, a miss, a boss, a power-up), and the visual system decides how that looks. The game plays exactly as before: all the old checks still pass untouched.
+
+- **Drawings on 24s.** The characters' drawings change 24 times a second, like shot animation, while their positions stay smooth every frame. That covers the skull's squash, lean, spin and face, its hat, the slingshot's twang and the ring's wobble. The camera exposes on the same beat, so pose and camera move together. The background cast still steps on twos (12 a second).
+- **States.** The skull goes idle → aim → launch → flight → impact or miss → recover → idle, and ko when the run ends. The ring, the launcher and the camera have states of their own. The debug overlay shows them all.
+- **Squash and stretch from one table.**
+  - The launch squashes along the throw and overshoots into a stretch.
+  - In flight the skull stretches along its path, more the faster it goes.
+  - Each kind of hit has its own squash, and springs do the overshoot and settle.
+  - The skull still holds its shape while you pull back, as you asked. The slingshot takes the strain instead: the bands stretch and the fork squeezes in.
+- **One impact system.** Every contact goes through one place: perfect, swish, rim, clank, post, seed, ground and bounce, plus boss hits, knockouts and BONK Blast. That place fans it out to the camera jolt, the skull's squash, the ring's own squash along the line of the hit, sparks and dust, and the contact sounds. It's all scaled by how hard the hit was: a Skull Rush throw clanks harder than a lob, and a late bounce lands softer.
+- **SVG assets.** The skull, the slingshot and the ring's post each have their own folder, `asset.json`, named layers, anchors and a version. The slingshot and post are new drawings (see [The launcher and target artwork](#the-launcher-and-target-artwork)), and you can replace them with your own art.
+
+## New in v11: stages, bosses, power-ups, a shop and a much bigger Vault
+
+### Score and hits are separate now
+
+- **Score** is the big number at the top centre. It's what goes on the leaderboard (Story runs only).
+- **Hits** sit under it in smaller type, above your best. Every make is one hit, and hits are what move you through a stage.
+- A small **progress bar** sits at the foot of the picture, centred. It counts down to the Crow King and then the Pumpkin King, and turns into the boss's health bar during a fight.
+
+| Call | Base points |
+|---|---|
+| PERFECT | 250 |
+| SWISH | 100 |
+| RIM IN | 75 |
+
+Each make is multiplied by:
+- **the combo:** ×1, then +0.5 for every make in a row, up to ×6;
+- **the stage:** +25% per stage after the first;
+- **power-ups:** Cursed Skull and BONK Blast each triple it.
+
+Boss hits and boss knockouts add big bonuses on top.
+
+### A stage has two halves and two bosses
+
+| Hits | What happens |
+|---|---|
+| 0–25 | The ring slides left and right, getting faster and smaller. |
+| 25 | **Mini-boss: the Crow King.** He grabs the ring and carries it in his talons. He hovers, squawks (that's the warning), then swoops to his next perch: left, right, up, down, **near and far**. His crouch and his caw are the only warning. Toss through his ring 5 times (a perfect hits twice). |
+| Crow King down | Everything freezes for a fifth of a second, K.O.! The camera pulls back, the ring sprouts wings, and the band changes key. |
+| 25–50 | The ring flies a **triangle through depth**. Nothing marks the route: you learn it by watching. Each pattern plays twice before the next one. |
+| 50 | **Main boss: the Pumpkin King.** He rises behind the graves. A vine carries the ring around the triangle, and he puffs his cheeks, then spits volleys of seeds down the throw lane. A seed knocks the skull out of the air, so throw between volleys. He gets faster and angrier at half health. |
+| Pumpkin King down | Stage clear: a big bonus, bones, a skull back, and the next stage. |
+
+Stages are data, so new ones are cheap to add. Each stage has a name, a speed, its own triangle, its own patterns and modifiers. After Moonshine Cemetery come the Crooked Crypts (the ring bobs), Pumpkin Patch Hollow (it shrinks too) and the Bone Orchard (a lopsided triangle). After that the list loops, faster.
+
+### Power-ups
+
+Little cartoon props float in the **middle** of the ring. You get one by threading the skull through the prop: if the skull clips the drawing as it passes, it's yours. They appear on a fixed schedule rather than at random, at hits 6, 14 and 21, then 30, 38 and 45. Each lasts a few throws. None appear during the Crow King, and only Ghost Toss appears during the Pumpkin King.
+
+| Prop | Power-up | Effect |
+|---|---|---|
+| Winged skull | Skull Rush | Quicker flights, so there's less to lead. Lasts 4 throws. |
+| Eyeball in a reticle | Deadeye | The perfect window doubles, and the ring shows it. Lasts 5 throws. |
+| Dynamite | BONK Blast | Your next make scores ×3 and sends a shockwave through the graveyard. |
+| Ghost sheet | Ghost Toss | The skull goes see-through and slips past the rim or a seed. 2 uses. |
+| Magnet and bone | Bone Magnet | +20 bones on every make. Lasts 5 throws. |
+| Heart with a plaster | Second Chance | Your next miss is free. |
+| Horned purple skull | Cursed Skull | The ring moves 1.5× faster, but every make scores ×3. Lasts 5 throws. Take it if you're greedy. |
+
+Collecting one goes POP. The props you're carrying show as badges under the pause button.
+
+### A 364-piece Vault, a shop and a leaderboard
+
+- **Three times the cosmetics**, from 117 to 364. There are three new shelves, **Hats** (52), **Auras** (31) and **Ring poles** (21), and every old shelf is bigger.
+- **Hats** sit on their own spring. They pop up when you launch, lag behind in flight, fly off on a bonk and land back with a bounce. Some move on their own:
+  - the Propeller Beanie spins;
+  - the Fishbowl has a fish in it;
+  - the Bird's Nest has a bird that peeks out;
+  - the Tiny UFO beams down;
+  - the Lighthouse sweeps its beam.
+- **Auras** include Hellfire, Starstruck, Smoke Signals, Bat Swarm, Poltergeists, The Watchers, Personal Raincloud, Rainbow Arc, Black Hole and more.
+- **Ring poles** replace the wooden post. The Candy Cane, Barber Pole, Gas Lamp, Skull Totem, Tentacle and Rocket stand under the ring, and the Hanging Chain and Balloons hold it from above.
+- **Prizes for failing (the Hall of Shame).** 28 things are won by doing badly: the Dunce Cap, the Paper Bag of Shame, a Personal Raincloud, a Toilet Seat ring, the Giant Plunger pole, and titles like Airball Artist and Professional Misser.
+- **Boss prizes.** 27 things are won only by beating the bosses, such as the Crow King's Crown, the Pumpkin Helm, the Golden Gourd Crown for a flawless Pumpkin King, and the Crow's Nest ring.
+- **The Curio Cart,** run by Mort, a ghoul in a bowler who leans on his glove behind a heavy counter, shelves of junk stacked up behind him and a NO REFUNDS notice nailed to the wall. Whatever you're looking at sits glowing on a dish on the counter in front of him. He sells:
+  - **today's deals:** four things marked down 20–30%, new every midnight;
+  - **Cart exclusives:** 24 things sold nowhere else, like the Disco Ball skull, Diamond eyes, the Chandelier hat and the Rocket pole;
+  - **the Mystery Coffin:** 750 bones for something you don't own yet.
+- **The leaderboard.** The shared board shows each player's best score, stage and skull. Posting is opt-in, and it only uses the name on your headstone. Other players' names are shown as plain text. When the file runs on its own, the board shows your best runs on this device instead.
+- **Profile** stats are grouped into Career, Tossing, Bosses, Power-ups, the Hall of Shame, and Bones & the Vault. There are 43 in all, from time played and perfect rate to seeds taken to the face.
+
+### Moonshine Cemetery, rubber-hose edition
+
+- **Everything is inked and coloured, and bounces to the waltz on twos.**
+  - Headstones come in four stones, with moss. Some are only pretending to sleep and open their eyes to watch the skull fly.
+  - Trees have bendy arms and knothole faces.
+  - The zombie, skeleton, werewolf and ghost wear white gloves and have pie-cut eyes.
+  - There's a family crypt, lanterns with warm pools of light, iron fences, tufts of grass, rolling hills and a worn dirt path to the ring.
+- **A gravedigger** works in the middle distance. He digs, tosses dirt onto his mound and sometimes leans on his shovel for a yawn.
+- **A black cat** strolls across between you and the ring now and then. It stops, stares, blinks, meows and moves on. A BONK Blast sends it running.
+- **The moon has a face.** It grins down at the ring with a telescope screwed into one eye. The clouds drift behind it.
+- **Morty talks back.** Grab him and, now and then, he complains: "Hey! What do you think you're doing?!", "Not the face!", "My agent will hear about this!" There are 28 grab lines (four of them are him introducing himself), plus lines for your last skull, the bosses and hot streaks. They come as a speech bubble with a cartoon mumble. **Settings → Morty's voice** switches between Mumble, Spoken (your device reads the lines out) and Off.
+- **Feel:**
+  - the slingshot stays put after the shot: its bands snap through the rest point, overshoot and twang back, and give a little when the next skull drops into the pouch;
+  - a short hit-stop on perfects;
+  - the biggest camera jolts saved for boss hits, knockouts and game over;
+  - a brass sting when a boss arrives and a fanfare when it falls;
+  - a walking bass in the 3D half, and an oom-pah-pah with a drum during fights.
+
+## New in v7: one skull, and a lost cartoon from 1933
+
+### The skull is the whole character
+
+His name is **Mortimer "Morty" Bones**. There's no body, no arms and no gloves. The skull is both the hero and the projectile, and all of its personality comes from how it squashes, stretches, turns and pulls faces. It's drawn on a rubber-hose spring rig, so every impact overshoots and wobbles back into shape.
+
+| Moment | What the skull does |
+|---|---|
+| Waiting | Rocks side to side, breathes and blinks. Some skins have their own habits (see the Skull Vault below). |
+| Aiming | Leans into the shot, gritting its teeth with its brows down |
+| Charging | Keeps its shape in the slingshot pouch, and grits its teeth harder the further you pull |
+| Launch | Squashes, smears along the flight line, then flies with its jaw dropped in fear |
+| Swish | Huge grin, and it stretches upward with joy |
+| Perfect | Spins fast with star eyes and an enormous grin |
+| Rim-in | Tilts about 30°, squints one socket and looks confused |
+| Hitting the rim, the post or the ground | Goes flat, boings back and sees stars |
+| Clean miss | Stops dead in mid-air and turns to look at you, with a "..." bubble. Then it drops like a stone and lands with a BONK. |
+
+On the title card Morty is the O in TOSS. He drops into place, hops about and boings when you poke him. When the round ends he turns up beside the headstone with X's for eyes and a wisp where the rest of him was.
+
+### A 1930s cartoon look
+
+- **Palette and paper.**
+  - Ink black, aged paper, bone and old cream.
+  - Dusty red, vintage teal, mustard, midnight blue and muted purple.
+  - Everything is outlined in thick ink.
+- **The title card.** A stage with velvet curtains, a scalloped valance and footlights. The logo's letters bob, the skull stands in for the O in TOSS, and the logo grows to fill the space the menu leaves free.
+- **Buttons.** Painted wooden signs, nailed on. On hover a skull pops up over the top edge, and on press a crack flashes across the wood. Chips look like paper tags, and the round buttons are wooden knobs.
+- **Impacts.** Comic bursts such as BONK!, WHAM! and POP!, with paper captions like "OOF… too high". The caption always sits on the far side of the ring from the skull, so it never hides the skull's face.
+- **Combo labels.** A small tag under your skulls: ×2 NICE, ×5 SKULLFUL and so on, up to ×12 ABSOLUTE BONES.
+- **Film.** The picture has grain, dust, scratches, flicker and a slightly wobbly gate. Big scene changes iris out and back in like the end of an old cartoon. The iris is skipped under reduced motion, and pausing is always instant.
+- **Moonshine Cemetery, repainted.** A watercolour sky, a cream moon, a haunted house with lit windows, and ink-silhouette graveyard creatures.
+- **A multiplane scene.** The graveyard is a stack of flat, inked planes at different depths. From back to front:
+  1. sky and moon
+  2. clouds
+  3. the far skyline
+  4. bats and the witch
+  5. the ground
+  6. headstones and wanderers
+  7. the play field
+  8. near props (a broken headstone, iron railing and grass)
+  9. branches right by the lens
+
+  The far planes are hazier and the foreground is dark and slightly soft, like a miniature set.
+
+### The rostrum camera
+
+One camera photographs the planes. When it moves, near planes slide further than far ones. Its springs overshoot and settle, and it only takes a new picture 24 times a second, so it steps like an old rostrum camera instead of gliding.
+
+| Move | When | Strength |
+|---|---|---|
+| Lean with the aim | While you pull. It leans toward your pull, further the harder you pull. This is the main source of parallax. | Moderate |
+| Follow the throw | In flight. It pans after the skull and pushes in as it reaches the ring. | Moderate |
+| Anticipation pull | It dollies back as the band stretches, then snaps forward past centre when you let go. | Accent |
+| Jolts | On bonks, perfects and lightning, each plane knocks a different way, then settles. This replaces the old screen shake. | Short and sharp |
+| Idle drift | Always, very slowly | Almost invisible |
+- **Sound.** Cartoon effects: a slide whistle up on launch and down on a drop, plus a boing, a bonk, a xylophone run on a perfect and a ding on a swish. Buttons knock like wood.
+
+### The Skull Vault
+
+The shop is now the **Skull Vault**: 117 items on ten shelves. Every item changes only how the skull, its trail, its hits or the picture look. **Nothing changes the physics or gives an advantage.**
+
+| Shelf | Items | Free to start | For sale |
+|---|---|---|---|
+| Skulls | 17 | Classic | Wooden 450 → Flaming 8,000 |
+| Eyes | 11 | Pie Eyes | Pinpricks 300 → Hypnotized 6,000 |
+| Teeth | 9 | Classic Grin | Toothless 300 → Oversized Jaw 3,000 |
+| Paint jobs | 15 | Bare Bone | Cream & Red 300 → Spiral 3,000 |
+| Trails | 18 | Dust | Smoke 400 → Comet 8,000 |
+| Impacts | 9 | Classic BONK! | Cartoon WHAM! 400 → Explosive KABOOM! 6,000 |
+| Rings | 10 | Circus Hoop, Dusty Red, Toxic | Iron Chain 500 → Void Portal 9,000 |
+| Aim lines | 8 | Cream, Toxic | Dusty Red 300 → Technicolor 5,000 |
+| Film reels | 5 | Standard Print | Lost Reel 900 → Damaged Print 3,000 |
+| Titles | 15 | Grave Rookie | Earned only, never sold |
+
+- **Rarity is shown in stars:** ★ Stock, ★★ Featured, ★★★ Special and ★★★★ Lost.
+- **Skins have personalities.** A few examples:
+  - Gold admires itself.
+  - Wooden has a woodworm that pokes out.
+  - Radio's eyes become tuning dials.
+  - Silver Screen flickers into a film negative.
+  - Wax drips and carries a lit candle.
+  - Ice sheds frost, and Flaming burns.
+- **Impacts replace the bonk word and its burst:**
+  - Classic BONK!, Cartoon WHAM!, Vintage Ink Stars and Confetti Pop
+  - Ink Splash, Bone Burst, Newspaper Halftone and Little Ghost
+  - Explosive KABOOM!
+- **Film reels re-grade the whole picture:**
+  - Standard Print
+  - Lost Reel, which is scratchy and sepia
+  - Silent Era, in black and white
+  - Technicolor Test, which is warm and saturated
+  - Damaged Print, with burns and heavy weave
+- **Titles appear on the ribbon** across the headstone (unless the round set a record, which the ribbon says instead) and in your profile. They're earned by playing, for example:
+  - Skull Flinger: 50 makes
+  - Ricochet Artist: 30 rim-ins
+  - Certified Bonker: 100 bonks
+  - The Last Skull: 25 makes on your final skull
+  - HOLY SMOKES: a 20-make streak
+- **The preview stage.** Tap any item to try it on. The skull hops onto a pedestal wearing it and pulls faces, and you can drag to spin it. On the Trails shelf it loops the stage, on the Impacts shelf it hops and bursts, and on the Rings and Aim shelves it poses beside a ring.
+- **Your items carry over.** Everything you unlocked in v5 or v6 is still yours under its new name. For example, Gilded is now Gold, Frost is Ice and Embers is the Fire trail.
+
+## How to play
+
+Press **PLAY** and choose **Story** or **Arcade** (then a map). Then:
+
+1. **Pull down** anywhere on screen.
+2. **Aim.** Pulling further down throws higher. Pulling left throws right, and pulling right throws left.
+3. **Let go.** Every throw takes 0.82 s to reach the ring's usual spot, so lead a moving ring by the same amount every time. When the ring flies nearer or further away, the crosshair shows where the skull will cross it.
+
+Every 5 makes in a row earns a skull, and bonus skulls stack up to 5.
+
+With a gamepad, pull the left stick down and press **A** (or the right trigger) to throw; **Start** pauses.
+
+On desktop, use ← → ↑ ↓ to aim and **Space** to throw. **Esc** or **P** pauses the game, and **Esc** also closes any open panel.
+
+## Scoring
+
+| Call | What happened | Result |
+|---|---|---|
+| PERFECT | Through the middle of the hole | 1 hit, 250 points |
+| SWISH | Through the hole without touching the rim | 1 hit, 100 points |
+| RIM IN | Clipped the inside of the rim and still went through | 1 hit, 75 points |
+| BONK | Hit the outside of the rim, the post, a pumpkin seed or the ground short of the ring | miss |
+| WHIFF | Wide of the ring | miss |
+| OOF | Too high or too low | miss |
+
+Points are multiplied by your combo, the stage and some power-ups (see above).
+
+A run pays 10 bones, plus:
+- 8 per hit, 5 per perfect and 4 per step of your best combo;
+- 5 for every 2,500 points, and 6 per power-up;
+- 25 more for a new best.
+
+Beating the Pumpkin King pays 150 + 50 × the stage. Everyone starts with a gift of 300 bones. Daily, weekly and monthly challenges (three of each) pay extra bones, each achievement pays once, and most Vault items can also be unlocked free by reaching a goal.
+
+## When the round ends
+
+First, **GAME OVER** bounces in over the picture. Then the round is buried, not scored on a card: **HERE LIES…**, a headstone with a cross on it, and the round carved
+into the slate under your name - score, time, hits, perfects out of throws, best combo, bosses and power-ups if
+there were any, and a skill level in stars. Under a rule at the foot: **GRADE**, a single letter in a circle.
+
+The grade is mostly how clean the tossing was - a perfect counts three, a swish two, a rim-in one, against every
+throw you took - plus credit for how deep into the stage you got and any boss you put down. S is a perfect run;
+F is a round best forgotten. A banner across the base of the stone reads **A BRAND NEW RECORD!** when the score
+beats your best, and carries your current title the rest of the time. An Arcade stone says **Survived** instead of Time, its banner names the map (**New best on The Bone Orchard!**), and the line under it shows that map's best score and longest run.
+
+## The music
+
+The score is six recorded loops, one per act or place, sitting in `music/` beside `index.html`:
+
+| File | When it plays |
+| --- | --- |
+| `music/menu.mp3` | the title card and the headstone at the end of a round |
+| `music/a.mp3` | the first half of a stage, up to the Crow King |
+| `music/b.mp3` | after the mini-boss, once the ring starts moving through depth |
+| `music/boss.mp3` | both boss fights |
+| `music/pause.mp3` | the pause menu (the act's loop picks up where it was when you resume) |
+| `music/shop.mp3` | the Curio Cart |
+
+The game crossfades between them as the acts change and as you open or leave the pause menu or the Cart,
+and follows the **Music** slider in Settings like everything else.
+
+**Sound effects** are synthesised, apart from three recordings in `src/sfx/` that the build embeds in every
+version: `powerup.mp3` (grabbing a power-up), `purchase.mp3` (buying in the Vault or at the Cart) and
+`achievement.mp3` (a medal). They play on the **Effects** slider. To swap one, drop a new file in with the same
+name and rebuild; the build refuses any file over 200 KB. A new file in that folder is embedded too, but the
+game only plays the three names it knows.
+
+**Two builds, because a lone HTML file can't fetch a folder that isn't there.**
+
+- `skull-toss-with-music.html` - the music is inside the file. Open it from anywhere, online or off, no
+  folder, no server; it plays the score. About 17 MB. Build it with `python3 src/build.py --with-music`.
+- `index.html` + the `music/` folder beside it - the light build (1.2 MB) that loads the six loops as it
+  needs them. This is what gets published, and the loops sit alongside the page there.
+
+Open `index.html` on its own, with no `music/` next to it, and the game plays without music (v49: the
+synthesised waltz that used to stand in, and that played for a moment before each loop arrived, is gone).
+A loop fades in as soon as it has loaded.
+
+**To swap a track**, drop a new file in over the old one, same name. Any length; it loops. Trim the fade
+off the end first, or it will dip every time it comes round. Mono or stereo, 96-128 kbps is plenty.
+
+## Settings and profile
+
+- **Settings.**
+  - Sound on/off, plus separate volumes for music, effects and ambience.
+  - **Film look:** Full, Light or Off. It starts on Light if your device asks for reduced motion.
+  - **Camera:** Full, Gentle or Still. It starts on Still if your device asks for reduced motion.
+  - **Camera jolts** on or off. They're off whenever the camera is Still.
+  - Vibration.
+  - Aim guide: Full, Short or Off.
+  - Morty's voice: Mumble, Spoken or Off.
+  - Reset progress (tap twice to confirm).
+- **Profile.**
+  - Save status, plus copy and load save codes.
+  - Your headstone name and title.
+  - Your rank, from Gravedigger to The Reaper.
+  - 43 lifetime stats in six groups, including the Hall of Shame.
+
+## Saving your progress
+
+- **Published version.** Progress saves to a private slot on your account, which only you can see, and syncs on any signed-in device. When two devices disagree, every counter keeps its higher value, unlocks and achievements are combined, and each Arcade map keeps its better record. Your bones balance and your challenges come from whichever save is newer, so a purchase can't be refunded by a merge.
+- **This file on its own.** Progress is saved in the browser. To move it to another device, use **Copy save code** there and **Load save code** here.
+- **Save schema and backup.** Your profile carries a schema number (2 in v14), and older saves step up to it in order as they load. The game also keeps a copy of the last profile and cosmetics that loaded cleanly (`skullToss.profile.v1.bak`, `skullToss.cosmetics.v1.bak`). If the main copy won't read, that copy loads instead, and the broken text is kept as `….corrupt`.
+- **Older saves** load normally, and their unlocks move to the new item names. An old best score becomes your best number of hits in a run.
+- **The leaderboard** (published version only) is shared by everyone the game is shared with. Your entry is your best Story run played to its end in the game, never a number that arrived in a save code. Each player has one entry, which only they can write, and posting is off until you turn it on. Opting out deletes your entry.
+
+## Scene artwork (optional)
+
+Any plane of the graveyard can be replaced with your own art: an SVG, or a painted plate saved as WebP or PNG. Put the file in `src/art/scene/` and rebuild. A plane without a file keeps its coded placeholder.
+
+| File | Plane | Depth |
+|---|---|---|
+| `sky` | Sky and stars. The moon artwork still hangs in front of a painted sky; the plain coded disc doesn't. | Farthest; barely moves |
+| `far` | The skyline: hills, the house and the ridge | Far |
+| `mid` | A graveyard plane between the skyline and the ring | Middle |
+| `near` | Props at the edges of the frame, on the ground in front of the ring | Near |
+| `foreground` | Branches, drapes or anything right in front of the lens | Nearest; moves most |
+
+Name the file after its plane: `far.svg`, `far.webp` or `far.png`. Every plane must:
+- be twice as wide as it is tall, with the horizon 35% of the way down. An SVG uses `viewBox="0 0 2000 1000"` with the horizon at y = 350. A painted plate works well at 3200x1600, with the horizon at y = 560.
+- keep what matters within the middle 23% of the width (460 of 2000 units), which is all a portrait phone shows, and fill the full width for wide screens;
+- be transparent wherever the planes behind should show through. That's everything except the sky, so painted plates for the other planes need to be WebP or PNG with transparency.
+
+Painted plates give the classic look of an inked cast in front of a watercolour world. Each plate is painted once per screen size into its plane, so it costs no more each frame than the coded plane it replaces.
+
+The build stops with a message if a plane has the wrong proportions, or both an SVG and a painted plate. It warns when a plate is over 1.5 MB, because the page carries it.
+
+## The ring artwork (optional)
+
+The rings are drawn in code, except where you give one a picture. Drop a square image in
+`src/art/rings/` named after the ring's id — `hoop.webp` or `hoop.png` — with the hole fully
+transparent and the ring centred, then run:
+
+```
+python3 src/art/rings/measure.py
+```
+
+That writes `hoop.json` next to it with where the hole and the outer edge fall, and the build embeds
+both. The game scales the picture so **the hole in the art is the hole you throw through**, whatever
+the tube's thickness, so the collision never drifts from what you see. When a skull drops through, the
+picture blooms instead of the coded flash.
+
+The default hoop ships as a painted lifebuoy (640x640 WebP, 89 KB). Delete `src/art/rings/hoop.*` and
+the coded red-and-cream hoop comes back. The other 23 rings are still code, so they keep animating and
+recolouring.
+
+## The moon artwork (optional)
+
+The moon is a picture too: the grinning moon with a telescope in one eye. To use a different drawing,
+give `prepare.py` any PNG or WebP of it. The background can be transparent or plain white.
+
+```
+python3 src/art/moon/prepare.py path/to/your-moon.png
+```
+
+It cleans the picture and writes `moon.webp` and `moon.json` into `src/art/moon/`. The cleaning keys out a white background and fills any pinholes in the cut-out. It also finds the round disc, even with a telescope or a hat sticking out of it, and scales the picture to a 240 px disc radius.
+
+`moon.json` records where the disc sits. The game puts the disc where the moon hangs, and anything beyond the disc hangs out over the sky.
+
+Where the moon sits:
+- It hangs a size larger than the old plain disc, so the face reads on a phone.
+- It is in front of the drifting clouds; its glow stays behind them.
+- The vignette leaves a soft clearing around it, so the cream and the ink stay bright instead of turning grey.
+
+Delete `src/art/moon/moon.*` and the old plain disc comes back.
+
+## The skull artwork
+
+The skull is drawn from seven SVG layers in `src/art/skull/`. They all share one 1000×1000 canvas, so they line up exactly:
+
+| Layer | What it is | What the game does with it |
+|---|---|---|
+| `cranium.svg` | The head | Skins recolour it, and textures and paint jobs are drawn inside it |
+| `jaw.svg` | The jaw, with the dark mouth opening inside it | Drops open, shifts sideways when confused, and is resized by some Teeth items |
+| `socket-left.svg`, `socket-right.svg` | The eye sockets | Swell outward on fear and excitement. Pupils, lids and brows are drawn inside them. |
+| `nose.svg` | The nose | Drawn as it is |
+| `teeth-upper.svg`, `teeth-lower.svg` | The two rows of teeth | The upper row stays with the head and the lower row rides on the jaw. The divider lines mark single teeth for Gold Tooth, One Tooth and Crooked. |
+
+Colours work by role:
+- light fills become the skin's bone colour;
+- dark fills become the skin's socket colour;
+- strokes become the skin's ink colour.
+
+The Classic skin uses the artwork's own colours, with no added shading.
+
+To change the skull, replace any of these files and run `python3 src/build.py`. Each layer must use `viewBox="0 0 1000 1000"`. The importer takes the rest as your drawing tool exports it:
+- paths and basic shapes;
+- groups with transforms;
+- `<use>`;
+- the class styles Illustrator writes.
+
+The build stops with a message if a layer is missing, empty, the wrong size, or contains text or an embedded picture.
+
+## The launcher and target artwork
+
+Like the skull, the slingshot and the ring's post are SVG assets now, each with its own folder and an `asset.json`. Replace an SVG with your own drawing (same layer names, same canvas) and rebuild.
+
+**`src/art/launcher/launcher.svg`** is one file with a named group per layer (`<g id="frame">` and so on). It uses a 1000×1000 canvas where 150 units are one skull radius and the skull rests at (500, 400).
+
+| Layer | What it is |
+|---|---|
+| `frame` | The wooden Y. It jumps after a shot and squeezes in a little under a hard pull. |
+| `tips` | Whatever sits over the band ends at the prong tips (the cream cord) |
+| `pouch` | The leather pouch, behind the skull. It follows the pull, then twangs. |
+| `pouch-front` *(optional)* | A lip drawn in front of the seated skull |
+| `shadow` *(optional)* | A shadow under the frame |
+
+The bands are drawn by the game, because they stretch. `asset.json` says where they tie on (`bandL`, `bandR` on the prongs, `pouchL`, `pouchR` on the pouch) and what they look like (`bands`: outline, colour, widths).
+
+**`src/art/target/target.svg`** is the ring's post, on a 400×1000 canvas where 40 units are the post's width. The `post` layer is stretched from y = 100 (just under the ring) to y = 900 (the ground). `post-cap` (the iron collar under the ring) and `post-foot` (the block on the ground) are drawn at their true shape. The ring itself stays as ring art (the lifebuoy) or a coded ring. The other 20 poles in the Vault are still drawn in code.
+
+Colours in any of these SVGs can be the game's palette names (`fill="ink"`, `stroke="var(--red)"`), so they stay in step with the rest of the game. Every asset carries a `version` (1.0.0) and a production `name` (`ST_MOON_CEM_LAUNCHER_BASE`); the debug overlay shows which versions are in.
+
+## Editing the game
+
+`index.html` is assembled from `src/`:
+
+- `page.html` is the page skeleton.
+- `css/*.css` holds the design tokens, controls and HUD, screens, sheets and the Skull Vault.
+- `markup.html` holds the icon sprite, screens and sheets.
+- `art/skull/`, `art/launcher/` and `art/target/` hold the vector assets, each with an `asset.json`. `art/rings/` holds the lifebuoy, `art/moon/` the moon and its `prepare.py`, and `art/scene/` any plane artwork (see above).
+- `svgart.py` is the SVG importer the build uses for the vector assets.
+- `fonts/` holds the four embedded fonts and their licences:
+  - Luckiest Guy for the display lettering (Apache 2.0)
+  - Bangers for the comic bursts (OFL)
+  - Bebas Neue for every number, the score included (OFL)
+  - Nunito Sans for UI text (OFL)
+- `sfx/` holds the recorded sound effects (see [The music](#the-music)).
+- `js/*.js` holds the script, joined in filename order:
+  1. Data and the catalogue (`01`, `01b`), audio, cloud save and the leaderboard (`03b`), state, economy (with the daily, weekly and monthly challenges), the camera (`04c`), the visual system with its states and pose library (`04d`), the shot director (`04e`: FX recipes, the timeline and the sound cues) and achievements (`04f`)
+  2. Layers, the world and the rubber-hose graveyard (`06c`: props, the gravedigger and the cat)
+  3. The game and its two modes (`07`), stages and the Arcade rules (`07b`), power-ups (`07c`) and bosses (`07d`)
+  4. Drawing: the skull and its rig (`08a`), rings, the scene, skins and paint (`08d`), trails and impacts (`08e`), hats and auras (`08f`), the skull's voice (`08g`), and the v11 looks (`08h`)
+  5. Input, screens (with the Play sheet and the GAME OVER card), sheets, the Skull Vault, the film overlay, the leaderboard sheet (`09f`), the Curio Cart (`09g`) and the visual debug overlay (`09h`)
+  6. Boot, and the console handle every build carries (the overlay's switches, the animation inspectors, `telemetry()`)
+  7. `99_dev_hooks.js`: the test hooks the spec drives. Only `--dev` builds include them.
+
+The play log and the consented play analytics are `04g_telemetry.js`, and the gamepad lives with the rest of the input in `09a_input.js`. Where the game is running (web, the app stores' shells, the desktop) is `03e_platform.js`.
+
+Run `python3 src/build.py` to rebuild the release `index.html`, or `python3 src/build.py --dev` for `index-dev.html` with the test hooks (add `--with-music` to either). The build refuses to run if two script parts define the same top-level name, and it won't put the test hooks in the published build.
+
+## Performance
+
+Measured with the spec's own harness in headless Chromium at 390x844, DPR 2 - software rendering, so the
+absolute numbers run far higher than on a real phone or desktop; the useful part is the before-and-after.
+
+- A busy frame (four wanderers on screen) went from **16.5 ms to 14.4 ms** after the pass below.
+- Pixels pushed each frame dropped from about **5.9 M to 4.6 M** (the canvas itself is 1.3 M at DPR 2).
+- The spec has a canary check that fails if a frame ever costs more than 60 ms.
+
+What changed:
+
+- **Wanderers are drawn as cels.** Each zombie, skeleton, werewolf and ghost pose is painted once into a
+  little cel - twelve to a cycle, trimmed to the drawing - and photographed each frame, the way a 1930s
+  studio shot one drawing at a time. It replaces a few hundred bezier strokes a frame with one blit.
+- **The vignette left the canvas.** It never changed between frames, so it is a still overlay over the
+  picture now instead of a full-screen blit on every frame.
+- **The graveyard is kept in order.** The props are sorted back to front once, not rebuilt and re-sorted
+  sixty times a second, and a prop only takes the shear transform when it actually sways.
+
+What was measured and left alone: the gravedigger (his cost is in fill, not in paths), the parallax plane
+blits (they are the multiplane camera), and the cloud field. The device pixel ratio was already capped at
+2. On a device that can't keep up, the boot loop first cuts the effects (particles, dust and film grain, down
+to half) and only then drops the resolution.
+
+## The visual debug overlay
+
+Press the **`** key (under Esc) to see what the game is really using, drawn over the picture. Press it again to hide it. Opening the file with `?debug` on the end of the address (`index.html?debug`) starts with it on. It shows:
+
+- **The ring's circles.** Cream circles mark the tube: the ring art should fill the band between them. Inside them:
+  - green is the clean window for the skull's centre;
+  - gold is the perfect window;
+  - dashed red is where a throw stops touching the ring at all;
+  - dashed magenta is the grab window when a power-up floats in the ring.
+
+  In the post phase, dashed red lines mark the post.
+- **The skull.** Its collision circle, its pivot, and the rig's squash-and-stretch axis with its current amount.
+- **The moon's disc**, as `moon.json` measured it.
+- **A panel:**
+  - the frame rate, what each frame costs, and the resolution;
+  - the visual system's states (skull, pose, ring, launcher, camera, boss, power-ups), the effects quality, the last impact and how hard it was, and which art versions are in;
+  - the shot director: the throw's number, its biggest moment and that moment's weight, and the last few sound cues with when they played;
+  - the drawing and camera-exposure counts (24 a second, in step) and each wanderer's cel (twelve to a cycle, on twos);
+  - where the camera is;
+  - how far each plane has slid and zoomed.
+
+Each part can also be switched from the browser console: `SkullToss.debug.visuals.showCollisionRadius = true`. The switches are `showFPS`, `showStates`, `showCollisionRadius`, `showPivots`, `showParallax`, `showCamera` and `showAnimationFrame`. `forceAnimationFPS = 12` steps the drawings and the camera 12 times a second instead of 24, and 60 makes them smooth; set it back to 0 for the default. On a phone the panel leaves out the parallax table to save room. On a phone, long lines wrap. With every switch off, the overlay costs nothing.
+
+From the console, `SkullToss.debug.visualAnimation` lists the pose library (`poseLibrary()`, `samplePose("death")`), the FX recipes (`fxRecipe("perfect")`, `fxTimeline("perfect")`, `fxIntensity("bossHit")`), what the director is doing (`fxState()`), the sound cues (`cues()`) and the effects quality (`quality()`).
+
+## Tests
+
+Build the dev version (`python3 src/build.py --dev`), put `TEST_SPEC.js` next to `index-dev.html` and open **`index-dev.html?test`**. The release build leaves the test hooks out, so it can't run the spec. The tests run with the clock paused, so results are deterministic, and they never touch your saved data. There are **232 checks**, covering:
+
+- **Layout, scoring and aiming.**
+  - Everything is centred and every result is classified correctly.
+  - Points follow base × combo × stage, and hits count one each.
+  - The preview matches the real throw, and leading a moving ring pays off.
+  - Every throw is ready again within 2.5 s.
+- **The HUD.** Skulls top left (small), score top centre in Bebas Neue with the hits under it and the best under those, pause and power-ups top right, progress bar along the bottom.
+- **Stages and bosses.**
+  - 25 hits bring the Crow King, who carries the ring near and far.
+  - A ring off its usual plane is still exact, and leading the 3D ring scores.
+  - Beating him turns the ring into a repeating triangle through depth.
+  - 50 hits bring the Pumpkin King, whose seeds knock the skull down. Ghost Toss slips through them.
+  - Beating him clears the stage.
+- **Power-ups.** They float in the ring, and a toss that clips the drawn prop grabs one while one that misses the drawing doesn't. Skull Rush, Deadeye, Second Chance, Cursed Skull and BONK Blast all do what they say.
+- **The skull.**
+  - It is drawn from all seven SVG layers.
+  - It squashes and stretches, and every result gets the right mood.
+  - A clean miss hangs, then BONKs.
+  - Hats pop off at launch and settle back.
+  - It talks when grabbed.
+- **The Vault and the Curio Cart.**
+  - Thirteen shelves and 364 items. Every item renders in play and on its shelf.
+  - Prizes for failing and for bosses are won, not sold. Exclusives are sold only at the cart.
+  - Deals are marked down, and the coffin gives something new.
+- **The leaderboard.** It's opt-in, posts only your headstone name, score and looks, shows other names as plain text, and takes your entry down when you opt out.
+- **Film, the camera, screens, combo calls, the economy, daily challenges, results, the profile, saving and the living graveyard.** This includes the gravedigger, the cat and the moon artwork.
+- **The visual system.** Its API and states, the three SVG assets with their layers, anchors and versions, drawings stepping on 24s while the flight stays smooth, the state flow of a throw, and impacts scaled by how hard they hit.
+- **The shot director.**
+  - Full draw is the anticipation, and the skull keeps its shape in the pouch.
+  - The poses follow a throw: launch, a smear that thins, flight, then the make's own drawing.
+  - A bonk lands on its own drawing (eyes screwed shut, a contact star), then rebounds into the dizzy look.
+  - One throw is one timeline: snap, whoosh on the smear, contact, crack, and the sting three drawings on, each once.
+  - Every hit is heard once, with the boing on the rebound.
+  - The FX recipes rank from launch to boss defeat on one timeline, and the pose library has all fourteen of the plan's poses.
+  - The bosses have visual states, and busy devices lose effects before pixels (never below half).
+- **v12.**
+  - PLAY asks Story or Arcade, and the map list shows every map with its best; a map starts there.
+  - Arcade has no bosses, goes 3D at 25 hits and keeps speeding up. Bests are kept map by map, the clock races your best time, times are never rounded up into the next minute, and Toss again replays the same map.
+  - GAME OVER shows before the headstone, and ending the run from the pause menu skips it.
+  - Daily, weekly and monthly challenges: three of each, weeks and months reset on time, bigger periods always pay more, and a throw counts toward all three.
+  - Achievements pay once, the medal drops in (under the score mid-run), and the sheet lists them all.
+  - The pause menu and the Cart have their own music and hand back to the act, and the three recorded sounds are embedded.
+  - The title skull's canvases spill past its letter so an aura is never cut off, and the tagline is the new one.
+- **v14.**
+  - The leaderboard posts a Story run played to its end. A hand-edited save code keeps its best on the profile, but it never reaches the board.
+  - Saves carry schema 2: a v12 save steps up to it, a newer build's save keeps its number, and a newer build's code is refused.
+  - A save that won't read loads the last copy that did, and keeps the broken text.
+  - The fixed step: one throw ends in exactly the same state at 60 Hz and at a jittery mix of 30–144 Hz frames.
+  - A gamepad aims where the same finger drag would, throws on A, throws nothing when the stick springs back, and pauses on Start.
+  - The play log records a run from start to end on the device.
+- **v15.**
+  - Flashes Full, Reduced and Off each give the right flash, lightning strength and flicker.
+  - High contrast and large text reach the page, and both switch off again.
+  - Tab wraps inside an open sheet, and the arrows move along a radio row.
+  - The budget: effects are capped, a step costs under 0.5 ms, and the page stays under 2,500 elements.
+  - The UI kit builds elements with text, attributes, data and handlers.
+- **v16–v18.**
+  - Eight maps from the checked map data, and the code draws everything they name.
+  - Each map dresses the scene as itself: its planes, props clear of the lane, its weather, moon and frame. Map 1 is Moonshine Cemetery as it was.
+  - Arcade opens a map once Story has reached it, and a locked map can't be picked.
+  - Map 1's end boss gives Morty's Top Hat, and only the first time counts.
+  - The story ends after map 8: THE END, the results say *The end*, and The Whole Reel is earned.
+  - A v12 save migrates: stages past four mean map 5, and The Whole Reel becomes Half the Reel.
+- **v19.**
+  - The Tier Director: each map's two tiers, and Arcade climbing past 50 hits.
+  - The Ring Path Director: every path stays in the ring's space, the carousel circles, and a jump cut holds, flickers and cuts. The Carnival rides the carousel and the Final Reel cuts.
+  - Wind: the guide's crossing drifts by ½·w·t², a throw aimed at the middle is carried into a ring 0.8 m off, the HUD shows the wind, and the wind turns after each throw.
+  - Bats, falling bones, balloons and the pendulum each knock the skull down, Ghost Toss slips past each, and a quarter swing later the pendulum's lane is clear.
+  - Hazards come round on the tier's schedule, fog rolls in and out, and no pendulum swings during the end boss.
+  - A make that flies on into a bonus target pays and counts, map 1 opens with none, and the orchard hangs a bone-fruit.
+  - The same seed lays out the same targets and hazards.
+- **v20.**
+  - Every map's mini-boss takes the ring, keeps it moving in play, gives its tell and falls, and the second half follows.
+  - Every map's end boss throws its volleys after a tell, keeps the ring in play and falls holding its piece. All eight pieces finish the story.
+  - A new end boss's volley knocks the skull down, and a Ghost Toss appears at two-thirds health.
+- **v21.**
+  - Across 40 seeds, the Power-Up Director never deals a prop before the fourth hit or more than three a half, pity makes one certain by the fifteenth hit, and no prop comes twice running.
+  - A first half never deals the Cursed Skull, the second half deals its own, and the same seed rolls the same props.
+  - In play, a run of makes brings a prop, and misses never do.
+- **v22.**
+  - Out of skulls, a continue for 200 bones gives one skull back and keeps the score; the run and the profile count it.
+  - No thanks ends the run, and so does the eight-second clock.
+  - One continue a map; no offer without the bones or an ad; with an ad provider the reel buys the skull.
+  - A run that used a continue never goes on the leaderboard, but still counts for your own best.
+  - A run survives a reload: it picks up where it left off, a boss fight from its start, and a waiting continue is offered again.
+- **v23.**
+  - A Story run opens on the leader, then Reel One's card. No throw is allowed while a card is up, and a tap skips it. The leader plays once a session.
+  - Between reels, two changeover cues, then the next reel's card. After Reel Four comes the intermission, then Reel Five.
+  - After Reel Eight, THE END card, then the headstone reading The end.
+  - Title cards Short gives a brief card and no leader. Off goes straight into play. Arcade opens on its map's own card.
+- **v24.**
+  - The markup, the code's text and every one of Morty's pools come from the string table, and nothing goes missing in play.
+  - In the pseudo-locale every tagged text is accented and padded, placeholders survive, and no title button, settings label or continue button overflows.
+  - Morty deals a pool like cards, with no repeats until it's done.
+  - Big moments always get a line (a boss walking on, a boss down, the continue offer and taking it). Small ones wait out the cooldown. Twelve idle seconds get one nudge per lull.
+  - His mood follows the run: nervous on the last skull, cocky on a streak, grumpy after misses.
+- **v25.**
+  - Dead Centre, Long Bomb, Point Blank and Top Corner come from where the ring was. Each pays 150 × rarity and is counted; an ordinary swish earns nothing.
+  - Leading Man, Wind Rider, Thread the Needle, Two for One and Phantom come from what the throw did.
+  - A Hat Trick, a Buzzer Beater and a Knockout Blow hold the reel, and the rarest shot takes the card.
+  - A crash zoom scales the frame, a whip pan slides it, and a boss walks on to a Dutch tilt. Each comes back to rest. Camera Still counts the shot and leaves the frame alone.
+  - The Profile lists the twelve shots, what each takes and how often you've made it.
+- **v26.**
+  - Practice: misses are free and nothing counts on the real profile. The ring stands still or runs at half speed, and the 3D path can be practised.
+  - Boss Rush is locked until an end boss falls. It then runs the beaten bosses back to back, gives a skull back after each end boss, and keeps its record.
+  - Curtain Call: misses are free and the twenty-second clock ends the run.
+  - Longshot: the ring backs off 0.4 m after each make, misses cost skulls, and the record is the farthest make.
+  - Target Gallery: five targets hang behind a still ring, a throw through the hole reaches them, and ten throws end the run.
+  - Can Alley after an end boss (v45): offered, skippable; misses are free, cans pay 5 bones, then the next reel.
+  - The Play sheet lists five more modes, locked until an end boss falls. Practice picks a map and its options.
+- **v27.**
+  - The Codex notes a boss when you meet it, a power-up when you grab it, and each map's hazard and target. What you see in Practice counts too.
+  - The Codex sheet has eight tabs, 16 bosses written up or ???, and the found count.
+  - The Archive starts with the first memo, unseals eight documents by Reel Five, and the restoration report when the story is finished.
+- **v28.**
+  - The cartoon misbehaves between throws: nothing in the first five, one a map at most, never mid-flight, and never with Mischief off.
+  - The six misbehaviours each do their thing. Tapping the animator's hand is a secret.
+  - The secrets are each found their own way, each pays 150 bones once, and the Codex's Secrets tab keeps them.
+- **v29.**
+  - Eight bands in the Vault, the rubber one yours, and each strung on the launcher its own way. Barbed Wire comes from 300 misses and Ectoplasm from the story.
+  - An outfit saves a look and wears it back, never with things you no longer own. Surprise me uses only your things.
+  - Renamed items stay yours, and item goals name the right bosses.
+- **v30.**
+  - With no server the Soul Shop says so and Soul looks stay locked.
+  - The daily Souls come once a day, a pack is credited once per receipt, a forged receipt pays nothing, and the server charges its own price whatever the caller says.
+  - A Soul look is bought and worn; with too few Souls nothing changes; and the shop shows the wallet.
+  - Souls are never on the profile or in a save code, and a wallet that doesn't own a look takes it off.
+  - Plus five server tests in `firebase/functions/test`.
+- **v31.**
+  - A real run earns experience on a rising 50-level curve; Practice earns none.
+  - A level up pays 25 bones × the level, once, and level 5 unlocks its title.
+  - The career card shows level, experience to the next, pieces and best score, and the log keeps the last ten runs.
+- **v32.**
+  - Shot tiers come at 1, 10 and 25 and each pays once. Gold on all twelve is the Shot Doctor.
+  - Map stars: its end boss down, down without a miss, and 100 makes there.
+  - Boss tiers light up in the sheet, the title chip shows a pip, and a tier is claimed from the sheet.
+- **v33.**
+  - Each sound set reshapes a sound as it's made (pitch, voice, length, filter, room), and Classic leaves it alone.
+  - All 16 bosses and 8 reels have a motif, all different and under three seconds, and a sting has one more note per step of rarity.
+- **v34.**
+  - A finished run is checked by the server and posted all-time and this week. A forged score is refused, and a run straight after another is slowed down.
+  - Each kind of forgery is refused by name.
+  - The board has a This week tab.
+- **v35.**
+  - A run played only through a player's inputs (throws, card skips, the end) replays to the same score, hits and throws, and changes nothing on the profile or the resume snapshot.
+  - A replay survives a link: encoded, decoded and replayed the same. Junk is refused, and the title offers a shared one.
+  - The headstone offers Watch replay and Share, and a replay's own stone says Replay.
+- **v36.**
+  - The Arcade shows a cabinet per map: marquee, top scores and coin slot, or Out of Order until reached. A coin starts that cabinet.
+  - A top-five score asks for initials (ALO from Ada Lovelace), and ▲ changes a letter.
+  - A score below the five asks nothing and leaves the table alone.
+- **v37.**
+  - The new challenge kinds are in all three pools, the live config can take kinds out, and a signature shot counts toward its challenge.
+  - An event doubles the pay on the same goals.
+  - The daily streak pays 20 a day up to a week, once a day, and a missed day starts it again.
+  - Kill switches close the Soul Shop, and the event banner shows and goes.
+- **v38.**
+  - The week's challenge is the same for everyone, changes each week, and plays on its map whatever you've reached.
+  - Each of the six twists does its thing.
+  - A note met is a star paying its bones once a week, the week's best is kept, and last week's stars don't count.
+  - A replay carries its note.
+- **v39.**
+  - Play data waits for a yes and is asked for once, after the first run. A yes sends the session so far, cut down, to the server, which files and counts it. A no stops everything, and Global Privacy Control is a no.
+  - Each first is noted once, in order, and survives a save merge.
+  - Only listed events and fields leave the device. Errors are kept, five a session are sent, and a kill switch or a sample of 0 stops it all.
+  - A scheduled event runs only in its window, maintenance and old-build lines show, and a mode taken off can't be started.
+  - A refunded pack's owed Souls show in the Soul Shop and block buying.
+  - The economy audit finds nothing.
+  - Restore points: one a day, the last three, and recovering only adds.
+  - Plus five server tests (analytics, rate limit, refunds, support's tools, server-side switches).
+- **v40.**
+  - The web build is the web: no store, no reels, no Quit, and no service worker under test.
+  - The phone shells: the native haptic engine, the back button in every state, and backgrounding mid-run.
+  - Soul packs through a store: credited and then finished, a left-over one credited at the next launch and never twice, and the store's price on the pack.
+  - Rewarded reels: offered once loaded, watched, loaded again, and switched off by the live config.
+  - The desktop shell: full screen, Quit, and Steam achievements by API name.
+- **v41.**
+  - The content audit finds nothing.
+  - A replay on the balloon map sees the same balloons, however much later it's watched.
+- **v42.**
+  - A season runs on its dates, or when the live config names it, and "off" means none.
+  - Runs climb the Ticket, the Feature counts double, a note pays once, and Practice earns nothing.
+  - Stubs are claimed once and only when reached. The premium reward needs the Premium Ticket (bought at the server's price), and season looks are the Ticket's alone.
+  - After the season there's a week to claim, then it all expires, and unearned season looks leave the Vault.
+  - The Feature plays its map after dark with its twists, its bar names it, and its replay keeps its rules.
+  - Two devices' Tickets merge.
+- **v43.**
+  - Google Analytics waits for the same yes and gets the same cut-down events, with advertising off, and a no stops it.
+  - Firebase partly set up (no database or functions yet, or sign-in off): the game plays on, and analytics still works.

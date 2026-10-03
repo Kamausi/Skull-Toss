@@ -1,0 +1,1 @@
+{ "private": true, "description": "Builds src/vendor/three.js (an IIFE of the Three.js parts the 3D renderer uses). Run: npm install && npm run build", "scripts": { "build": "esbuild entry.js --bundle --minify --format=iife --global-name=THREE --outfile=../../src/vendor/three.js --legal-comments=inline" }, "devDependencies": { "three": "0.186.0", "esbuild": "0.24.0" } }

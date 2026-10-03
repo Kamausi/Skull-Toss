@@ -1,0 +1,601 @@
+{
+  "id": "woods",
+  "n": 3,
+  "name": "The Whistling Woods",
+  "reel": "Reel Three",
+  "premise": "The trees here whistle when the wind goes through them, and the signposts all point the wrong way.",
+  "identity": {
+    "visual": "Tall black trunks, hollow logs, crooked signposts, will-o'-wisps in the ferns.",
+    "spatial": "A narrow cutting through the trees; hollow logs lie across the lane's edges and blow up it.",
+    "mechanic": "Trajectory and deception: the wind turns every throw, hollow logs gust the skull, and painted decoys hide among the bullseyes.",
+    "throw": "Read the wind sign and the leaves, aim off, and never trust a bullseye with a question mark on it.",
+    "boss": "Marrowroot whistles up a gale and hangs his decoys in the lane: the ring you see sway may not be the one to throw at.",
+    "targets": "Will-o'-wisps, and cardboard decoys that only look like them.",
+    "hazards": "Wind and hollow-log gusts.",
+    "camera": "Tall and narrow, the trunks framing the lane.",
+    "ambient": "Owls, fireflies of wisps, leaves always blowing one way.",
+    "music": "The waltz on a penny whistle.",
+    "sfx": "Whistling wind, creaks, hoots.",
+    "transition": "A gust of leaves across the lens.",
+    "reward": "Marrowroot's Root Beard and the third shard."
+  },
+  "sheet": {
+    "concept": "Make the path of the throw the puzzle: things push it, and things lie about where it should go.",
+    "plane": "A cutting through the trunks (z 0–7.8); logs blow across the hazard zone at waist to head height.",
+    "launcher": [
+      0,
+      0.9,
+      0
+    ],
+    "zones": {
+      "ring": {
+        "x": [
+          -1.45,
+          1.45
+        ],
+        "y": [
+          1.8,
+          3.3
+        ],
+        "z": [
+          4.7,
+          7.5
+        ]
+      },
+      "targets": {
+        "x": [
+          -1.6,
+          1.6
+        ],
+        "y": [
+          1.4,
+          3.1
+        ],
+        "z": [
+          7.4,
+          9.0
+        ]
+      },
+      "hazards": {
+        "x": [
+          -2.3,
+          2.3
+        ],
+        "y": [
+          1.0,
+          4.2
+        ],
+        "z": [
+          2.2,
+          5.4
+        ]
+      }
+    },
+    "corridor": {
+      "halfWidth": 2.4,
+      "zMax": 16
+    },
+    "camera": {
+      "x": [
+        -0.26,
+        0.26
+      ],
+      "y": [
+        -0.12,
+        0.1
+      ],
+      "z": [
+        -0.4,
+        1.0
+      ]
+    },
+    "parallax": [
+      "sky",
+      "far",
+      "ground",
+      "world",
+      "near",
+      "fg"
+    ],
+    "interactions": [
+      {
+        "on": "tree",
+        "does": "bend"
+      },
+      {
+        "on": "signpost",
+        "does": "rotate"
+      },
+      {
+        "on": "log",
+        "does": "squeak"
+      },
+      {
+        "on": "mushroom",
+        "does": "squeak"
+      },
+      {
+        "on": "owls",
+        "does": "react"
+      }
+    ],
+    "ambient": [
+      "owls",
+      "wisps",
+      "weather",
+      "walkers",
+      "ghost"
+    ],
+    "lighting": {
+      "key": [
+        -0.35,
+        0.94
+      ],
+      "ambient": "#1C2A28",
+      "rim": "rgba(200,240,210,.3)",
+      "ring": 0.38,
+      "boss": "#A8F0C8"
+    },
+    "arenas": {
+      "mini": {
+        "z": [
+          5.0,
+          7.8
+        ],
+        "note": "the Owl perches on the signpost arms"
+      },
+      "end": {
+        "z": [
+          9.4,
+          14.6
+        ],
+        "note": "Marrowroot stands among the trunks, arms out across the lane"
+      }
+    },
+    "transition": "Leaves whip across the lens on a whistle.",
+    "reward": {
+      "bodyPart": "beard:roots",
+      "section": "ribs",
+      "fragment": "whistle",
+      "show": "Marrowroot's roots curl into a beard on Morty's jaw."
+    }
+  },
+  "look": {
+    "sky": [
+      "#0E1A1C",
+      "#1C2E30",
+      "#2E4A48",
+      "#4A6660"
+    ],
+    "horizon": "rgba(160,220,190,.12)",
+    "moon": "crescent",
+    "moonColor": "#E6F2DC",
+    "stars": 0.7,
+    "skyline": "woods",
+    "silhouette": "#0A1210",
+    "haze": "rgba(74,102,96,.26)",
+    "ground": [
+      "#2E3A2A",
+      "#222C20",
+      "#182018",
+      "#0E140E"
+    ],
+    "hills": [
+      "#34422E",
+      "#2C3828",
+      "#243022"
+    ],
+    "hillRim": "rgba(200,240,210,.12)",
+    "grass": [
+      "#4A6A3A",
+      "#3A5A2E"
+    ],
+    "lane": "dirt",
+    "light": "rgba(190,240,210,.08)",
+    "props": "woods",
+    "foreground": "vines",
+    "weather": "leaves",
+    "tint": null,
+    "ambient": {
+      "walkers": [
+        "werewolf"
+      ],
+      "ghost": false,
+      "bats": 0,
+      "witch": false,
+      "digger": false,
+      "cat": false,
+      "lightning": false,
+      "crows": false
+    }
+  },
+  "anchor": "post",
+  "ring": {
+    "speed": 1.12,
+    "tri": {
+      "a": 1.4,
+      "up": 0.9,
+      "near": 1.35,
+      "far": 1.45,
+      "skew": -0.25
+    },
+    "seqs": [
+      [
+        0,
+        2,
+        1
+      ],
+      [
+        0,
+        1,
+        2,
+        1
+      ],
+      [
+        1,
+        0,
+        2,
+        0
+      ]
+    ],
+    "mods": [
+      "bob"
+    ],
+    "path": "triangle",
+    "personality": {
+      "_doc": "v60: the third act's ring has a character, told before it matters (07z_rings.js)",
+      "kind": "timid",
+      "from": 20,
+      "to": 30
+    }
+  },
+  "tiers": [
+    "II",
+    "III"
+  ],
+  "mechanic": {
+    "kind": "wind",
+    "max": 1.6
+  },
+  "obstacles": {
+    "A": [
+      {
+        "kind": "fan",
+        "box": [
+          -2.3,
+          -0.6,
+          1.2,
+          3.6,
+          2.4,
+          4.2
+        ],
+        "push": [
+          4.5,
+          1.0
+        ],
+        "pulse": [
+          2.6,
+          1.6
+        ],
+        "from": 10
+      },
+      {
+        "kind": "gate",
+        "_doc": "v66 (the owner's call): a real gate across the lane that swings open and shut on its clock; the map's ring interaction works it (ring it and it's held open two throws); through the gate, the ring and on into the actor is a key, and two keys in the first half open the secret path (07wa_gates.js)",
+        "span": [
+          -1.6,
+          1.6
+        ],
+        "h": 3.3,
+        "z": 2.8,
+        "cycle": [
+          3.2,
+          1.0
+        ],
+        "phase": 1.6,
+        "look": "wood",
+        "from": 14
+      }
+    ],
+    "B": [
+      {
+        "kind": "fan",
+        "box": [
+          -2.3,
+          -0.4,
+          1.2,
+          3.6,
+          2.2,
+          4.0
+        ],
+        "push": [
+          4.8,
+          1.2
+        ],
+        "pulse": [
+          2.4,
+          1.4
+        ],
+        "from": 0
+      },
+      {
+        "kind": "fan",
+        "box": [
+          0.4,
+          2.3,
+          1.2,
+          3.6,
+          4.6,
+          5.4
+        ],
+        "push": [
+          -4.8,
+          0.8
+        ],
+        "pulse": [
+          2.8,
+          1.2
+        ],
+        "from": 4
+      },
+      {
+        "kind": "coach",
+        "_doc": "v67: the foreground pressure event (07wb_coach.js): a phantom coach crosses the lane on its schedule, told first (lamp, bell, a track on the ground); wait for it or lob over it; a ghost where it passes in front of the ring",
+        "z": 2.3,
+        "y": [
+          1.5,
+          2.6
+        ],
+        "every": [
+          8,
+          1.2
+        ],
+        "speed": 3.4,
+        "look": "wood",
+        "phase": 2.6,
+        "from": 2
+      }
+    ],
+    "boss": [
+      {
+        "kind": "fan",
+        "box": [
+          -2.3,
+          2.3,
+          1.2,
+          3.8,
+          3.2,
+          4.4
+        ],
+        "push": [
+          4.0,
+          0.6
+        ],
+        "pulse": [
+          3.0,
+          1.5
+        ],
+        "flip": true,
+        "from": 0
+      }
+    ]
+  },
+  "targetTypes": {
+    "A": [
+      "standard",
+      "decoy"
+    ],
+    "B": [
+      "swinging",
+      "decoy",
+      "runaway"
+    ]
+  },
+  "bosses": {
+    "mini": "owl",
+    "end": "marrowroot"
+  },
+  "acts": [
+    "The Wisp Path",
+    "Hollow-Log Hollow",
+    "The Signpost Maze",
+    "The Marrow Root"
+  ],
+  "travel": {
+    "step": 6,
+    "arrive": [
+      0.85,
+      0.7,
+      0.55,
+      0.4,
+      0.25
+    ],
+    "gap": 2.6,
+    "far": 170,
+    "_doc": "v47 perceptual travel (docs/TRAVEL.md): see 01-hollow.json.",
+    "backdrop": [
+      "pine",
+      "pine",
+      "owl-tree",
+      "tree"
+    ],
+    "zones": [
+      {
+        "id": "wisps",
+        "from": [
+          0,
+          0
+        ],
+        "density": 0.6,
+        "fog": 0.08,
+        "tone": "rgba(0,0,0,0)",
+        "near": "fern",
+        "mix": {
+          "pine": 4,
+          "fern": 3,
+          "mushroom-ring": 2,
+          "tree": 1
+        }
+      },
+      {
+        "id": "logs",
+        "from": [
+          10,
+          6
+        ],
+        "density": 0.64,
+        "fog": 0.12,
+        "tone": "rgba(20,40,30,.1)",
+        "near": "fern",
+        "mix": {
+          "hollow-log": 3,
+          "pine": 3,
+          "fern": 2,
+          "mushroom-ring": 1
+        }
+      },
+      {
+        "id": "signposts",
+        "from": [
+          20,
+          8
+        ],
+        "density": 0.6,
+        "fog": 0.18,
+        "tone": "rgba(20,30,40,.16)",
+        "near": "fern",
+        "mix": {
+          "signpost": 2,
+          "pine": 3,
+          "hollow-log": 1,
+          "fern": 2,
+          "mushroom-ring": 1
+        },
+        "flock": 0.3
+      },
+      {
+        "id": "owls",
+        "from": [
+          30,
+          -6
+        ],
+        "density": 0.4,
+        "fog": 0.26,
+        "tone": "rgba(10,20,30,.26)",
+        "near": "fern",
+        "mix": {
+          "owl-tree": 3,
+          "pine": 2,
+          "fern": 2,
+          "mushroom-ring": 1
+        },
+        "flock": 0.6,
+        "backdrop": [
+          "owl-tree",
+          "pine"
+        ]
+      },
+      {
+        "id": "root",
+        "from": [
+          30,
+          30
+        ],
+        "density": 0.55,
+        "fog": 0.18,
+        "tone": "rgba(40,30,20,.2)",
+        "near": "fern",
+        "mix": {
+          "gnarled-root": 3,
+          "bonetree": 2,
+          "owl-tree": 1,
+          "hollow-log": 1,
+          "skullpile": 1
+        }
+      }
+    ],
+    "landmarks": [
+      {
+        "asset": "marrow-lair",
+        "hit": 50,
+        "ahead": 44,
+        "x": 0,
+        "mul": 1.25,
+        "wakes": "end"
+      }
+    ],
+    "clear": [
+      {
+        "hit": 30,
+        "back": 6,
+        "ahead": 28,
+        "x": 4.2
+      },
+      {
+        "hit": 50,
+        "back": 6,
+        "ahead": 34,
+        "x": 5
+      }
+    ],
+    "land": {
+      "hills": 4.2,
+      "roll": 2.0,
+      "wave": 85,
+      "curve": 1.2,
+      "bend": 130
+    },
+    "sky": {
+      "arc": 0.8,
+      "late": [
+        "#060A10",
+        "#2E4A3A"
+      ],
+      "k": 0.3
+    }
+  },
+  "fragment": "whistle",
+  "target": "wisp",
+  "music": {
+    "rate": 1.03,
+    "key": 1
+  },
+  "blurb": "The wind turns every throw, hollow logs gust up the lane, and decoys hide among the bullseyes",
+  "ecosystem": {
+    "_doc": "v58 MAP → ECOSYSTEM → CAST (blueprint.json: ecosystem): who and what lives here, and nowhere else it doesn't belong.",
+    "teaches": "Wind",
+    "cast": [
+      "werewolf",
+      "owl",
+      "deer",
+      "fox",
+      "spirit"
+    ],
+    "wildlife": {
+      "owl": 3,
+      "deer": 2,
+      "fox": 1,
+      "spirit": 5
+    },
+    "vegetation": [
+      "pine",
+      "fern",
+      "mushroom-ring",
+      "gnarled-root"
+    ],
+    "props": [
+      "hollow-log",
+      "owl-tree",
+      "skullpile",
+      "bonetree"
+    ],
+    "hazards": [
+      "the wind through the trees"
+    ]
+  },
+  "encounter": {
+    "_doc": "v58 the ring interaction (07w_encounter.js): what hangs behind the ring on this map, and what going through the ring into it does (path: the next throw's movers and threats stand aside; bonus: points only).",
+    "interaction": "chime",
+    "consequence": "bonus"
+  }
+}

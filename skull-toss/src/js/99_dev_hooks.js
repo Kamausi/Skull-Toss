@@ -1,0 +1,474 @@
+  // ───────────────────────── test hooks (dev build only: python3 src/build.py --dev) ─────────────────────────
+  // These can change the game (bones, stats, the leaderboard), so the release and published builds leave this part out.
+  // TEST_SPEC.js drives the game through them with the clock paused.
+  const WEB_PAYMENTS = Payments, WEB_ADS = Ads;   // (the web build's own, for going back after a faked shell)
+  Object.assign(window.SkullToss.debug, {
+    constants: { G, SKULL_R, START_Y, RING_Z, RING_Y, RING_TUBE, RC_START, RC_MIN, POST_HALF, FLIGHT_T, START_LIVES, MAX_LIVES, STAGE_MINI, STAGE_LOOSE, STAGE_BOSS, STAGE_END, ACT_LEN },
+    level, catalog: () => JSON.parse(JSON.stringify(CATALOG)), bandStyle: () => ({ id: cos.band, ...(BANDS[cos.band] || {}) }), wearOutfit: i => wearOutfit(i), saveOutfit: i => saveOutfit(i), surprise: () => surpriseLook(),
+    reqText: (k, n) => REQ_TEXT[k](n), cleanProfile: p => cleanProfile(p),
+    async fakeServer(uid) { Backend.reset(); Backend.useFake(uid); await Souls.connect(); return Backend.kind; }, noServer() { Backend.reset(); Souls.connect(); },
+    setWallet(w) { Souls.set(w); }, levelFor: xp => levelFor(xp), xpForLevel: L => xpForLevel(L),
+    shape: (f, type, dur, peak, slide, o) => soundShape(f, type, dur, peak, slide, o), motifPlan: id => motifPlan(id), sting: r => playSting(r), soundRoom: () => soundRoom(),
+    claimMastery: (cat, id, i) => claimMastery(cat, id, i), masteryClaimable: () => masteryClaimable(), tierReached: (cat, id, i) => tierReached(cat, id, i),   // (the client's view only: for drawing tests)
+    setInitials: ini => setInitials(ini), directorOf: w => directorOf(w), directorWith(o) { directorOverride = o; if (o !== null) startGame({ mode: "director" }); }, director: () => game.director && JSON.parse(JSON.stringify(game.director)), setFlags: v => Flags.set(v), flags: () => ({ ...Flags.values }), ensurePeriod: per => JSON.parse(JSON.stringify(ensurePeriod(per))), streakAfterRun: d => streakAfterRun(d),
+    mathCore: () => MC,   // (v68: the math core, 01d_mathcore.js)
+    portalNow() { portalTo(Math.min(8, (game.stage || 1) + 1), () => {}); },   // (v68: open a portal where the ring is, for a look at it)
+    r3d: on => { R3D.force = on == null ? null : !!on; return r3dOn(); }, r3dState: () => ({ ok: R3D.ok, on: r3dOn(), runtime: R3D.runtime, drawn: R3D.drawn, fails: R3D.fails, clears: R3D.clears, renders: R3D.renders }), r3dRim: k => { if (k != null && R3D.rimU) R3D.rimU.uRimK.value = k; return R3D.rimU ? R3D.rimU.uRimK.value : null; }, r3dLights: () => R3D.ok ? { key: '#' + R3D.key.color.getHexString(), sky: '#' + R3D.fill.color.getHexString(), ground: '#' + R3D.fill.groundColor.getHexString(), rim: '#' + R3D.rimU.uRimC.value.getHexString(), map: R3D.rigMap } : null, r3dShared: on => { R3D.shared = !!on; return R3D.shared; }, r3dWorld: on => { if (on != null) R3D_WORLD.on = !!on; return R3D_WORLD.on; }, r3dWorldState: () => r3dWorldState(), r3dWorldProbe: () => r3dWorldProbe(), r3dWorldCalib: () => r3dWorldCalib(), mortyFace: () => { const M = R3D.cache.skull; if (!M || !M.userData.geom) return null; const D = M.userData, vis = o => o.visible; return { geom: D.geom.visible, old: D.oldFace.visible, frames: R3D_SK.geomFrames || 0, jawDrop: +(D.hY - D.jaw.position.y).toFixed(4), mouth: D.mouthBack.visible, upper: D.teeth.upper.filter(vis).length, lower: D.teeth.lower.filter(vis).length, gold: D.teeth.upper.filter(T => T.userData.body.material === D.goldMat).length, fangs: D.fangs.filter(vis).length, eyes: D.eyes.map(vis), glyphs: D.glyphs.map(G => !G.visible ? null : ['x1', 'star', 'spiral', 'line'].filter(k => G.userData[k].visible).join('')), brows: D.brows.map(vis) }; }, mortyBoxes: () => ({ BOX, K: ART_K, CY: ART_CY, CX: ART_CX, TEETH, SOCK: SOCK.map(({ path, ...q }) => q) }), mortyTest: (x, y, r, mood, o = {}) => { const f = faceFor(mood, o.t || 0, o); if (o.blink != null) f.blink = o.blink; ctx.save(); baseXform(ctx); ctx.fillStyle = o.bg || "#3a3a44"; ctx.fillRect(x - r * 1.8, y - r * 1.8, r * 3.6, r * 3.6); R3D.fresh = true; drawSkull(ctx, x, y, r, { face: f, jaw: o.jaw, look: { ...cos, ...(o.look || {}) }, t: o.t || 0, ang: o.ang || 0, a: 1, dir: 0 }); r3dFlush(); ctx.restore(); return { geom: R3D_SK.geomFrames || 0, ok: r3dFaceGeomOK({ ...cos, ...(o.look || {}) }, f) }; }, r3dScatterOn: on => { if (on != null) R3D_SCATTER.on = !!on; return R3D_SCATTER.on; }, r3dFilmic: on => { if (on != null) R3D_WORLD.filmic = !!on; return R3D_WORLD.filmic; }, r3dScatter: () => ({ on: R3D_SCATTER.on, placed: R3D_SCATTER.placed, counts: { ...R3D_SCATTER.counts }, sample: Object.fromEntries((R3D_SCATTER.sets || []).filter(S => S.mesh.count && S.first).map(S => [S.name, [S.first.d, S.first.u, S.first.rot || 0, S.first.s].map(v => (Array.isArray(v) ? v.map(q => +q.toFixed(6)) : +(+v).toFixed(6)))])) }), r3dKit: () => ({ THREE, r3dReady, r3dToon, r3dInk, r3dActorLOD, r3dRig, ACTOR_BIPED, r3dRigWalk, r3dActorPart, r3dLathe, r3dTaper, r3dFaceLayout, r3dFace, ACTOR_EXPR, r3dContactShadowMesh, r3dActorRegister, r3dActorLoad, r3dActorUse, r3dActorAnimate, r3dAssetsStatus, r3dAssetsUpdate, r3dBounds, scRand }), r3dBosses: () => BOSS_IDS.filter(id => r3dBossModelled({ kind: id })), r3dShotKinds: () => Object.keys(R3D_SHOTS),   // (v68: the 3D renderer)
+    r3dPerf: () => r3dPerf(), r3dHold: q => { R3D_RCM.hold = q == null ? null : clamp(q, 0, 1); if (q == null) R3D_RCM.pid = MC.PF.pid(); return R3D_RCM.hold; },   // (v68: the runtime complexity manager; hold pins its quality)
+    r3dWorth: (x, y, cw, ch, sc, k) => r3dWorth(k || { probe: 1 }, x, y, cw, ch, [cw / 2, ch], sc), r3dClock: t => { R3D_RCM.now = t; },
+    watchReplay: () => Replay.watch(Replay.last), replaying: () => !!Replay.play, lastReplay: () => Replay.last && JSON.parse(JSON.stringify(Replay.last)),
+    encodeReplay: R => Replay.encode(R), decodeReplay: s => Replay.decode(s), replayLink: R => Replay.link(R), offerShared(R) { sharedReplay = R; renderSharedOffer(); }, stopReplay: () => Replay.stop(true),
+    serverKeys: pre => (Backend.fakeDocs ? [...Backend.fakeDocs.keys()].filter(k => k.startsWith(pre)) : []), serverSet(p, o) { if (Backend.fakeDocs) Backend.fakeDocs.set(p, JSON.parse(JSON.stringify(o))); },
+    serverAdmin: (op, data) => Backend.fakeH.admin[op]({ db: { tx: Backend.fakeDB }, data, now: Date.now() + (Backend.fakeClock || 0) }), flag: (k, now) => Flags.get(k, now), eventLive: now => Flags.eventLive(now),
+    submitBoard: () => Board.submit(), lastSubmit: () => Board.lastSubmit, serverDoc: p => (Backend.fakeDocs && Backend.fakeDocs.has(p) ? JSON.parse(JSON.stringify(Backend.fakeDocs.get(p))) : null),
+    advanceServerClock(ms) { Backend.fakeClock = (Backend.fakeClock || 0) + ms; }, weekOf: ms => Runs.weekOf(ms), checkRun: r => Runs.check(r),
+    wallet: () => Souls.wallet && JSON.parse(JSON.stringify(Souls.wallet)), soulsApi: () => Souls, callServer: (name, data) => Backend.call(name, data), economy: () => Economy,
+    start() { startGame(); },
+    pause(on = true) { manual = on; },
+    simStep: SIM_STEP, simAdvance: dt => advance(dt), simReset() { simAcc = 0; },   // the live loop's fixed step
+    setScene: i => setScene(i), mapUnlocked: i => mapUnlocked(i), goWords: () => $("gameOver").textContent,
+    scene: () => ({ map: sceneMap, lane: look().lane, props: GY.props.length, kinds: [...new Set(GY.props.map(p => p.kind))].sort(), weather: WX.kind, bits: WX.bits.length, moon: moon.kind, fg: fgLayer.length,
+      clear: GY.props.every(p => p.kind === "digger" || clearOfLane(p.x, p.z)), clouds: world.clouds.length }),
+    maps: () => JSON.parse(JSON.stringify(MAP_DATA)),
+    implemented: () => ({ skyline: Object.keys(SKYLINES), lane: Object.keys(LANES), props: Object.keys(PROPSETS), foreground: Object.keys(FOREGROUNDS), near: Object.keys(NEAR_SETS),
+      weather: ["none", "mist", ...Object.keys(WX_COUNT)], moon: ["art", "none", "crescent", "harvest", "full", "screen", "eclipse"], registry: MAP_REGISTRY }),
+    calm() { HZ.kind = "none"; HZ.list = []; HZ.wind = 0; HZ.fogT = 0; HZ.fog = 0; renderWind(); OB.off = true; OB.list = []; },   // (for set-up throws that aren't about hazards)
+    setLives(n) { game.lives = n; updateHud(); }, cont: () => game.cont && { ...game.cont }, continueRule: () => continueRule(),
+    fakeAds(on) { Ads = on ? { available: () => true, show: () => ({ then: f => f(true) }) } : { available: () => false, show: () => Promise.resolve(false) }; },   // (a synchronous reel, for the spec)
+    continues(on = true) { if (sandbox) sandbox.contOn = on; },
+    cards(on = true) { if (sandbox) sandbox.cardsOn = on; reelSt.leaderShown = false; reelSt.shown = []; reelSt.cues = []; },
+    skipReel: () => skipReelCard(), encore(on = true) { if (sandbox) sandbox.encoreOn = on; }, startMode(mode, map = 0) { startGame({ mode, map }); }, setPractice(o) { Object.assign(practice, o); },
+    realProfile: () => JSON.parse(JSON.stringify(realProfile())), inPractice: () => inPractice(),
+    modeState: () => ({ mode: game.mode, phase: game.phase, rush: modeSt.rush.map(b => b.id), rushI: modeSt.rushI, encoreEnd: game.run.encoreEnd, frozen: ring.frozen && { ...ring.frozen } }),
+    targetsFull: () => targets.map(T => ({ ...T, ...targetPos(T) })), stageSpots: () => STAGE_SPOTS.map(q => q.slice()), roadYawNow: () => ({ h: roadYaw(), F, bleed: bleed(), sky: roadYawOx(400, "sky"), far: roadYawOx(40, "far"), groundNear: roadYawOx(8 + CAM_BACK, "ground"), groundFar: roadYawOx(80 + CAM_BACK, "ground"), world: roadYawOx(9, "world"), play: roadYawOx(9, "play") }),
+    landPathNow: () => { landBegin(); return (LAND.slices || []).map(S => ({ z: S.z, pathOnly: !!S.pathOnly, half: (S.path[1].x - S.path[0].x) / 2 / projectBase(0, 0, S.z).s })); }, pathInAt: z => pathIn(z), laneFades: () => landCurves(),   // (v65)
+    celEdge: type => { const c = walkerCel(type, 0, false, 2).c, d = c.getContext("2d").getImageData(0, 0, c.width, c.height).data, w = c.width, h = c.height; let m = 0; for (let x = 0; x < w; x++) for (const y of [0, h - 1]) m = Math.max(m, d[(y * w + x) * 4 + 3]); for (let y = 0; y < h; y++) for (const x of [0, w - 1]) m = Math.max(m, d[(y * w + x) * 4 + 3]); return m; },
+    popupsNow: () => ["stagecard", "powerCard"].map(id => { const e = $(id); const r = e.getBoundingClientRect(); return { id, hidden: e.hidden, c: parseFloat(e.style.top || getComputedStyle(e).top), h: e.offsetHeight, top: r.top, bottom: r.bottom }; }),
+    stageCardNow: (k, t1, s) => stageCard(k, t1, s, 3), powerCardNow: id => powerCard(id),
+    crowJaw: u => crowJaw(u), landmark: z => ({ scale: landmarkScale(z), sil: landmarkSil(z), rev: landmarkReveal(z) }), hasReveal: id => !!(ASSETS["travel/" + id] && ASSETS["travel/" + id].layers.reveal),
+    musicBeats: () => Object.fromEntries(Object.entries(MUSIC_BEATS).map(([k, v]) => [k, { bpm: v.bpm, n: v.beats.length }])), powersHere: () => powersHere(), synergy: () => synergyNow(), filmSpot: () => film.spot && { ...film.spot },
+    powerCards: () => [...$("powers").children].map(e => ({ id: e.dataset.pw, w: parseFloat(e.querySelector(".pw-t i").style.width), gauge: !e.querySelector(".pw-t").hidden, low: e.classList.contains("low"), crit: e.classList.contains("crit"), uses: e.querySelector("b").hidden ? null : e.querySelector("b").textContent })),
+    portalsOn(on = true) { if (sandbox) sandbox.portalsOn = on; }, portal: () => ({ phase: PORTAL.phase, dest: PORTAL.dest, miss: PORTAL.miss, y: PORTAL.y, r: PORTAL.r, hidden: !!game.ringHidden, seen: PORTAL.seen.slice(), arrivals: PORTAL.arrivals || 0 }), windNowIs: () => windNow(), hzKind(k) { HZ.kind = k; }, diggerState: () => GY.digger && { u: GY.digger.u, kind: GY.digger.kind, dirt: GY.digger.dirt.length, dust: GY.digger.dust.length, load: GY.digger.load, sa: GY.digger.sa, bar: GY.digger.bar, mound: GY.digger.mound }, musicClock: () => ({ live: MusicClock.live, track: MusicClock.track, bpm: MusicClock.bpm, beat: MusicClock.beat, bar: MusicClock.bar, phrase: MusicClock.phrase }), groove: ph => ({ hop: Groove.hop(ph), sway: Groove.sway(ph), settle: Groove.settle(ph) }), shotFocus: (x, y) => { irisSpot(x, y, 0.45); return { spot: !!film.spot, blur: !$("shotFocus").hidden }; }, mischiefOn(on = true) { if (sandbox) sandbox.mischiefOn = on; }, misbehave: kind => misbehave(kind),
+    misc: () => (updateCamFx(), { kind: misc.kind, log: misc.log.slice(), lastMap: misc.lastMap, css: cvs.style.transform, hand: misc.kind === "hand" ? handAt((game.time - misc.t0) / misc.dur) : null, wrong: reelEl.classList.contains("wrong") && !reelEl.hidden }),
+    clearMisc() { misc.kind = null; misc.log = []; misc.lastMap = 0; misc.lastThrow = -99; }, secrets: () => realProfile().secrets.slice(), titleIdle(s) { sec.quietSince = uiNow() - s; sec.slept = false; },
+    upwardPull() { secretUpward(); }, secretName: n => secretName(n), canvas: () => cvs, codex: () => ({ count: codexCount(), total: codexTotal(), seen: realProfile().met.slice(), archive: ARCHIVE.filter(A => A.open()).map(A => A.id) }), shots(on = true) { if (sandbox) sandbox.shotsOn = on; }, lastShots: () => (skull.shots || []).slice(), shotList: () => SHOTS.map(S => ({ id: S.id, rare: S.rare, cam: S.cam })),
+    camfx: () => (updateCamFx(), { kind: camfx.kind, log: camfx.log.slice(), css: cvs.style.transform, spot: !!film.spot }), clearCamLog() { camfx.log = []; }, setStreak(n) { game.streak = n; }, bossInfo: () => Object.fromEntries(BOSS_IDS.map(id => [id, { ...BOSS_INFO[id] }])),
+    tr: (id, vars) => t(id, vars), lineIds: prefix => lineIds(prefix).slice(),
+    reel: () => ({ card: reelSt.card ? reelSt.card.kind : null, n: reelSt.card ? reelSt.card.n || 0 : 0, shown: reelSt.shown.slice(), cues: reelSt.cues.length, title: $("rcTitle").textContent, reel: $("rcReel").textContent, hidden: reelEl.hidden, cine: game.cine ? game.cine.kind : null, dur: game.cine ? game.cine.dur : 0, rot: reelSt.card && reelSt.card.kind === "leader" ? leaderRot(game.time - reelSt.t0) : 0 }),
+    // the shells (03e_platform.js), faked: { capacitor: "ios"|"android", plugins, cdv } or { desktop: {…} }; platformReset() goes back to the web
+    platformWith(o = {}) {
+      if (o.capacitor) window.Capacitor = { isNativePlatform: () => true, getPlatform: () => o.capacitor, Plugins: o.plugins || {} };
+      if (o.cdv) window.CdvPurchase = o.cdv;
+      if (o.desktop) window.skullTossDesktop = o.desktop;
+      Platform.ready = false; Payments = WEB_PAYMENTS; Ads = WEB_ADS; Platform.init(); $("quitBtnTitle").hidden = !Platform.caps.quit;
+      return { id: Platform.id, shell: Platform.shell, caps: { ...Platform.caps } };
+    },
+    // store art (tools/store-assets.mjs): the app icon and Steam's capsules, drawn with the game's own skull, scene and lettering
+    startBoss(which = "end") { if (which === "mini") startMiniBoss(); else startMainBoss(); },
+    renderIcon(size = 1024, o = {}) {
+      const cv = document.createElement("canvas"); cv.width = cv.height = size; const c = cv.getContext("2d"), k = size / 1024;
+      if (!o.transparent) { const g = c.createRadialGradient(size / 2, size * 0.42, size * 0.05, size / 2, size / 2, size * 0.78); g.addColorStop(0, "#3A4E68"); g.addColorStop(0.7, MIDNIGHT); g.addColorStop(1, INK); c.fillStyle = g; c.fillRect(0, 0, size, size); }
+      const s = o.maskable ? 0.78 : 1;   // (a maskable icon keeps to the middle 80%)
+      c.save(); c.translate(size / 2, size * 0.53); c.scale(s, s); c.translate(-size / 2, -size * 0.53);
+      c.lineWidth = 34 * k; c.strokeStyle = INK; c.beginPath(); c.ellipse(size / 2, size * 0.53, 380 * k, 380 * k, 0, 0, TAU); c.stroke();
+      c.lineWidth = 22 * k; c.strokeStyle = MUSTARD; c.stroke();
+      drawSkull(c, size / 2, size * 0.53, 300 * k, { t: 0.6, look: { ...DEFAULT_COS }, face: faceFor("happy", 0.6, { lx: 0, ly: 0.05, seed: 1.7 }) });
+      c.restore(); return cv.toDataURL("image/png");
+    },
+    renderCapsule(w, h, o = {}) {
+      const cv = document.createElement("canvas"); cv.width = w; cv.height = h; const c = cv.getContext("2d"), st = $("stage");
+      if (!o.transparent) { const sc = Math.max(w / st.width, h / st.height); c.drawImage(st, (w - st.width * sc) / 2, (h - st.height * sc) / 2, st.width * sc, st.height * sc);
+        const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "rgba(23,19,15,.15)"); g.addColorStop(1, "rgba(23,19,15,.55)"); c.fillStyle = g; c.fillRect(0, 0, w, h); }
+      const out = () => cv.toDataURL(o.jpeg ? "image/jpeg" : "image/png", 0.88);
+      if (o.art === false) return out();
+      const u = Math.min(w / 16, h / 6.2), skullX = o.logoOnly ? w * 0.5 : w * 0.73, textX = o.logoOnly ? w * 0.5 : w * 0.36, midY = h * (o.logoOnly ? 0.5 : 0.5);
+      if (!o.logoOnly) drawSkull(c, skullX, midY + u * 0.2, u * 1.85, { t: 0.6, look: { ...DEFAULT_COS }, face: faceFor("happy", 0.6, { lx: -0.4, ly: 0.05, seed: 1.7 }) });
+      c.textAlign = "center"; c.textBaseline = "middle"; c.lineJoin = "round";
+      const word = (txt, y, size, fill) => { c.font = `${size}px ${DISPLAY}`; c.lineWidth = size * 0.16; c.strokeStyle = INK; c.strokeText(txt, textX, y); c.fillStyle = fill; c.fillText(txt, textX, y); };
+      word("SKULL", midY - u * 0.95, u * 1.9, CREAM); word("TOSS", midY + u * 0.95, u * 1.9, GOLD);
+      if (o.tagline) { c.font = `800 ${Math.round(u * 0.34)}px ${UIFONT}`; c.fillStyle = CREAM; c.fillText("A LOST CARTOON FROM 1933", textX, midY + u * 2.25); }
+      return out();
+    },
+    backgroundOn(on = true) { if (sandbox) sandbox.bgOn = on; },
+    platformReset() { delete window.Capacitor; delete window.CdvPurchase; delete window.skullTossDesktop; Platform.ready = false; Payments = WEB_PAYMENTS; Ads = WEB_ADS; Platform.init(); $("quitBtnTitle").hidden = true; bgHidden = false; },
+    platform: () => ({ id: Platform.id, shell: Platform.shell, caps: { ...Platform.caps } }), haptic: ms => Platform.haptic(ms), backButton: () => backButton(), swRegistered: () => registerServiceWorker(),
+    payments: () => Payments, ads: () => Ads, steamAchievement: id => Platform.achievement(id),
+    // the content audit (v41): everything that refers to something else points at something real, and has its words
+    contentAudit() {
+      const P = [], str = id => { if (!(STRINGS.en && STRINGS.en[id] != null) && !(STRINGS[LANG] && STRINGS[LANG][id] != null)) P.push(`no string ${id}`); };
+      const onMaps = id => MAP_DATA.filter(M => M.bosses.mini === id || M.bosses.end === id).length;
+      MAP_DATA.forEach((M, i) => {
+        if (M.n !== i + 1) P.push(`map ${i + 1} is numbered ${M.n}`);
+        for (const k of ["mini", "end"]) if (!BOSS_IDS.includes(M.bosses[k])) P.push(`map ${M.n}: its ${k} boss "${M.bosses[k]}" doesn't exist`);
+        if (!MOTIFS["map" + M.n]) P.push(`map ${M.n} has no motif`);
+        for (const ph of ["A", "B"]) for (const ty of M.targetTypes[ph]) if (!CODEX.target.ids().includes(ty)) P.push(`map ${M.n}: target type "${ty}" isn't in the Codex`);
+        for (const ph of ["A", "B", "boss"]) for (const o of M.obstacles[ph]) if (!CODEX.obstacle.ids().includes(o.kind) || !OB_DRAW[o.kind]) P.push(`map ${M.n}: obstacle "${o.kind}" isn't drawn or in the Codex`);
+        if (!BODY_PART[M.bosses.end] || !findItem(BODY_PART[M.bosses.end].kind, BODY_PART[M.bosses.end].id)) P.push(`map ${M.n}: its body-part reward isn't in the Vault`);
+      });
+      for (const id of BOSS_IDS) { if (onMaps(id) !== 1) P.push(`boss ${id} is on ${onMaps(id)} maps`); for (const f of ["name", "short", "tell", "hint"]) str(`boss.${id}.${f}`); str(`codex.boss.${id}`); if (!MOTIFS[id]) P.push(`boss ${id} has no motif`); }
+      if (Object.keys(FRAGMENTS).length !== MAP_COUNT) P.push(`${Object.keys(FRAGMENTS).length} pieces for ${MAP_COUNT} maps`);
+      for (const [id, F] of Object.entries(FRAGMENTS)) { if (!MAP_DATA.some(M => M.bosses.end === F.from)) P.push(`piece ${id} comes from ${F.from}, who isn't an end boss`); str(`fragment.${id}.name`); str(`fragment.${id}.line`); }
+      if (new Set(Object.values(FRAGMENTS).map(F => F.from)).size !== Object.keys(FRAGMENTS).length) P.push("two pieces come from one boss");
+      for (const id of POWER_IDS) { if (!POWERS[id].name || !POWERS[id].tip) P.push(`power-up ${id} has no name or tip`); str(`codex.power.${id}`); }
+      for (const id of CODEX.hazard.ids()) { str(`codex.hazard.${id}.name`); str(`codex.hazard.${id}.body`); }
+      for (const id of CODEX.target.ids()) { str(`codex.target.${id}.name`); str(`codex.target.${id}.body`); }
+      for (const id of CODEX.obstacle.ids()) { str(`codex.obstacle.${id}.name`); str(`codex.obstacle.${id}.body`); str(`obstacle.${id}.intro`); }
+      for (const id of SHOT_IDS) { str(`shot.${id}.name`); str(`shot.${id}.desc`); }
+      const statKnown = k => STAT_KEYS.includes(k) || typeof DEFAULT_PROFILE[k] === "number";
+      const achIds = new Set();
+      for (const A of ACHIEVEMENTS) {
+        if (achIds.has(A.id)) P.push(`achievement ${A.id} twice`); achIds.add(A.id);
+        if (!A.get && !statKnown(A.stat)) P.push(`achievement ${A.id} counts "${A.stat}", which isn't kept`);
+        if (!(A.n > 0) || !(A.bones >= 0) || !A.name || !A.text) P.push(`achievement ${A.id} is incomplete`);
+      }
+      for (const per of PERIOD_IDS) for (const c of PERIODS[per].pool) {
+        if (!chalDef(c.id)) P.push(`${per} challenge ${c.id} has no wording`);
+        if (!(c.range[0] > 0 && c.range[0] <= c.range[1]) || !(c.reward(c.range[0]) > 0)) P.push(`${per} challenge ${c.id}: range or reward`);
+      }
+      for (const m of Object.keys(MODES)) { str(`mode.${m}.name`); if (m === "practice" || m === "rush" || MODES[m].mini) str(`mode.${m}.rule`); }
+      for (const id of SECRETS) for (const f of ["name", "body", "hint"]) str(`secret.${id}.${f}`);
+      for (const A of ARCHIVE) for (const f of ["date", "title", "body", "how"]) str(`archive.${A.id}.${f}`);
+      for (const id of TWIST_IDS) { str(`director.twist.${id}.name`); str(`director.twist.${id}.line`); }
+      for (const N of NOTE_POOL) str(`director.note.${N.id}`);
+      for (const [id, S] of Object.entries(SEASONS)) {   // seasons (v42)
+        for (const f of ["name", "line", "feature", "featureLine"]) str(`season.${id}.${f}`);
+        for (const N of S.notes) str(`season.note.${N.id}`);
+        for (const tw of S.feature.twists) if (!TWISTS[tw]) P.push(`season ${id}: the Feature's twist "${tw}" doesn't exist`);
+        if (!(S.feature.map >= 0 && S.feature.map < MAP_COUNT)) P.push(`season ${id}: the Feature's map ${S.feature.map} doesn't exist`);
+        if (!(Date.parse(S.from) < Date.parse(S.until))) P.push(`season ${id}: its dates run backwards`);
+        if (S.track.some(([f]) => !f)) P.push(`season ${id}: a stub with no free reward`);
+      }
+      return P;
+    },
+    // seasons (07l_season.js): move the season's calendar, set or read the Ticket, claim a stub
+    seasonAt(when) { seasonClock = when == null ? 0 : (typeof when === "number" ? when : Date.parse(when)) - Date.now(); renderSeasonChip(); },
+    season: () => { const S = seasonNow(); return S && { id: S.id, n: S.n }; }, seasonClaimable: () => { const S = seasonClaimable(); return S && { id: S.id, over: !!S.over }; },
+    seasonRec: () => realProfile().season && JSON.parse(JSON.stringify(realProfile().season)), setSeasonRec(r) { realProfile().season = r ? JSON.parse(JSON.stringify(r)) : null; },
+    claimSeason: (i, prem = false) => claimSeasonTier(i, prem), seasonPips: () => seasonClaimableCount(), twists: () => twistsNow().slice(), feature: () => game.feature && { ...game.feature },
+    shopCat(k) { shop.cat = k; if (sheet === "customize") renderShop(); }, canUse: (kind, id) => { const it = findItem(kind, id); return !!it && canUse(kind, it); },
+    async useFirebaseWith(cfg, stub) { window.firebase = stub; Backend.reset(); await Backend.useFirebase(cfg); await Souls.connect(); renderConsent();
+      return { kind: Backend.kind, appCheck: !!Backend.appCheck, me: Backend.me && Backend.me.id, db: !!Backend.db, call: !!Backend.call, error: Backend.error, ga: GA.configured(), souls: Souls.available() }; },
+    gaWith(cfg) { gaTest = cfg; GA.state = "off"; GA.sdk = null; GA.pending = []; }, gaState: () => GA.state, gaStart: () => GA.start(),
+    economyAudit: () => economyAudit(), analyticsOn(on = true) { if (sandbox) sandbox.analyticsOn = on; }, playData: () => ({ q: PlayData.q.map(e => ({ ...e })), sent: PlayData.sent, consent: PlayData.consent(), allowed: PlayData.allowed() }),
+    flushPlayData: () => PlayData.flush(), setConsent: v => PlayData.set(v), resetConsent() { settings.analytics = "ask"; PlayData.q = []; PlayData.sent = 0; PlayData.errorsSent = 0; }, firsts: () => realProfile().firsts.slice(),
+    reportError: (m, s) => PlayData.error(m, s), errors: () => Telemetry.errors.map(e => ({ ...e })), renderConsent() { renderConsent(); return !$("consentCard").hidden; },
+    makeRestorePoint: day => restorePoint(realProfile(), day), restorePoints: () => restorePoints().map(r => ({ day: r.day, games: r.p.games })), restoreFrom: day => restoreFrom(day), gameBuild: GAME_BUILD,
+    snapOn(on = true) { if (sandbox) { sandbox.snapOn = on; sandbox.snap = null; } }, snapshot: () => readRunSnapshot(),
+    tier: () => ({ ...tierNow() }),
+    // the Power-Up Director alone: n makes in a row from the start of the first half, noting the hits where a prop turned up
+    bonus: play => takeBonus(play), bonusOffered: () => !!game.bonus && !$("bonusBox").hidden, cans: () => cans.map(c => ({ row: c.row, i: c.i, num: c.num, x: c.x, y: c.y, z: c.z, down: c.down })),
+    // v56: the attractions (07u_attractions.js): their state, a throw that meets (x, y) on the attraction's plane, and props to set
+    attr: () => ({ on: ATTR.on, kind: ATTR.kind, zp: ATTR.zp, score: ATTR.score, value: ATTR.on ? attrValue() : 0, far: ATTR.far, step: ATTR.step, round: ATTR.round, lvl: ATTR.lvl, sweeps: ATTR.sweeps, dead: ATTR.dead, perfects: ATTR.perfects,
+      cur: ATTR.cur && { phase: ATTR.cur.phase, t: ATTR.cur.t, win: ATTR.cur.win, fin: ATTR.cur.fin, act: ATTR.cur.act, done: ATTR.cur.done }, props: ATTR.props.map(p => ({ ...p })), ringHidden: !!game.ringHidden, wind: HZ.wind, dark: document.body.classList.contains("attr-dark"), pull: ATTR.pull, shake: ATTR.shake }),
+    vineEnd: () => vineEnd(), skullInfo: () => ({ vine: !!skull.vine, vined: !!skull.vined, sub: skull.sub ? { dive: !!skull.sub.dive } : null, g: skull.g, clones: skull.clones ? skull.clones.length : 0, cloned: !!skull.cloned, homed: !!skull.homed, rew: !!skull.rew, pos: { ...skull.pos } }),
+    band: () => ({ on: { ...Band.on }, want: bandWant(), log: Band.log.slice(), sting: Band.sting.slice(), keys: Object.fromEntries(Object.entries(MUSIC_BEATS).map(([k, v]) => [k, v.key || null])) }), bandDry(on = true) { Band.dry = on; Band.log.length = 0; Band.n16 = null; Band.on = {}; },
+    land: (x = 0, z = 40) => ({ ...landAt(x, z), on: LAND.on, flat: LAND.flat, hills: LAND.hills, curve: LAND.curve, slices: LAND.slices ? LAND.slices.length : 0 }), landRaw: (d, u) => ({ h: landH(d, u), cx: landCx(d) }),
+    attrThrow(x, y) { const a = attrAimFor(x, y); return this.throwAt(a.AX, a.AY); },
+    attrProps(list) { ATTR.props = list.map(p => ({ ...p })); }, attrSwing: (ahead = 0) => swingPos(ahead), attrFlight: () => ATTR.zp * flightT() / RING_Z, attrCurtain(phase, t = 0) { if (ATTR.cur) { ATTR.cur.phase = phase; ATTR.cur.t = t; } }, attrWindSet(w) { HZ.wind = w; },
+    pitchHoles: () => PITCH.holes.map(h => ({ ...h })),
+    knockCan(i) { knockCan(cans[i], null); }, canPrizes: () => CAN_PRIZES.map(p => p[0] + ":" + p[1]), findItem: (kind, id) => !!findItem(kind, id),
+    ranks: () => RANKS.map(r => [...r]),
+    powerDeal(n) { const was = game.phase; game.phase = "B"; powerDirectorReset(); const out = []; for (let i = 0; i < n; i++) out.push(rollPower()); game.phase = was; return out; },
+    powerMilestones() { const out = [], score = game.score, st = game.stage, ph = game.phase, res = game.result, hits = game.stageHits; powerDirectorReset(); game.result = { make: true, pts: 0 }; game.stageHits = 0;
+      for (const [s2, p2] of [[1, "A"], [1, "B"], [2, "A"], [2, "B"]]) { game.stage = s2; game.phase = p2; pickupSchedule(); out.push(PD.step); }
+      Object.assign(game, { score, stage: st, phase: ph, result: res, stageHits: hits }); powerDirectorReset(); return out; },
+    ringHeat: () => ringHeatGoal(),
+    powerRolls(n, phase = "A", per = 250) { const out = [], was = game.result, score = game.score; game.phase = phase; game.stageHits = phase === "A" ? 0 : STAGE_LOOSE; game.score = 0; powerDirectorReset();
+      for (let i = 0; i < n; i++) { game.stageHits++; game.score += per; game.throws++; game.result = { make: true, pts: per }; pickupSchedule(); if (pickup) { out.push({ hit: game.stageHits, id: pickup.id, score: game.score }); pickup = null; } }
+      game.result = was; game.score = score; return out; }, setWind(w) { HZ.wind = w; renderWind(); }, hz: () => ({ kind: HZ.kind, wind: HZ.wind, fog: HZ.fog, list: HZ.list.map(h => ({ kind: h.kind, fixed: !!h.fixed, x: h.x, y: h.y, z: h.z })), bob: pendBob() }),
+    fogIn() { HZ.fogT = 3.6; }, hazardsAfterThrow: () => hazardsAfterThrow(), setPendT(t) { HZ.pendT = t; }, pend: () => ({ ...PEND, period: pendPeriod() }),
+    plantHazard(kind, x, y, z, r = 0.28) { HZ.list = HZ.list.filter(h => h.kind !== kind); HZ.list.push({ kind, x, y, z, ox: x, oy: y, oz: z, r, fixed: true, t: 0, at: 0, dir: 1 }); },
+    targets: () => targets.map(T => ({ kind: T.kind, ...targetPos(T), pop: T.pop, left: T.left })), refillTargets: () => refillTargets(),
+    plantDecoy(x, y, z) { targets.length = 0; targets.push({ kind: mapData(game.stage || 1).target, type: "decoy", x, y, z, t: 0, left: 6, pop: 0, ph: 0 }); },
+    plantTarget(x, y, z) { targets.length = 0; targets.push({ kind: mapData(game.stage || 1).target, x, y, z, t: 0, left: 6, pop: 0, ph: 0 }); },
+    ringPath(mode, phases) { const was = ring.mode; setRingMode(mode, false); const out = phases.map(p => ({ ...ringAt(p), tell: RING_PATHS[mode].tell ? RING_PATHS[mode].tell(p) : 0 })); setRingMode(was, false); return out; },
+    ringPaths: () => Object.keys(RING_PATHS), seedRun: s => seedRun(s), runSeed: () => game.seed,
+    pollPad: () => pollPad(), aim: () => ({ active: aim.active, source: aim.source, valid: aim.valid, tension: aim.tension, AX: aim.AX, AY: aim.AY }),
+    telemetry: () => Telemetry.events.map(e => ({ ...e })), migrateProfile: p => migrateProfile(JSON.parse(JSON.stringify(p))), saveSchema: SAVE_SCHEMA,
+    readSaved: (k, st) => readSaved(k, st), boardEntry: () => Board.entry(), endRun: () => endRun(),
+    step(sec) { const h = SIM_STEP; let t = 0; while (t < sec - 1e-9) { const d = Math.min(h, sec - t); update(d); t += d; } draw(); },
+    stepQuiet(sec) { const h = SIM_STEP; let t = 0; while (t < sec - 1e-9) { const d = Math.min(h, sec - t); update(d); t += d; } },   // (v62: the balance model's long runs; nothing drawn)
+    freezeRing(x = 0, y = RING_Y, z = RING_Z) { ring.frozen = { x, y, z }; ring.x = x; ring.y = y; ring.z = z; },
+    unfreezeRing() { ring.frozen = null; },
+    setRingPhase(p) { ring.phase = p; const q = ringAt(p); ring.x = q.x; ring.y = q.y; ring.z = q.z; },
+    setScore(n) { game.stageHits = n; game.hits = n; snapRing(); updateHud(); },   // (in hits: how far into the stage)
+    setHits(n) { game.stageHits = n; game.hits = Math.max(game.hits, n); snapRing(); updateHud(); },
+    setStage(n) { game.stage = n; setScene(n - 1); hazardsReset(); secretReset(); snapRing(); updateHud(); },
+    gates: () => OB.list.filter(I => I.kind === "gate").map(I => ({ ...I, open: gateOpen(I), leaves: gateLeaves(I) })), secret: () => ({ ...SECRET, on: secretOn(), branch: SECRET.branch && { ...SECRET.branch } }), secretOffAt: d => secretOff(d),
+    secretKeys(n) { SECRET.keys = n; SECRET.stage = game.stage; if (n >= SECRET.need && !SECRET.open) secretOpen(); }, gateClock(t) { OB.t = t; }, eyesSeen: () => ({ drawn: EYES.drawn, st: { ...EYES.st }, reduced: reduceMotion }), eyesClear() { EYES.drawn = 0; EYES.st = {}; }, clockNow: () => game.time, pixelMid: () => { const d = ctx.getImageData(Math.round(cvs.width * 0.2), Math.round(cvs.height * 0.75), 1, 1).data; return [d[0], d[1], d[2]]; }, resultNamed: k => !!RESULT[k] && (RESULT[k].make || t(`result.${k}.call`) !== `result.${k}.call`), coachNow: () => OB.list.filter(I => I.kind === "coach").map(I => ({ ...I, at: coachAt(I), beh: obBehaviour(I), drawn: { ...COACH_DRAWN } })), gatesHold(n = 99) { for (const I of OB.list) if (I.kind === "gate") I.held = n; }, encAlways(on = true) { encDefOverride = on; },   // (v66)
+    setPoints(n) { game.score = n; }, blueprint: () => JSON.parse(JSON.stringify(BLUEPRINT)), tiers: () => JSON.parse(JSON.stringify(TIER_DATA)),
+    plantObstacle(o) { OB.off = false; OB.list.push({ ...o, key: "test" + OB.list.length, born: OB.t, hitAt: -9, fired: -1, balls: o.balls || [] }); }, clearObstacles() { OB.list = []; }, banked: () => skull.banked || 0,
+    reactAt(x, z, k = 1) { envImpact(x, z, k); return GY.props.filter(p => p.react || p.fallen || p.cracked).map(p => ({ kind: p.kind, does: p.react ? p.react.does : p.fallen ? "fall" : "crack" })); },
+    spawnTargetType(type) { spawnTarget(type); return { ...targets[targets.length - 1] }; }, hitTargetNow(i = 0) { hitTarget(targets[i]); return targets.map(T => ({ type: T.type, pop: T.pop, shield: !!T.shield })); }, targetLive: i => targetLive(targets[i]), targetPos: i => targetPos(targets[i]),
+    pk: () => boss && boss.kind === "pumpkin" ? { eyes: boss.eyes.slice(), blind: boss.blind, rc: boss.rc, hp: boss.hp, eye: [boss.eyePos(0), boss.eyePos(1)], phase: boss.phase, reach: boss.reach } : null,
+    travel: () => ({ on: TRAVEL.on, D: +TRAVEL.D.toFixed(3), goal: TRAVEL.goal, zone: (travelZone(TRAVEL.D + 12) || {}).id || null, shown: GY.props.filter(k => k.travel && travelShows(k)).length, near: TRAVEL.near.length,
+      table: TRAVEL.table ? [0, 10, 20, 30, 40, 50, 80].map(h => TRAVEL.table[h]) : null, props: GY.props.filter(k => k.travel).length, lair: (GY.props.find(k => k.wakes) || {}).z }),
+    gpu: () => ({ supported: Gpu.supported, on: Gpu.on, mode: gpuMode(), hidden: Gpu.cv ? Gpu.cv.hidden : true, blend: Gpu.cv ? getComputedStyle(Gpu.cv).mixBlendMode : "", alive: (() => { let n = 0; for (let i = 0; i < GPU_MAX; i++) { const o = i * GPU_STRIDE; if (Gpu.t - Gpu.data[o + 4] <= Gpu.data[o + 5]) n++; } return n; })(),
+      ...Gpu.stats, flashes: Gpu.flashes.length, t: Gpu.t, css: Gpu.cv ? Gpu.cv.style.transform : "" }),
+    gpuFrame(dt = 1 / 60) { gpuFrame(dt); }, gpuFake(ok) { if (!ok) { Gpu.supported = false; Gpu.on = false; if (Gpu.cv) Gpu.cv.hidden = true; } else gpuInit(); },
+    gpuPixel(x, y) { const gl = Gpu.gl; if (!gl) return null; const px = new Uint8Array(4); gl.readPixels(Math.round(x * Gpu.dpr), Gpu.cv.height - Math.round(y * Gpu.dpr) - 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); return [...px]; },
+    travelAt: h => travelAt(h), travelEnd: () => travelAt(STAGE_END),
+    travelSpans: () => GY.props.filter(k => k.travel && k.kind !== "digger").map(k => { const K = travelKind(k.kind), w = (K.canvas[0] / 100) * k.mul, f = (K.foot[0] / 100) * k.mul, x0 = k.flip > 0 ? k.x - f : k.x - (w - f); return { kind: k.kind, d: k.d, x0, x1: x0 + w, lm: !!k.wakes }; }),
+    snapTravel() { TRAVEL.D = travelGoal(); travelApply(); },
+    travelTo(D) { TRAVEL.D = TRAVEL.goal = D; travelApply(); skyUpdate(); },   // (v58: put the camera anywhere on the track)
+    ringRefl: () => RING_REFL.drawn,
+    enc: () => ({ it: ENC.it ? { kind: ENC.it.kind, cons: ENC.it.cons, side: ENC.it.side, pos: encPos(), sense: +ENC.it.sense.toFixed(2) } : null, calm: ENC.calm, chain: ENC.chain, chains: ENC.chains, phase: ENC.phase, cam: cam.mode, sense: +ENC.sense.toFixed(2),
+      obs: OB.list.map(O => ({ kind: O.kind, beh: obBehaviour(O), out: O.out || 0, sense: +(O.sense || 0).toFixed(2), weak: encWeak(O), cat: OB_CAT[O.kind] })), cats: ENC_CATS, tcat: TARGET_CAT }),
+    encForce(on = true) { encDefOverride = on; encSync(); }, obOn() { OB.off = false; obstaclesSync(true); },
+    senseAt(AX, AY) { const was = { ...aim }; Object.assign(aim, { active: true, valid: true, AX, AY }); updateEncounter(1 / 60); const r = { sense: ENC.sense, obs: OB.list.map(O => ({ kind: O.kind, sense: O.sense, beh: obBehaviour(O) })) }; Object.assign(aim, was); return r; }, encHits: h => { game.stageHits = h; encSync(); },
+    wild: () => ({ n: WILD.list.reduce((o, c) => ((o[c.kind] = (o[c.kind] || 0) + 1), o), {}), heat: WILD.heat, list: WILD.list.map(c => ({ k: c.kind, x: +c.x.toFixed(2), y: +c.y.toFixed(2), z: +c.z.toFixed(2), st: c.st })) }),
+    cast: () => ({ skeleton: castVariant("skeleton"), digger: castVariant("gravedigger"), zombie: castVariant("zombie"), flock: look().ambient.crows ? "crow" : look().ambient.bats > 0 ? "bat" : null, walkers: look().ambient.walkers, id: MAP_DATA[sceneMap].id, eco: MAP_DATA[sceneMap].ecosystem }),
+    travelRows: () => { const R = GY.props.filter(k => k.travel && k.kind === "theatre-seats"); return { n: R.length, over: R.filter(k => Math.abs(k.tilt) > 0.3).length, buried: R.filter(k => k.sink > 0.2).length }; },
+    aqua: () => ({ kind: AQ.B ? AQ.B.kind : null, n: AQ.fauna.reduce((o, c) => ((o[c.kind] = (o[c.kind] || 0) + 1), o), {}), snow: AQ.snow.length, bubbles: AQ.bubbles.length, far: AQ.far.length, list: AQ.fauna.map(c => ({ k: c.kind, x: +c.x.toFixed(2), y: +c.y.toFixed(2), z: +c.z.toFixed(2), st: c.st })) }),
+    aquaStep: dt => updateAquatic(dt), aquaTile: () => !!aquaTile(),
+    aquaPoke(kind) { const c = AQ.fauna.find(f => f.kind === kind && f.st !== "away" && f.st !== "under"); if (!c) return null; const at = c.m ? c.m[0] : c; AQ.poke = { x: at.x || c.x, y: (at.y != null ? at.y : c.y), z: at.z || c.z, k: 1.4 }; for (let i = 0; i < 20; i++) updateAquatic(1 / 30); AQ.poke = null; return { kind, st: c.st, ext: c.ext, hide: c.hide }; },
+    curlDiv(x, y, t) { const e = 0.07, a = { ...curl(x + e, y, t) }, b = { ...curl(x - e, y, t) }, c = { ...curl(x, y + e, t) }, d = { ...curl(x, y - e, t) }, m = { ...curl(x, y, t) }; return { div: (a.x - b.x) / (2 * e) + (c.y - d.y) / (2 * e), mag: Math.hypot(m.x, m.y) }; },
+    sky: () => ({ p: +SKY.p.toFixed(3), dx: Math.round(SKY.dx), dy: Math.round(SKY.dy), x: Math.round(moon.x + SKY.dx), y: Math.round(moon.y + SKY.dy), kind: moon.kind, halo: !!moon.halo, path: !!moonPath }),
+    welcome(on = true) { if (sandbox) sandbox.welcomeOn = on; }, coffinBones: () => COFFIN_BONES, fitResults: () => fitResults(),
+    crossings(on = true) { if (sandbox) sandbox.crossOn = on; }, bodyShow(on = true) { if (sandbox) sandbox.bodyOn = on; },
+    crossing: () => ({ on: crossOn(), n: game.run.crossN || 0, makes: game.run.crossMakes || 0, gold: crossGolden(), rc: game.run.crossRc || 0, frozen: ring.frozen ? { ...ring.frozen } : null, map: sceneMap + 1, D: +TRAVEL.D.toFixed(3), goal: TRAVEL.goal }),
+    body: () => ({ have: (profile.body || []).slice(), run: (game.run.sections || []).slice(), show: game.run.bodyShow ? game.run.bodyShow.id : null, cine: game.cine ? game.cine.kind : null, sections: BODY_SECTIONS.slice(), of: n => sectionOf(n) }),
+    sectionOf: n => sectionOf(n), cleanBody: b => cleanProfile({ body: b }).body, mergeBody: (a, b) => mergeProfiles(cleanProfile({ body: a }), cleanProfile({ body: b })).body, drawBodyTo(have) { const c = document.createElement("canvas"); c.width = 200; c.height = 320; drawBody(c.getContext("2d"), 100, 60, 30, have, { ghosts: true }); return c.toDataURL().length; },
+    fight: () => boss ? { kind: boss.kind, hp: boss.hp, max: boss.max, end: !!boss.end, phase: boss.phase || 0, phaseDue: !!boss.phaseDue } : null,
+    act: () => ({ act: game.act || 0, name: actName(game.act || 0), card: $("stagecard").hidden ? "" : $("stagecard").textContent, catchDue: !!game.run.catchDue }),
+    fgAlphaAt(pts) { let a = 0; for (const P of fgLayer) { const g = P.c.getContext("2d"); for (const q of pts) { const x = Math.round((q.x - P.x0) * P.c.width / P.w), y = Math.round((q.y - P.y0) * P.c.height / P.h); if (x < 0 || y < 0 || x >= P.c.width || y >= P.c.height) continue; a = Math.max(a, g.getImageData(x, y, 1, 1).data[3] / 255); } } return a; },
+    ringScreen: (x, y, z) => { const p = projectBase(x, y, z); return { x: p.x, y: p.y }; },
+    obstacles: () => OB.list.map(I => ({ kind: I.kind, key: I.key, balls: I.balls.length })), syncObstacles() { obstaclesSync(true); }, obClock(t) { if (t != null) OB.t = t; return OB.t; }, obForce: (x, y, z) => obstacleForce({ x, y, z }), water: () => ({ on: waterFlight(), g: skull.g, g0: skull.g0, wet: !!skull.wet, pocket: inPocket(skull.pos), pos: { ...skull.pos }, v0: { ...skull.v0 } }),
+    anchor: () => ({ kind: anchorKind(), holds: anchorHolds(), z0: ringZ0() }), envReacts: () => ENV.reacts, light: () => LIGHT(),
+    stageCheck() { return modeCheck() || stageCheck(); }, endThrow() { if (game.state === "ready") { powersAfterThrow(); if (boss && boss.after) boss.after(); modeCheck() || stageCheck() || pickupSchedule(); } },
+    boss: () => boss && { kind: boss.kind, hp: boss.hp, max: boss.max, dead: boss.dead, flawless: boss.flawless, t: boss.t },
+    hurtBoss(n = 1) { if (boss) { for (let i = 0; i < n && !boss.dead; i++) boss.hit("swish", null); } },
+    seeds: () => seeds.filter(s => s.live).map(s => ({ x: s.x, y: s.y, z: s.z })),
+    spawnPickup(id) { spawnPickup(id); }, pickup: () => pickup && { id: pickup.id, left: pickup.left, pop: pickup.pop },
+    powers: () => JSON.parse(JSON.stringify(powers)), givePower(id) { givePower(id); }, clearPowers() { clearPowers(); },
+    ringMode: () => ({ mode: ring.mode, z: ring.z, phase: ring.phase, omega: ring.omega, seq: ring.tri.seq.slice(), flat: ringFlat() }),
+    triVerts: () => triVerts(), stages: () => STAGES.map(s => s.name), scoreFor: (kind, streak, stage = 1) => Math.max(5, Math.round((BASE_PTS[kind] * comboMult(streak) * (1 + 0.25 * (stage - 1))) / 5) * 5),
+    throwAt(AX, AY) { if (game.state !== "ready") return false; launch(AX, AY); return true; },
+    holdAim(nx, ny) { if (game.state !== "ready") return false; Object.assign(aim, { active: true, source: "key", nx, ny }); refreshAim(); return true; },   // pull and hold (as the arrow keys do)
+    letGo() { release(); },
+    aimFor(x, y, z = RING_Z) {
+      const T = flightT(), tc = z * T / RING_Z, vy = (y - START_Y + 0.5 * G * tc * tc) / tc, A = { AX: x * RING_Z / z, AY: START_Y + vy * T - 0.5 * G * T * T };
+      if (!waterFlight()) return A;
+      // v60: under the sea, solve the aim through the water's own curve (drag and buoyancy; not the currents, jets or pockets)
+      const at = (AX, AY) => { const v = aimVelocity(AX, AY), P = forcedPath(v, z / v.z + 0.2, { forces: false, pockets: false, banks: false }), k = P.findIndex(q => q.z >= z); if (k < 1) return null; const a = P[k - 1], b = P[k], u = (z - a.z) / (b.z - a.z); return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u }; };
+      for (let i = 0; i < 12; i++) {
+        const c = at(A.AX, A.AY); if (!c) break; const ex = x - c.x, ey = y - c.y; if (Math.hypot(ex, ey) < 1e-4) break;
+        const h = 0.01, cx = at(A.AX + h, A.AY), cy = at(A.AX, A.AY + h); if (!cx || !cy) break;
+        A.AX += ex / ((cx.x - c.x) / h); A.AY += ey / ((cy.y - c.y) / h);
+      }
+      return A;
+    },
+    throwThrough(x, y, z) { const a = this.aimFor(x, y, z); return this.throwAt(a.AX, a.AY); },
+    // v62 (the difficulty model, tools/balance.mjs): the aim that meets the ring's middle as it arrives (ringAhead: where
+    // it will be), flown the way the game flies it (the wind, the machinery, the water), and what a player times a throw by
+    attrCur: () => ATTR.cur && { ...ATTR.cur }, attrMark: () => ATTR.mark && { ...ATTR.mark }, curtainNextNow(w = 0) { curtainNext(w); }, suddenSetNow(h) { if (h != null) game.hits = h; suddenSet(); }, longInfo: () => ({ dists: Array.from({ length: 14 }, (_, i) => longDist(i)), r: [10, 50, 90, 120].map(longR), mark: LONG.mark }), stageCardText: () => $("stagecard").textContent, hintText: () => $("hint").textContent,   // (v64)
+    stageFilter: () => (updateCamFx(), cvs.style.filter), camMoveNow: k => camMove(k), mischiefPool: () => MISCHIEF.kinds.slice(), moonNow: () => ({ ...moon }), stageOpeningNow: () => stageOpening(),   // (v63)
+    bankPark: () => PARK.at && { ...PARK.at }, banksSync() { banksAfterThrow(); },   // (v62: a sealed ring waits for its bank)
+    seedsLive: () => seeds.some(sd => !sd.live || sd.z > 0) || (!!boss && !!boss.volley && (boss.volley.tell > 0 || boss.spit > 0)),   // (a volley told, on its way, or still in front of the pouch)
+    volleyTold: () => !!boss && ((!!boss.volley && (boss.volley.tell > 0 || boss.spit > 0)) || (boss.pathAt && (boss.pathAt(boss.t).tell || 0) > 0)),   // (a volley or a change of the ring's way, told)
+    // would this throw fly into a seed? (each seed flown on as updateSeeds flies it; the ones still to come launched when they will)
+    seedThreat(AX, AY) {
+      if (!seeds.length || !boss) return false;
+      const P = forcedPath(aimVelocity(AX, AY), 1.8), T0 = boss.t, fly = 1.45;
+      for (const sd0 of seeds) {
+        const q = { ...sd0 }; let tq = 0;
+        if (!q.live) { q.vx = (q.tx - q.x) / fly; q.vz = (q.tz - q.z) / fly; q.vy = (q.ty - q.y + 0.5 * 3 * fly * fly) / fly; }
+        const wait = q.live ? 0 : Math.max(0, q.at - T0);
+        for (const k of P) {
+          const dt = k.t - tq; tq = k.t; const move = Math.max(0, k.t - wait) - Math.max(0, k.t - dt - wait);
+          if (move > 0) { q.x += q.vx * move; q.z += q.vz * move; q.vy -= 3 * move; q.y += q.vy * move; }
+          if (Math.hypot(k.x - q.x, k.y - q.y, k.z - q.z) < SKULL_R + SEED_R + 0.12) return true;
+        }
+      }
+      return false;
+    },
+    // would this throw run into the machinery (or the pendulum) where it will be by then? (what a player times a throw around)
+    obThreat(AX, AY) {
+      const P = forcedPath(aimVelocity(AX, AY), 1.8), T0 = OB.t, k = obSpeed(), H0 = HZ.pendT;
+      for (const q of P) {
+        if (q.z > ring.z + 0.3) break;
+        const T = T0 + q.t * k;
+        for (const I of OB.list) {
+          if (I.kind === "coach") { const c = coachAt(I, T); if (c.x != null && Math.abs(q.x - c.x) < COACH.half + SKULL_R + 0.1 && q.y > I.y[0] - SKULL_R && q.y < I.y[1] + SKULL_R && Math.abs(q.z - I.z) < COACH.depth + SKULL_R) return I.kind; continue; }   // (v67)
+          if (I.kind === "gate") { if (Math.abs(q.z - I.z) < 0.08 && q.y < I.h + GATE.beam + SKULL_R) { const L = gateLeaves(I, T); if (q.y > I.h - SKULL_R || q.x < L[0].edge + SKULL_R + 0.05 || q.x > L[1].edge - SKULL_R - 0.05) return I.kind; } continue; }   // (v66: a person waits for the gate)
+          if (obStandsAside(I)) continue;
+          if (I.kind === "bumper") { const c = bumperAt(I, T); if (Math.hypot(q.x - c.x, q.y - c.y, q.z - c.z) < I.r + SKULL_R + 0.08) return I.kind; }
+          else if (I.kind === "bar") { const E = barEnds(I, T); if (segDist(q, E.a, E.b) < BAR_R + SKULL_R + 0.08) return I.kind; }
+          else if (I.kind === "spikes") { const r = spikesRaise(I, T); if (r > 0.2 && q.x > I.span[0] - SKULL_R && q.x < I.span[1] + SKULL_R && q.y < I.h * r + SKULL_R + 0.08 && Math.abs(q.z - I.z) < 0.25 + SKULL_R) return I.kind; }
+          else if (I.kind === "crusher") { const [x0, x1, z0, z1] = I.box, B = crusherBottom(I, T); if (q.x > x0 - SKULL_R && q.x < x1 + SKULL_R && q.z > z0 - SKULL_R && q.z < z1 + SKULL_R && q.y > B.y - SKULL_R - 0.08 && q.y < B.y + CRUSHER_TALL + SKULL_R) return I.kind; }
+          else if (I.kind === "cannon") { const [per, tell] = I.every, ph = I.phase || 0; for (let j = Math.floor((T0 - ph - tell) / per) - 1; j <= Math.floor((T0 - ph) / per) + 1; j++) { const tf = ph + tell + j * per; if (tf - tell > T0 || j < 0) continue; const b = ballAt(I, { t0: tf }, T); if (T >= tf && Math.hypot(q.x - b.x, q.y - b.y, q.z - b.z) < BALL_R + SKULL_R + 0.1) return I.kind; } }   // (the balls in the air, and one whose fuse is lit)
+          else if (I.kind === "barrier") { const [x0, x1, y0, y1, z] = I.box; if (Math.abs(q.z - z) < 0.2 && barrierAlpha(I, T) > 0.3 && q.x > x0 - SKULL_R && q.x < x1 + SKULL_R && q.y > y0 - SKULL_R && q.y < y1 + SKULL_R) return I.kind; }
+        }
+        for (const h of HZ.list) if (h.kind === "balloon" && Math.hypot(q.x - h.x, q.y - (h.y + h.vy * q.t), q.z - h.z) < h.r + SKULL_R + 0.1) return "balloon";
+        if (HZ.kind === "pendulum" && hazardsLive()) { const b = pendBob(H0 + q.t); if (Math.hypot(q.x - b.x, q.y - b.y, q.z - b.z) < PEND.r + SKULL_R + 0.1) return "pendulum"; }
+      }
+      return false;
+    },
+    bankedAim(AX, AY) { const v = aimVelocity(AX, AY), P = forcedPath(v, 2.2), Q = forcedPath(v, 2.2, { banks: false }); return P.some((q, i) => Q[i] && Math.abs(q.x - Q[i].x) > 1e-4); },
+    boardsNow: () => OB.list.filter(I => I.kind === "bank" && !obStandsAside(I)).map(I => { const B = boardAt(I); return { x: B.x, z: B.z, len: I.len, y: I.y }; }),
+    leadAim(AX0, AY0) {   // (a first guess: off a bank board, say)
+      const ahead = t => this.ringAhead(t);
+      const cross = (AX, AY) => {
+        const P = forcedPath(aimVelocity(AX, AY), 2.2);
+        for (let k = 1; k < P.length; k++) {
+          const a = P[k - 1], b = P[k], ra = ahead(a.t), rb = ahead(b.t), fa = a.z - ra.z, fb = b.z - rb.z;
+          if (fa < 0 && fb >= 0) { const u = fa / (fa - fb), t = a.t + (b.t - a.t) * u, r = ahead(t); return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, t, r }; }
+        }
+        return null;
+      };
+      const r0 = ahead(ring.z / VZ), A = AX0 != null ? { AX: AX0, AY: AY0 } : { AX: r0.x * RING_Z / r0.z, AY: r0.y };
+      let c = cross(A.AX, A.AY);
+      for (let i = 0; i < 8 && c; i++) {
+        const ex = c.r.x - c.x, ey = c.r.y - c.y; if (Math.hypot(ex, ey) < 1e-4) break;
+        const h = 0.01, cx = cross(A.AX + h, A.AY), cy = cross(A.AX, A.AY + h); if (!cx || !cy) break;
+        const a = ((cx.x - cx.r.x) - (c.x - c.r.x)) / h, b = ((cy.x - cy.r.x) - (c.x - c.r.x)) / h, cc = ((cx.y - cx.r.y) - (c.y - c.r.y)) / h, d = ((cy.y - cy.r.y) - (c.y - c.r.y)) / h, det = a * d - b * cc;
+        if (Math.abs(det) < 1e-9) break;
+        A.AX += (d * ex - b * ey) / det; A.AY += (a * ey - cc * ex) / det; c = cross(A.AX, A.AY);
+      }
+      return c ? { AX: A.AX, AY: A.AY, t: c.t, ring: c.r, rc: ring.rc } : null;
+    },
+    // v60: aim through (x, y) at the ring by way of whatever the guide shows (a bank board's bounce), from a first guess
+    aimVia(x, y, AX, AY) {
+      const A = { AX, AY };
+      for (let i = 0; i < 16; i++) {
+        const c = this.predictCrossing(A.AX, A.AY), ex = x - c.x, ey = y - c.y; if (Math.hypot(ex, ey) < 1e-5) break;
+        const h = 0.004, cx = this.predictCrossing(A.AX + h, A.AY), cy = this.predictCrossing(A.AX, A.AY + h);
+        const a = (cx.x - c.x) / h, b = (cy.x - c.x) / h, cc = (cx.y - c.y) / h, d = (cy.y - c.y) / h, det = a * d - b * cc; if (Math.abs(det) < 1e-9) break;
+        A.AX += (d * ex - b * ey) / det; A.AY += (a * ey - cc * ex) / det;
+      }
+      return A;
+    },
+    pers: () => ({ kind: persKind(), off: PERS.off, narrow: ringNarrow(), rate: persRate(), decoy: decoyAt(), t: PERS.t, nerve: PERS.nerve, tells: PERS.tells, phase: ring.phase }), chainPitch: n => chainPitch(n), persClock(t) { if (t != null) PERS.t = t; return PERS.t; },
+    lanes: () => ({ i: LANE.i, z: laneZNow(), live: laneIndex() >= 0, want: laneIndex(), depth: laneDepth(), ringZ: ring.z, def: laneDef() }), lanesSync() { lanesAfterThrow(true); },
+    bank: () => ({ banked: skull.banked || 0, seal: skull.seal || 0, need: bankSeal(), live: banksLive(), ground: groundMat(), bounces: skull.bounces, vy: skull.v0.y }),
+    surfaces: () => JSON.parse(JSON.stringify(SURFACES)), surfaceBounce: (v, n, mat) => surfaceBounce(v, n, mat),
+    aimFromDrag(dx, dy) { const m = mapDrag(dx, dy); return { ...m, ...aimPoint(m.nx, m.ny) }; },
+    predictCrossing(AX, AY) { const v = aimVelocity(AX, AY), tc = ring.z / v.z; if (obstacleForcesLive() || waterFlight() || banksLive()) { const P = forcedPath(v, tc * 1.6 + 0.8), k = P.findIndex(q => q.z >= ring.z); if (k > 0) { const a = P[k - 1], b = P[k], u = (ring.z - a.z) / (b.z - a.z); return { x: a.x + (b.x - a.x) * u, y: a.y + (b.y - a.y) * u, z: ring.z }; } } return { x: v.x * tc + 0.5 * windNow() * tc * tc, y: START_Y + v.y * tc - 0.5 * G * tc * tc, z: ring.z }; },
+    pitchBoard: () => ({ rim: PITCH.rim, holes: PITCH.holes.map(h => ({ ...h })), box: [PITCH.x0, PITCH.x1, PITCH.y0, PITCH.y1] }), skullR: SKULL_R,
+    guideCross(AX, AY) { const p = buildPreview(AX, AY, "full"); return p.cross; }, guideNow: () => guideNow(),
+    previewInfo(AX, AY) { const p = buildPreview(AX, AY, guideNow()); return { dots: p.front.length + p.back.length, crosshair: !!p.cross }; },
+    ringAhead(sec) { return ringAt(ring.phase + ring.omega * sec); },
+    state() {
+      return { state: game.state, score: game.score, hits: game.hits, throws: game.throws, stage: game.stage, stageHits: game.stageHits, phase: game.phase, lives: game.lives, slots: game.slots, streak: game.streak,
+        best: profile.bestScore, bestHits: profile.best, paused, sheet, screen, cine: game.cine && game.cine.kind,
+        lastResult: game.result && { ...game.result }, lastCross: game.lastCross && { ...game.lastCross },
+        ring: { x: ring.x, y: ring.y, z: ring.z, rc: ring.rc, amp: ring.amp, omega: ring.omega, mode: ring.mode }, skull: { ...skull.pos } };
+    },
+    layout() {
+      const s = projectBase(0, START_Y, 0), r = projectBase(ring.x, ring.y, ring.z), sh = projectBase(ring.x, 0, ring.z), tc = projectBase(0, 0, RING_Z);
+      return { W, H, skull: { x: s.x, y: s.y, r: SKULL_R * s.s }, ring: { x: r.x, y: r.y, r: ring.rc * r.s }, ringShadowX: sh.x, trackCenterX: tc.x, pullMax: pullMax() };
+    },
+    world() {
+      return { t: world.t, clouds: world.clouds.map(c => c.x), walkers: world.walkers.map(w => ({ type: w.type, x: w.x, z: w.z, state: w.state })),
+        bats: world.bats.length, witch: !!world.witch, bolt: !!world.bolt, spawned: { ...world.next } };
+    },
+    catNow() { spawnCat(); },
+    cartBuy: (kind, id) => cartBuy(kind, id), deals: () => dailyDeals().map(d => ({ kind: d.kind, id: d.it.id, price: d.price, full: d.it.souls, shop: !!d.it.shop })),
+    async coffin() { const g = await openCoffin(mulberry32(7)); return g && { kind: g.kind, id: g.it.id, shop: !!g.it.shop }; }, coffinShow: () => !!cart.show && !$("coffinShow").hidden, endCoffinShow: wear => endCoffinShow(wear),
+    plantSeed(x, y, z) { seeds.length = 0; seeds.push({ live: true, fixed: true, x, y, z, ox: x, oy: y, oz: z, vx: 0, vy: 0, vz: 0, rot: 0, at: 0 }); },
+    skullPathAt(AX, AY, t) { const v = aimVelocity(AX, AY); return { x: v.x * t + 0.5 * windNow() * t * t, y: START_Y + v.y * t - 0.5 * G * t * t, z: v.z * t }; }, say(pool = "grab") { voice.test = true; const s = sayLine(pool); voice.test = false; return s; },
+    voiceLines: () => { const o = {}; for (const id of lineIds("morty.")) { const pool = id.split(".").slice(1, -1).join("."); (o[pool] = o[pool] || []).push(t(id)); } return o; },
+    voiceTest(on = true) { voice.test = on; voice.bags = {}; voice.last = -99; }, voice: () => ({ text: voice.text, id: voice.id, pool: voice.pool, said: voice.said, mood: mortyMood() }),
+    lang: l => (l ? setLang(l) : LANG), missingStrings: () => [...t.missing], grab() { return skullGrabbed(); }, hat: () => ({ ...hatSpring }), digger: () => GY.digger && { t: GY.digger.t, dirt: GY.digger.dirt.length }, cat: () => GY.cat && { id: GY.cat.id, x: GY.cat.x, z: GY.cat.z, state: GY.cat.state },
+    music() {
+      const out = { want: reel.want, on: reel.on, synth: !!mus, tracks: {} };
+      for (const [k, t] of Object.entries(reel.tracks)) out.tracks[k] = { live: t.live, paused: t.el ? t.el.paused : null, at: t.el ? +t.el.currentTime.toFixed(2) : null, gain: t.gain ? +t.gain.gain.value.toFixed(3) : null };
+      return out;
+    },
+    visualShapes: () => visualShapes(), sling: () => ({ ...sling }), VisualSystem,
+    visualSystem() {   // the picture's side of things: its clock, its states, the art it loaded, the last impact, the drawing now showing
+      return { clock: { fps: VCLOCK.fps, frame: VCLOCK.n, t: +VCLOCK.t.toFixed(4) }, state: { skull: VSTATE.skull, target: VSTATE.target, launcher: VSTATE.launcher, camera: VSTATE.camera, stage: VSTATE.stage, log: VSTATE.log.slice() },
+        assets: Object.fromEntries(Object.entries(ASSETS).map(([id, A]) => [id, { version: A.meta.version, name: A.meta.name, layers: Object.keys(A.layers), anchors: A.meta.anchors || null, shapes: A.meta.shapes }])),
+        lastImpact, held: VENT.skull && { a: VENT.skull.a, angle: VENT.skull.angle, tilt: VENT.skull.tilt, t: VENT.skull.t, pose: VENT.skull.pose, smear: VENT.skull.smear, tremble: VENT.skull.tremble, mood: VENT.skull.face.mood, glyph: VENT.skull.face.glyph },
+        rig: { a: rig.a, dir: rig.dir }, target: { sq: targetSq.v }, pose: VPOSE.id, poseLog: VPOSE.log ? VPOSE.log.slice() : [], boss: VSTATE.boss, power: VSTATE.power, cuts: VCLOCK.cuts, director: fxState() };
+    },
+    moon() {   // where the moon hangs, whether its artwork is in, and how bright the sky is on the disc and beside it
+      if (moonState === "loading") buildMoon();   // picks the picture up if it has decoded but its onload is still queued
+      const N = 64, c = document.createElement("canvas"); c.width = c.height = N;
+      const g = c.getContext("2d", { willReadFrequently: true }), R = moon.r * 2.4, s = N / (R * 2);   // read copies, never the live plates
+      g.setTransform(s, 0, 0, s, -(moon.x - R) * s, -(moon.y - R) * s);
+      for (const P of [skyLayer, moonLayer]) if (P) g.drawImage(P.c, P.x0, P.y0, P.w, P.h);
+      const d = g.getImageData(0, 0, N, N).data, lum = i => 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2], k = N / 2 / 2.4;
+      let disc = 0, n = 0;
+      for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (Math.hypot(x + 0.5 - N / 2, y + 0.5 - N / 2) < k * 0.8) { disc += lum((y * N + x) * 4); n++; }
+      return { x: moon.x, y: moon.y, r: moon.r, art: moonState, layer: !!moonLayer, disc: Math.round(disc / n), sky: Math.round(lum(((N - 4) * N + 3) * 4)) };
+    },
+    placeWalker(i, x, z) { const k = world.walkers[i]; if (k) { k.x = x; k.z = z; k.v = 0; } return !!k; },   // (v53: for looking at one up close)
+    forceSpawn(what) { if (what === "bats") spawnFlock(); else if (what === "witch") spawnWitch(); else if (what === "bolt") spawnBolt(); else spawnWalker(what); },
+    settings() { return { ...settings }; },
+    setSetting(k, v) { settings[k] = v; persist(); Sound.apply(); applyAccess(); if (sheet === "settings") renderSettings(); },
+    access: () => ({ flashK: flashK(), hc: document.documentElement.classList.contains("hc"), text: document.documentElement.dataset.text, lastFlash: $("flash").dataset.last }),
+    perf: () => ({ ...PERF, now: { particles: particles.length, bursts: bursts.length, inkStars: inkStars.length } }),
+    spray(n) { for (let i = 0; i < n; i++) { particles.push({ kind: "dot", x: W / 2, y: H / 2, vx: 0, vy: 0, life: 5, max: 5, size: 2, color: CREAM, g: 0, a: 1 }); bursts.push({ word: "", x: 0, y: 0, t: 0, dur: 5 }); } },
+    h: (...a) => h(...a),
+    profile() { return JSON.parse(JSON.stringify(profile)); },
+    setStats(o) { Object.assign(profile, JSON.parse(JSON.stringify(o)));   // (a copy: the live profile must never share a list with the caller)
+      if (o.unlocked) profile.unlocked = [...o.unlocked]; if (o.achievements) profile.achievements = [...o.achievements]; if (o.arcade) profile.arcade = JSON.parse(JSON.stringify(o.arcade)); },
+    setName(n) { profile.name = n; },
+    equip, cosmetics() { return { ...cos }; }, checkUnlocks: () => checkUnlocks().map(f => f.kind + ":" + f.it.id),
+    nextUnlock() { const n = nextUnlock(); return n && { kind: n.kind, id: n.it.id, have: n.have, need: n.it.req[1] }; },
+    exportCode, importCode, merge: mergeProfiles,
+    openSheet, closeSheet, pauseRun, resumeRun, toTitle, shop: () => ({ ...shop }), runStats: () => ({ ...game.run }),
+    bones: () => profile.bones, setBones(n) { profile.bones = n; renderBones(); if (sheet) renderSheet(sheet); },
+    buy, daily: () => JSON.parse(JSON.stringify(ensureDaily())), challenge, claim: claimChallenge, runBones,
+    weekly: () => JSON.parse(JSON.stringify(ensurePeriod("weekly"))), monthly: () => JSON.parse(JSON.stringify(ensurePeriod("monthly"))),
+    setPeriod(per, d) { profile[per] = d; updatePips(); }, periodKey: (per, d) => PERIODS[per].key(d), resetIn: per => msToReset(per),
+    startArcade(map = 0) { startGame({ mode: "arcade", map }); }, arcade: () => ({ mode: game.mode, map: game.map, secs: arcadeSecs(), rec: { ...arcadeRec() }, tint: stageDef().tint || null, ramp: arcadeRamp() }),
+    achievements: () => ACHIEVEMENTS.map(A => ({ id: A.id, name: A.name, n: A.n, bones: A.bones, have: achValue(A), got: achHas(A.id) })), checkAchievements: () => checkAchievements().map(A => A.id),
+    gameOverShowing: () => !$("gameOver").hidden, mmss: s => mmss(s), pickupHit: lc => pickupHit(lc), sfx: () => Object.keys(SFX_EMBED || {}).sort(),
+    challengePools: () => Object.fromEntries(PERIOD_IDS.map(per => [per, Object.fromEntries(PERIODS[per].pool.map(c => [c.id, [c.reward(c.range[0]), c.reward(c.range[1])]]))])),
+    setDaily(d) { profile.daily = d; updatePips(); },
+    audio() { return { ...Sound.debug(), level: Sound.level() }; },
+    aimAt(nx, ny) { if (game.state !== "ready") return false; Object.assign(aim, { active: true, source: "key", nx, ny }); refreshAim(); return true; },
+    releaseAim() { release(); },
+    rig() { return { a: rig.a, dir: rig.dir, jaw: rig.jaw, tilt: rig.tilt, mood: rig.mood, dots: rig.dots }; },
+    bursts: () => bursts.map(b => b.word), kinds: () => KINDS.slice(), film: () => ({ level: settings.film, reel: document.body.dataset.reel, iris: !!film.iris }),
+    cloud() { return { state: Cloud.state, signedIn: !!Cloud.ref }; },
+    // a stand-in for the shared store, so the leaderboard can be tested without a published page
+    fakeBoard(rows = [], o = {}) {
+      const docs = new Map(rows.map(r => [r.id, r])), writes = [], id = p => p.split("/")[1]; let cb = null;
+      const snap = () => ({ docs: [...docs.values()].sort((a, b) => b.score - a.score).map(r => ({ id: r.id, data: () => ({ ...r }) })) });
+      const db = { collection: () => ({ orderBy: () => ({ limit: () => ({ onSnapshot: n => { cb = n; n(snap()); return () => { cb = null; }; } }) }) }),
+        doc: path => ({ get: () => Promise.resolve({ exists: docs.has(id(path)), data: () => docs.get(id(path)) }),
+          set: d => o.readonly ? Promise.reject({ code: "invalid_argument" }) : (writes.push({ path, d }), docs.set(id(path), { id: id(path), ...d }), cb && cb(snap()), Promise.resolve()),
+          delete: () => { docs.delete(id(path)); if (cb) cb(snap()); return Promise.resolve(); } }) };
+      Board.unwatch(); Object.assign(Board, { db, me: { id: "me1" }, state: "live", rows: [], mine: null, fake: true, tab: "live", mode: "story" });
+      return { writes, docs };
+    },
+    unfakeBoard() { Board.unwatch(); Object.assign(Board, { db: null, me: null, state: "local", rows: [], mine: null, fake: false, mode: "story", fakeLocal: null }); },
+    feel: () => ({ ghost: ghostShot.last ? ghostShot.last.length : 0, near: !!ghostShot.near, antic: { k: antic.k, state: antic.state, predicted: antic.predicted, from: antic.from } }),   // (v51, 08k_feel.js)
+    freezeLeft: () => game.freeze, deathFX: () => ({ ...DEATH_FX }),   // (v52: the knockout timing probe)
+    death: () => (boss && boss.death ? { arch: boss.death.arch, word: boss.death.word, gag: boss.death.gag, mat: boss.death.mat } : null), deathTable: () => JSON.parse(JSON.stringify(DEATH)), gags: () => GAGS.map(G => G.kind),   // (v51, 07r_bossdeath.js)
+    plus: () => ({ on: !!game.plus, open: plusOpen(), wind: PLUS.wind, cracked: PLUS.cracked, decoys: PLUS.decoys.length, fake: PLUS.fake, k: plusK(), rc: ring.rc, omega: ring.omega }),   // (v51: Adventure+, 07s_plus.js)
+    startPlus: () => startGame({ mode: "story", plus: true }),
+    startAt: (i, plus = false) => startGame({ mode: "story", map: i, plus: !!plus }),   // (v62: from a checkpoint)
+    bossPath: t => (boss && boss.pathAt ? boss.pathAt(t == null ? boss.t : t) : null),
+    intro(at = 0) { playIntro(); INTRO.t0 = performance.now() - at * 1000; return INTRO.on; }, introState: () => ({ on: INTRO.on, open: INTRO.open, lights: INTRO.lights.map(L => L.on), cls: $("title").className }),   // (v51: the spotlit opening, 09q_intro.js)
+    boardLocal(list) { Board.fakeLocal = list; }, boardMode(m) { Board.mode = m; if (sheet === "board") renderBoard(); },
+    boardPush: () => Board.push(true), boardState: () => Board.state, boardInit() { Board.state = "local"; Board.db = null; Board.init(Backend.db, Backend.me); },
+    sandbox(on) {
+      if (on) { sandbox = {}; Sound.apply(); }
+      else { sandbox = null; loadAll(); ensureDaily(); applyCosmetics(); updateHud(); Sound.apply(); }
+    },
+    storedBest() { return profile.bestScore; },
+    camera: () => ({ x: camS.x, y: camS.y, z: camS.z, on: camOn, live: { x: cam.x, y: cam.y, z: cam.z }, slip: Math.max(...PLANES.map(p => Math.hypot(camS.slip[p].x, camS.slip[p].y))) }),
+    parallax: zc => { const c = camAt(zc); return { k: c.k, dx: c.ox, dy: c.oy }; },
+    setCamera(v) { settings.camera = v; updateCamera(0); },
+    skullArt: () => ({ layers: Object.fromEntries(Object.entries(SKULL_ART).map(([k, v]) => [k, v.length])), bottom: SKULL_BOTTOM, sockets: SOCK.map(s => ({ x: s.x, y: s.y, rx: s.rx, ry: s.ry })),
+      art: { k: ART_K, cx: ART_CX, cy: ART_CY, top: ART_TOP, bot: ART_BOT, box: JSON.parse(JSON.stringify(BOX)), noseBot: NOSE_BOT, upperTop: UPPER_TOP } }),   // (v52: the angle sheet's landmarks, in the 1000-px art space)
+    // draws one skull on a fresh canvas: { look, mood, jaw, a, dir, ang, size } → data URL (for visual checks)
+    skullCard(o = {}) {
+      const n = o.size || 240, cv = document.createElement("canvas"); cv.width = cv.height = n; const c = cv.getContext("2d");
+      c.fillStyle = o.bg || "#26364A"; c.fillRect(0, 0, n, n);
+      const f = faceFor(o.mood || "idle", o.t || 0);
+      const look = { ...cos, ...(o.look || {}) }, cy = n * (o.cy || 0.46), sr = n * (o.r || 0.3);
+      drawAura(c, n / 2, cy, sr, o.t || 0, false, look.aura);
+      drawSkull(c, n / 2, cy, sr, { look, face: f, jaw: o.jaw == null ? f.jawT : o.jaw, a: o.a, dir: o.dir, ang: o.ang, t: o.t || 0 });
+      drawAura(c, n / 2, cy, sr, o.t || 0, true, look.aura); drawHat(c, n / 2, cy, sr, o.ang || 0, o.t || 0, null, 1, hatOf(look), o.a || 1, o.dir || 0);
+      if (o.power) drawPowerIcon(c, o.power, n / 2, n / 2, n * 0.3, o.t || 0);
+      if (o.pole) { c.fillStyle = o.bg || "#26364A"; c.fillRect(0, 0, n, n); drawRingShape(c, n / 2, n * 0.28, n * 0.2, n * 0.05, o.ring || "hoop", o.t || 0); drawPole(n / 2, n * 0.5, n * 0.95, n * 0.04, n * 0.45, o.pole, c, o.t || 0, n * 0.06); }
+      if (o.ring && !o.pole) { c.fillStyle = o.bg || "#26364A"; c.fillRect(0, 0, n, n); drawRingShape(c, n / 2, n / 2, n * 0.3, n * 0.07, o.ring, o.t || 0); }
+      return cv.toDataURL();
+    }
+  });
+  if (/[?&]test\b/.test(location.search)) { const s = document.createElement("script"); s.src = "TEST_SPEC.js"; document.body.appendChild(s); }
