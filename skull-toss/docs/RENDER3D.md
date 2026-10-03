@@ -26,7 +26,7 @@ by default. Add `?r3d` to the address to see it, or call `SkullToss.debug.r3d(tr
 
 | Piece | File | How |
 |---|---|---|
-| Morty | `08rb_r3d_skull.js` | A modelled head (cranium and a jaw-deep face shell). His 2D face is painted live onto the shell's front, so every expression, skin, paint and set of teeth carries over. His wings are a live piece behind him. |
+| Morty | `08rb_r3d_skull.js` | A modelled head (cranium and a jaw-deep face shell). The face shell is sculpted (v70): the eye sockets and nose are real hollows, and the brow ridge and cheekbones stand out, placed from the skull artwork's own socket and nose boxes. His 2D face is painted live onto the shell, projected straight on, so its ink lies in the hollows and every expression, skin, paint and set of teeth carries over. Bone takes the light brighter than the scenery (its own ramp), the face texture is 512 px, and the outline comes from the unsculpted shape so it rings his head without creasing into the hollows. His wings are a live piece behind him. |
 | The ring | `08ra_r3d_ring.js` | A torus in the cosmetic's colour. The lifebuoy has white quarters and a rope; chain, bones, thorn, fire and portal rings keep their character. |
 | The slingshot, the post | `08rc_r3d_launcher.js` | Turned wood, capped tips and rubber bands, posed from the painted launcher's anchors. The post is wood on an iron foot. |
 | Scenery, graveyard props, the walking cast | `08rd_r3d_sets.js` | **Set pieces.** Each painting (for a walker, each drawing of its walk) is cut out along its own outline (marching squares, simplified) and extruded with real depth. It's painted front and back, its cut edge is its own paint in shadow, and it's inked, like the Fleischer studio's miniature sets. A piece is built only while its depth would show on screen (the runtime complexity manager, below); otherwise it stays painted. |
@@ -43,6 +43,10 @@ painter's order. An overlay meant to sit on Morty (a hat, a frame launcher) goes
 look): the key light takes the moon's colour, the hemisphere fill the sky's top and bottom, and every toon material
 gets a thin rim in the moon's colour where its surface turns away from the camera (a Fresnel term, (1 − n·v)³,
 strength 0.35; `SkullToss.debug.r3dRim(k)` to try others, `r3dLights()` to read the rig).
+
+**Contact shadows (Phase 1, v70).** Each modelled boss that stands on the ground or hovers over it gets a soft shadow
+at its feet, by the same rule as Morty's (`BLUEPRINT.shadow.skull`: the higher its lowest point, the smaller and
+fainter, slid along the light), once a frame. The gator and Madame, up to their necks in water, get none.
 
 **Batching.** Hero pieces with 2D drawn over them (Morty, the ring, the slingshot, the post) render at once, into their
 own box. Everything else is queued. The queue renders as one scene in a single call (clones posed by their own

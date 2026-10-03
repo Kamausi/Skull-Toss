@@ -95,6 +95,7 @@
     const bb = new THREE.Box3().setFromObject(M); let reach = 0;
     for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) reach = Math.max(reach, Math.hypot(x, y));
     M.userData.reach = Math.max(reach, M.userData.reachMin || 0);
+    M.userData.foot = bb.min.y; M.userData.half = Math.max(Math.abs(bb.min.x), Math.abs(bb.max.x));   // (where it meets the ground, and how wide it is there: its contact shadow)
     return (R3D.cache[key] = M);
   }
   const r3dBossModelled = B => !!(B && R3D_BOSSES[B.kind]);
@@ -105,12 +106,29 @@
     if (!r3dOn() || !R3D_BOSSES[B.kind] || !R3D_BOSSES[B.kind][part]) return false;
     const M = r3dBossPart(B.kind, part); if (!M) return false;
     try { R3D_BOSSES[B.kind][part].pose(M.userData, B, x); } catch (e) { if (R3D.fails++ < 3) Debug.warn("RENDER", e, "08rg_r3d_bosskit:pose"); return false; }
+    r3dContactShadow(B, P, M, part);
     const k = 1 / p.s, hurt = B.hurt || 0, bounce = x.still ? 1 : 1 + Math.sin(bt(B) * 6) * 0.015, sc = P.sc || 1;
     M.position.set((p.x - W / 2) * k, -(p.y - HY) * k, -F * k);
     M.rotation.set(0, 0, -(P.rot || 0));
     M.scale.set(sc * (bounce + hurt * 0.06) * (x.sx || 1), sc * (1 / bounce - hurt * 0.05) * (x.sy || 1), sc);
     const R = M.userData.reach * sc * p.s * Math.max(Math.abs(x.sx || 1), Math.abs(x.sy || 1)) * 1.25 + 10;
     return r3dDraw(M, { x: p.x - R, y: p.y - R, w: R * 2, h: R * 2 }, clamp(0.05 * p.s, 1.3, 3.2), P.alpha == null ? 1 : P.alpha, false, x.clip);
+  }
+  // (Phase 1, docs/PRODUCTION-AUDIT.md §5) a soft contact shadow under each modelled boss, so a model stands on the
+  // ground or hovers over it instead of floating in the painting: the same rule as Morty's (BLUEPRINT.shadow.skull), the
+  // higher its lowest point the smaller and fainter the shadow, slid along the light. Once a frame per boss, and never
+  // for the ones up to their necks in water.
+  const R3D_WET = /^(gator|madame)$/, R3D_SHADOWED = /^(body|head|house)$/;
+  function r3dContactShadow(B, P, M, part) {
+    if (R3D_WET.test(B.kind) || !R3D_SHADOWED.test(part) || B.__shAt === R3D_RCM.now) return;
+    B.__shAt = R3D_RCM.now;
+    const sc = P.sc || 1, h = Math.max(0, P.y + M.userData.foot * sc), g = project(P.x + shadowShift(h), 0, P.z);
+    if (g.y > H + 20 || g.y < 0) return;
+    const S = BLUEPRINT.shadow.skull, k = 1 / (1 + h * S.height), rx = M.userData.half * sc * g.s * (0.55 + 0.45 * k), op = (S.opacity[0] + (S.opacity[1] - S.opacity[0]) * k) * (P.alpha == null ? 1 : P.alpha) * (B.dead ? 0.6 : 1);
+    if (rx < 1 || op < 0.02) return;
+    const gr = ctx.createRadialGradient(g.x, g.y, 0, g.x, g.y, rx);
+    gr.addColorStop(0, `rgba(0,0,0,${op})`); gr.addColorStop(0.7, `rgba(0,0,0,${op * 0.6})`); gr.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.save(); ctx.fillStyle = gr; ctx.beginPath(); ctx.ellipse(g.x, g.y, rx, rx * 0.24, 0, 0, TAU); ctx.fill(); ctx.restore();
   }
   // the shots the end bosses throw, modelled: a clod, a bat, a bone, mud, a pin, a gear, a frame of film, a seed
   const R3D_SHOTS = {

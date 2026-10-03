@@ -72,7 +72,7 @@ They describe the **3D production pass**, not the 2D game. Every asset listed al
 
 | ID | Asset | Source | Now | 3D today | G | V | Strategy | Status |
 |---|---|---|---|---|---|---|---|---|
-| ASSET-001 | Morty (the skull): cranium, sockets, pupils, brows, nose, teeth, jaw | `08a_skull.js`, `src/art/skull/*.svg` | Rubber rig (vector) | model: modelled head, 2D face painted onto the front shell | 3 | 3 | Sculpted skull with modelled sockets, nose and jaw on a hinge; eyes and brows as geometry with morph targets; bone material; volume-preserving squash | IMPLEMENTED |
+| ASSET-001 | Morty (the skull): cranium, sockets, pupils, brows, nose, teeth, jaw | `08a_skull.js`, `src/art/skull/*.svg` | Rubber rig (vector) | model: a sculpted face shell (sockets, nose, brow, cheekbones) with the 2D face projected onto it (v70) | 3 | 3 | Sculpted skull with modelled sockets, nose and jaw on a hinge; eyes and brows as geometry with morph targets; bone material; volume-preserving squash | IN PROGRESS (pass 1 of 3, §13) |
 | ASSET-002 | Morty's expressions and speech | `08a_skull.js`, `08g_voice.js` | Rig poses, speech bubbles | via the painted face | 2 | 3 | Morph targets and brow and pupil rigs; speech stays a 2D bubble | NOT STARTED |
 | ASSET-003 | Squash, stretch and smear in flight | `08c_scene.js` (`drawSmear`), `08k_feel.js` | Vector deformation | 2D smear over the model | 2 | 3 | Render-only non-uniform scale (`s`, `1/√s`) and a bounded smear mesh; never fed back into collision | NOT STARTED |
 | ASSET-004 | Morty's shadow | `drawSkullShadow` | Painted ellipse | 2D | 2 | 2 | Contact shadow (a projected blob or a short ray) | NOT STARTED |
@@ -581,3 +581,60 @@ requirement the game doesn't meet yet.
 | 4 | §346, §358: a multi-file project, GLB models, KTX2 textures, streamed assets | One self-contained HTML file; models are built in code; art is inlined | Keep the single file: it's what the web, the Capacitor shells and the offline play already rely on, and procedural models are small. Revisit only if models need sculpted detail that code can't carry, and then as an embedded compressed buffer, not network streaming |
 | 5 | §370: "the Raven King" | The map-1 mini-boss is the Crow King (`boss.crow.name`) | Read the brief's Raven King as the Crow King |
 | 6 | §133, §140–150: ray tracing, neural upscaling, frame generation, NeRF, splats | Not available in browsers or the shells, or not justified for this art style | Not planned (class C/D in §8) |
+
+---
+
+## 13. Pass reports
+
+### ASSET-001 Morty, pass 1 (v70)
+
+**Status: IN PROGRESS.** Pass 1 of 3. Pass 2 is the jaw on a hinge and the teeth as geometry; pass 3 is eyes and
+brows as geometry with morph targets.
+
+**Files modified.** `src/js/08rb_r3d_skull.js`.
+
+**Implemented.**
+- The face shell is sculpted, on a denser mesh (72 × 56 segments instead of 40 × 32).
+  - The eye sockets are hollows 0.2 skull radii deep, and the nose 0.1.
+  - The brow ridge over each socket and the cheekbones under and outboard of them stand out 0.05–0.06.
+  - Each is placed from the skull artwork's own socket and nose boxes (`SOCK`, the nose layer), so the painted face
+    lines up with the sculpt.
+- The painted face is still projected straight on, so every expression, skin, paint, set of teeth and eye cosmetic
+  carries over unchanged.
+- Bone has its own toon ramp (shadow 140, half 225, lit 255, against the scenery's 90/175/255). He keeps the
+  drawing's white where he faces the light and shades only where the surface turns away (the socket walls, the far
+  cheek).
+- The face texture is 512 px, up from 256. It was being magnified at hero size on a DPR 2 screen.
+- The cranium is set back 0.26 behind the face, so the hollows never show the back of his head.
+- The outline comes from an unsculpted copy of the shell. It rings the head without creasing into the hollows: a
+  first try inked the sculpted shell itself and drew black lines inside the sockets.
+
+**Mathematics applied.**
+- The relief is a sum of smooth bumps, (1 − d)², with d the squared normalised distance from each feature's ellipse
+  centre. It is scaled by the surface's facing, so the rim of the shell doesn't move.
+- The normals are recomputed from the moved vertices, so the toon light shades the hollows.
+- The UVs are unchanged (a straight-on projection). The painting stays where the rig drew it, whatever the depth.
+
+**Visual checks** (headless, DPR 2, quality pinned at 1):
+- At rest, side by side with the 2D Morty: the pupils, glints, teeth and grin are all present; the sockets and
+  cheeks now take shading.
+- In flight at gameplay distance, turned: reads as a round, lit skull.
+- Two defects were found and fixed in this pass: the back of the head showing through the sockets, and ink
+  creasing into the hollows.
+
+**Gameplay regression.** None expected: render only, 3D off by default, collision untouched. Full spec (see the commit).
+
+**Performance.** The shell has about 4,000 triangles instead of about 1,300 (plus the ink copy). The face texture is
+1 MB instead of 256 KB of upload when repainted. Not measured on a device.
+
+**Compatibility.** WebGL2 (as the rest of the renderer). Mobile not yet checked.
+
+**Remaining.**
+- Still warmer and a touch softer than the 2D drawing at rest. The 3D renders at 1.5× on a DPR 2 screen by design;
+  worth a look on a phone.
+- The jaw still opens only in the painting.
+- The eyes and brows are still painted.
+- No hero-distance review in every map's light yet.
+
+**Next dependency.** Pass 2, the jaw: it needs the 2D rig's jaw value (`o.jaw`) driving a hinged mesh, with the
+painted jaw masked out of the face texture.
