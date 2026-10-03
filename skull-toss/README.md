@@ -4,6 +4,15 @@ Lob the skull through a ring in a haunted graveyard. Play **Story** to climb thr
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
 
+## New in v73: Morty's head, eyes and slingshot are the owner's models
+
+On the owner's calls ("Use the skull for Morty's head", "Use this for his eyes", "Use this for the sling shot"), the
+3D renderer (still off unless you add `?r3d`) now uses the three supplied models: a real skull, its jaw swinging open
+on its hinge and every tooth its own (so toothless, gold and fangs are real teeth); eyeballs that look about, swell,
+blink and close; and the slingshot's frame and leather pouch, with the game's bands stretched between them. Skins,
+expressions, glyph eyes, brows and glasses all carry over. The models are baked by `tools/model-bake.mjs` into
+`src/models`, with their sources and provenance; none ships until its licence is recorded. `docs/PRODUCTION-AUDIT.md`.
+
 ## New in v72: the visual overhaul begins: Morty's face is geometry
 
 On the owner's call ("Continue with the visual overhaul", every asset regenerated rather than 2D drawn into 3D), the

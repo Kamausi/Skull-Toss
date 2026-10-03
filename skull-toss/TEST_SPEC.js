@@ -3118,6 +3118,7 @@
   test("v72 Morty's face is geometry, not his drawing: pupils, glyph eyes and brows are meshes, each tooth is a mesh, the jaw drops on a hinge over a dark mouth, the skin is a surface texture; looks not yet built fall back; nothing fails", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); const on = T.r3d(true);
     if (!T.r3dState().ok) { assert(!on, "no WebGL here: it stays off"); T.r3d(null); T.toTitle(); T.setStats(ZERO); return; }
+    T.mortyHeadOff(true);   // (v73: the owner's skull is his head now; this built face is its fallback, tested here on its own)
     T.pause(true); const at = (mood, o = {}) => { T.mortyTest(195, 400, 80, mood, { blink: 0, ...o }); return T.mortyFace(); };
     const idle = at("idle");
     assert(idle && idle.geom && !idle.old && idle.eyes.every(Boolean) && idle.glyphs.every(g => g === null), `idle: the geometric face, two pupils (${JSON.stringify(idle)})`);
@@ -3128,9 +3129,35 @@
     const wink = at("gleeful"); assert(wink.eyes[0] && wink.brows.every(Boolean), "the wink: one pupil showing, brows set");
     assert(at("idle", { look: { teeth: "toothless" } }).upper === 0 && at("idle", { look: { teeth: "gold" } }).gold === 1 && at("idle", { look: { teeth: "fangs" } }).fangs === 2 && at("idle", { look: { teeth: "one" } }).upper === 1, "toothless, a gold tooth, fangs, one tooth");
     const wood = at("idle", { look: { skull: "wood", eyes: "giant" } }); assert(wood.geom, "a patterned skin and giant eyes are built too");
-    const glasses = at("idle", { look: { glasses: "round" } }); assert(!glasses.geom && glasses.old, "a look not yet built (glasses) falls back to the projected face");
+    const glasses = at("idle", { look: { glasses: "round" } }); assert(glasses.geom && glasses.glasses === "round" && glasses.glassParts > 4, `v73: glasses are built on this face too (${JSON.stringify(glasses)})`);
+    const mask = at("idle", { look: { mask: "paperbag" } }); assert(!mask.geom && mask.old, "a look not yet built (a mask) falls back to the projected face");
     assert(T.r3dState().fails === 0 && idle.frames > 0, "nothing fails");
-    T.pause(false); T.r3d(null); T.toTitle(); T.setStats(ZERO);
+    T.mortyHeadOff(false); T.pause(false); T.r3d(null); T.toTitle(); T.setStats(ZERO);
+  });
+  // ── v73: the owner's models: the skull is Morty's head, the eye his eyes, and the slingshot the slingshot ──
+  test("v73 Morty's head is the owner's skull and his eyes the owner's eye: baked and embedded (provenance kept, nothing shipped without a licence); the jaw hinges, every tooth its own, eyeballs that look, swell, blink and give way to glyphs, brows and glasses on the skull, two detail levels; masks fall back; the slingshot is the owner's model; nothing fails", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); const on = T.r3d(true);
+    if (!T.r3dState().ok) { assert(!on, "no WebGL here: it stays off"); T.r3d(null); T.toTitle(); T.setStats(ZERO); return; }
+    const M = T.r3dModels(); assert(M["morty-head"] && M.slingshot && M["morty-head"].bytes > 100000, `both baked models are in the page (${JSON.stringify(Object.keys(M))})`);
+    const prov = { ...M["morty-head"].provenance, ...M.slingshot.provenance };
+    assert(Object.keys(prov).length === 3 && Object.values(prov).every(p => p.licence && p.ship === false && p.supplied), "each source's provenance travels with it, and none is marked for shipping until its licence is recorded");
+    T.pause(true); const at = (mood, o = {}, r = 80) => { T.mortyTest(195, 400, r, mood, { blink: 0, ...o }); return T.mortyHead(); };
+    const idle = at("idle");
+    assert(idle && idle.on && idle.lod === "hero" && idle.tris > 15000 && idle.upper === 14 && idle.lower === 14, `idle: the skull at hero detail with its 28 teeth (${JSON.stringify(idle)})`);
+    assert(idle.eyes.every(e => e.ball && !e.glyph && e.lid === null) && idle.jaw < 0.05 && !idle.brows.some(Boolean), "two eyeballs, lids open, the jaw shut, no brows");
+    const small = at("idle", {}, 18); assert(small.lod === "low" && small.tris < 5000, `small on screen: the light level (${small.tris})`);
+    const fear = at("fear"); assert(fear.jaw > 0.25 && fear.brows.every(Boolean) && fear.eyes[0].scale > idle.eyes[0].scale * 1.05, `fear: the mandible swings open on its hinge, brows up, the eyes swell (jaw ${fear.jaw}, eye ${fear.eyes[0].scale})`);
+    assert(at("idle", { blink: 1 }).eyes.every(e => e.lid > 1.4), "a blink: the lids close over the eyes");
+    assert(at("ko").eyes.every(e => !e.ball && e.glyph === "x1") && at("dizzy").eyes.every(e => e.glyph === "spiral") && at("perfect").eyes.every(e => e.glyph === "star"), "KO crosses, dizzy spirals and a perfect's stars stand in the sockets");
+    const T2 = id => at("idle", { look: { teeth: id } });
+    assert(T2("toothless").upper === 0 && T2("toothless").lower === 0 && T2("one").upper === 1 && T2("gold").gold === 1 && T2("fangs").fangs === 2, "toothless, one, gold and fangs are the skull's own teeth hidden, gilded or lengthened");
+    assert(at("idle", { look: { eyes: "giant" } }).eyes[0].scale > idle.eyes[0].scale * 1.2 && at("idle", { look: { eyes: "tiny" } }).eyes[0].scale < idle.eyes[0].scale * 0.7, "giant and tiny eyes");
+    assert(at("idle", { look: { glasses: "aviator" } }).glasses === "aviator" && at("idle", { look: { skull: "wood" } }).on, "glasses sit on the skull; a patterned skin is carried");
+    const mask = at("idle", { look: { mask: "paperbag" } }); assert(mask && !mask.on, "a mask isn't carried yet: the built face takes over");
+    T.pause(false); T.step(0.2);
+    const S = T.r3dSling(); assert(S && S.model && S.frame && S.pouch, `the slingshot is the owner's model, posed on the tips and the pouch (${JSON.stringify(S)})`);
+    assert(T.r3dState().fails === 0 && idle.frames > 0, "nothing fails");
+    T.r3d(null); T.toTitle(); T.setStats(ZERO);
   });
   // ── v71: the engine upgrade (the owner's Wilds of Aether engine, in Skull Toss: docs/RENDER3D.md "The engine") ──
   const r3dOrSkip = () => { const on = T.r3d(true); if (T.r3dState().ok) return true; assert(!on, "no WebGL here: it stays off"); T.r3d(null); T.toTitle(); T.setStats(ZERO); return false; };

@@ -37,7 +37,7 @@
     const face = new THREE.Group(), ink = new THREE.Mesh(smooth, R3D.cache.ink || (R3D.cache.ink = r3dInk())); ink.renderOrder = -1;
     face.add(ink, new THREE.Mesh(shell, faceMat));   // (v70: the face carries his outline, from the unsculpted shape, so the ink rings his head and never creases into the hollows; the cranium's is set back behind it)
     spin.add(craniumG, face); squash.add(spin); tilt.add(squash); head.add(tilt);
-    Object.assign(head.userData, { cv, g: cv.getContext("2d"), tex, back, spin, squash, tilt, oldFace: face });
+    Object.assign(head.userData, { cv, g: cv.getContext("2d"), tex, back, spin, squash, tilt, oldFace: face, cranium: craniumG });
     spin.add(r3dFaceBuild(head, shell, smooth, tex));   // (v72: the face as geometry, 08rm_r3d_mortyface.js; the v70 projected face above is the fallback for looks not yet built)
     return (R3D.cache.skull = head);
   }
@@ -63,7 +63,7 @@
     const M = r3dSkullModel(), D = M.userData, n = R3D_SK.tex, S = R3D_SK.span, look = o.look || cos;
     const Sk = SKINS[look.skull] || SKINS.bone, pal = (Sk.flick && Sk.flick(o.t || 0)) || Sk;
     // his face: as geometry (v72), or for a look not yet built, his drawing upright and unsquashed on the shell (the model does the turning and the squash)
-    if (!r3dFaceFrame(M, o, look)) { D.g.setTransform(1, 0, 0, 1, 0, 0); D.g.clearRect(0, 0, n, n); drawSkull(D.g, n / 2, n / 2, n / (2 * S), { ...o, look: { ...look, wings: "none" }, ang: 0, a: 1, dir: 0, alpha: 1 }); }   // (his wings are their own piece, behind him)
+    if (r3dHeadFrame(M, o, look, r)) { /* v73: the owner's skull and eyes (08rp_r3d_mortyhead.js) */ } else if (!r3dFaceFrame(M, o, look)) { D.g.setTransform(1, 0, 0, 1, 0, 0); D.g.clearRect(0, 0, n, n); drawSkull(D.g, n / 2, n / 2, n / (2 * S), { ...o, look: { ...look, wings: "none" }, ang: 0, a: 1, dir: 0, alpha: 1 }); }   // (his wings are their own piece, behind him)
     if (WINGS[look.wings]) {   // the wings: a live piece behind the head, posed as the 2D rig poses them
       const along0 = clamp(o.a == null ? 1 : o.a, 0.35, 1.9), perp0 = 1 / Math.pow(along0, 0.62), d0 = o.dir || 0;
       r3dCapture("wings", { x: x - r * 3.4, y: y - r * 3.4, w: r * 6.8, h: r * 6.8, auto: true }, F * SKULL_R / Math.max(0.5, r) + SKULL_R * 0.6, 0.02, () => {
@@ -81,5 +81,5 @@
     M.lookAt(0, 0, 0);   // (he faces the camera wherever he is, as the drawing does; the light still falls from the map's side)
     M.scale.set(SKULL_R * 1.06, SKULL_R, SKULL_R);
     const pad = r * 1.7 + 6;
-    return r3dDraw(M, { x: x - pad, y: y - pad, w: pad * 2, h: pad * 2 }, Math.max(1.4, r * 0.07), o.alpha == null ? 1 : o.alpha);
+    return r3dDraw(M, { x: x - pad, y: y - pad, w: pad * 2, h: pad * 2 }, Math.max(1.4, r * (D.head && D.head.root.visible ? 0.04 : 0.07)), o.alpha == null ? 1 : o.alpha);   // (v73: the skull's outline thinner: it has a real silhouette, jaw and cheekbones)
   }

@@ -17,6 +17,18 @@
       tipL: part(ball, tip), tipR: part(ball, tip), bandL: part(cyl, band), bandR: part(cyl, band), pouch: part(new THREE.SphereGeometry(1, 18, 10, 0, TAU, Math.PI * 0.45, Math.PI * 0.55), dark) };
     U.pouch.userData.body.material = dark.clone(); U.pouch.userData.body.material.side = THREE.DoubleSide;
     Object.assign(g.userData, U, { band });
+    // v73: the owner's slingshot (08ro_r3d_models.js): its frame with the cord wraps at its tips, and its leather pouch
+    // with the ties at its ends, in place of the turned handle, arms, caps and the cupped pouch above. The bands stay
+    // the game's own, stretched from the tips to the pouch each frame (the model's hang slack).
+    const SL = r3dSlingParts();
+    if (SL) {
+      const cord = r3dToon("#3A2A1C"), leather = r3dToon("#6A4429"); leather.side = THREE.DoubleSide;
+      const frame = new THREE.Group(), pouch = new THREE.Group(); frame.name = "SlingFrame"; pouch.name = "SlingPouch"; frame.matrixAutoUpdate = false; pouch.matrixAutoUpdate = false;
+      frame.add(r3dInked(SL.parts.frame, wood), r3dInked(SL.parts.tipL, cord), r3dInked(SL.parts.tipR, cord));
+      pouch.add(r3dInked(SL.parts.pouch, leather), r3dInked(SL.parts.tieL, cord), r3dInked(SL.parts.tieR, cord));
+      g.add(frame, pouch); for (const k of ["handle", "armL", "armR", "fork", "wrap", "tipL", "tipR", "pouch"]) U[k].visible = false;
+      Object.assign(g.userData, { model: { frame, pouch, A: SL.anchors } });
+    }
     return (R3D.cache.sling = g);
   }
   // sx, sy the seat; r Morty's radius at rest; tl, tr the band tips and pl, pr the pouch ends, all in screen pixels
@@ -34,6 +46,16 @@
     r3dLimb(U.bandL, tipL, pouchL, w * 0.075); r3dLimb(U.bandR, tipR, pouchR, w * 0.075);
     const S = BANDS[bandId] || BANDS.classic; U.band.color.set(S.core || "#A94332");
     const pc = P(sx + off.x, sy + off.y + r * 0.72, w * 0.45); U.pouch.position.copy(pc); U.pouch.scale.set(w * 0.8, w * 0.32, w * 0.45); U.pouch.rotation.set(0, 0, 0);
+    if (U.model) {   // (v73) the model's frame on the tips and the handle's foot, its pouch on the pouch's ends
+      const A = U.model.A, mid = tipL.clone().add(tipR).multiplyScalar(0.5), ex = tipR.clone().sub(tipL), sc = ex.length(); ex.normalize();
+      const down = mid.clone().sub(base), hl = down.length(), ey = down.clone().addScaledVector(ex, -down.dot(ex)).normalize(), ez = new THREE.Vector3().crossVectors(ex, ey);
+      const ky = clamp(hl / (sc * Math.abs(A.base[1])), 0.7, 1.4), m = new THREE.Matrix4().makeBasis(ex.multiplyScalar(sc), ey.multiplyScalar(sc * ky), ez.multiplyScalar(sc)).setPosition(mid);
+      U.model.frame.matrix.copy(m);
+      const tL = new THREE.Vector3(...A.tieL), tR = new THREE.Vector3(...A.tieR), px = pouchR.clone().sub(pouchL), ps = Math.max(1e-4, px.length() / Math.max(1e-4, Math.hypot(tR.x - tL.x, tR.y - tL.y))); px.normalize();
+      const py = new THREE.Vector3(0, 1, 0).addScaledVector(px, -px.y).normalize(), pz = new THREE.Vector3().crossVectors(px, py), pm = new THREE.Matrix4().makeBasis(px.multiplyScalar(ps), py.multiplyScalar(ps), pz.multiplyScalar(ps));
+      const tieMid = tL.clone().add(tR).multiplyScalar(0.5).applyMatrix4(pm); pm.setPosition(pouchL.clone().add(pouchR).multiplyScalar(0.5).sub(tieMid).add(new THREE.Vector3(0, 0, -w * 0.15)));
+      U.model.pouch.matrix.copy(pm);
+    }
     const x0 = Math.min(tl.x, pl.x, sx - r * 2) - 12, x1 = Math.max(tr.x, pr.x, sx + r * 2) + 12, y0 = Math.min(tl.y, tr.y, sy + off.y - r) - 12, y1 = sy + fy + r * 3.8;
     return r3dDraw(M, { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, Math.max(1.5, r * 0.06));
   }

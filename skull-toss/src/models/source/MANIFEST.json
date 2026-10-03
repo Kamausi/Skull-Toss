@@ -1,0 +1,23 @@
+{
+  "human-skull.glb": {
+    "what": "Free Pack - Human Skull: five detail levels of one anatomical skull and a text plate (no textures)",
+    "source": "Fab free pack, converted by fab-model-conversion",
+    "supplied": "the owner, 2026-10-03, for Morty's head",
+    "licence": "unconfirmed: the Fab listing's licence is to be recorded here by the owner",
+    "ship": false
+  },
+  "low-poly-eye.glb": {
+    "what": "Low poly eye: an eyeball (iris and sclera map) and a cornea",
+    "source": "Sketchfab model via Fab, converted by fab-model-conversion",
+    "supplied": "the owner, 2026-10-03, for Morty's eyes",
+    "licence": "unconfirmed: the listing's licence is to be recorded here by the owner",
+    "ship": false
+  },
+  "slingshot.obj.gz": {
+    "what": "Slingshot V1: a Y-fork frame, a leather pouch, cord wraps and two slack rubber bands (no material or texture: its Blank.mtl and Blank image.jpg are empty)",
+    "source": "17443_Slingshot_V1.obj (3ds Max Wavefront export, 2012), stored gzipped",
+    "supplied": "the owner, 2026-10-03, for the slingshot",
+    "licence": "unconfirmed: the source's licence is to be recorded here by the owner",
+    "ship": false
+  }
+}

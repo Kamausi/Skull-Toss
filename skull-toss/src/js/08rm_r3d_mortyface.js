@@ -14,14 +14,14 @@
   //   - the jaw is its own part of the shell, hinged where the artwork's jaw hinges, dropping with the rig's jaw value
   //     (0.42 skull radii a unit, as the 2D) and swinging a little, with a dark mouth behind it.
   // Looks that draw their own eyes or face pieces (the pumpkin, radio and flaming skulls' eyes, the ice skull's jaw,
-  // the five skulls with a glow behind, masks, glasses, hair, beards, and eye and teeth cosmetics not listed above)
+  // the five skulls with a glow behind, masks, hair, beards, and eye and teeth cosmetics not listed above)
   // keep the v70 projected face until their own pass; r3dFaceGeomOK says which.
   const MF = { masks: null, N: 256 };
   const MF_EYES = { pie: 1, tiny: 1, giant: 1, crossed: 1, sleepy: 1 }, MF_GLYPHS = { x: 1, star: 1, spiral: 1, closed: 1, happy: 1, squeeze: 1 }, MF_TEETH = { grin: 1, toothless: 1, tiny: 1, big: 1, jumbo: 1, gold: 1, fangs: 1, one: 1 };
   function r3dFaceGeomOK(look, f) {
     const S = SKINS[look.skull] || SKINS.bone;
     if (S.eyes || S.jawTop || S.behind) return false;
-    if (MASKS[look.mask] || HAIR[look.hair] || GLASSES[look.glasses] || BEARD[look.beard] || MOUSTACHES[look.beard]) return false;
+    if (MASKS[look.mask] || HAIR[look.hair] || BEARD[look.beard] || MOUSTACHES[look.beard]) return false;
     if (!MF_EYES[look.eyes || "pie"] || !MF_TEETH[look.teeth || "grin"]) return false;
     return !(f && f.glyph && !MF_GLYPHS[f.glyph]);
   }
@@ -121,6 +121,7 @@
   // the eyes, brows, teeth and jaw for this frame
   function r3dFacePose(D, f, look, pal, t, jawV) {
     const socks = r3dFaceSocks(f, look), eyes = look.eyes || "pie", shut = mfShut(f), Z = (x, yd, dz) => r3dShellZ(x, -yd) + dz;
+    r3dGlassesPose(D, look, socks, t);   // (v73: the pair he wears, built; 08rn_r3d_glasses.js)
     socks.forEach((s, i) => {
       const E = D.eyes[i], G = D.glyphs[i], g = f.glyph || ({ x: "x", star: "star", spiral: "spiral" })[eyes] || null;
       let px = s.x + f.lx * s.rx * 0.38, py = s.y + 0.03 + f.ly * s.ry * 0.36; if (eyes === "crossed" && !f.glyph) px = s.x + (i ? -1 : 1) * s.rx * 0.36;
@@ -174,7 +175,8 @@
     D.jaw.position.set(f.skew || 0, D.hY - drop, 0); D.jaw.rotation.set(-0.1 * jawV, 0, 0); D.jaw.scale.set(js[0], js[1], 1);
     // the mouth behind fills only the gap the jaw opens, between the hinge and where the jaw has dropped to, the mouth's width
     const mw = (BOX.mouth.x1 - BOX.mouth.x0) * ART_K * 0.92, gap = drop + 0.04;
-    D.mouthBack.visible = drop > 0.02;   // (idle's 0.02 jaw opens nothing you can see) D.mouthBack.scale.set(mw, gap, 1); D.mouthBack.position.set(f.skew || 0, D.mY - gap / 2 + 0.02, r3dShellZ(0, D.mY) - 0.12); D.mouthBack.material.color.set(pal.socket);
+    D.mouthBack.visible = drop > 0.02;   // (idle's 0.02 jaw opens nothing you can see)
+    D.mouthBack.scale.set(mw, gap, 1); D.mouthBack.position.set(f.skew || 0, D.mY - gap / 2 + 0.02, r3dShellZ(0, D.mY) - 0.12); D.mouthBack.material.color.set(pal.socket);
   }
   // per frame, from r3dSkull: the skin painted alone, the face's masks, the parts posed. Returns false to fall back.
   function r3dFaceFrame(M, o, look) {

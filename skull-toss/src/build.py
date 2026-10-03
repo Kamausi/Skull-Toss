@@ -557,6 +557,9 @@ if BF.exists():
             BEATS[key]["key"] = {"tonic": k["tonic"], "mode": k["mode"]}
 js = "  const MUSIC_BEATS = " + json.dumps(BEATS, separators=(",", ":")) + ";\n" + js
 # ── the recorded sound effects are small, so every build carries them (src/sfx/<name>.mp3 → SFX_EMBED[name]) ──
+# v73: Morty's head and eyes, baked from the owner's models by tools/morty-bake.mjs (src/models/*.bin)
+MODELS = {f.stem: base64.b64encode(f.read_bytes()).decode() for f in sorted((root / "models").glob("*.bin"))}
+js = "  const MODEL_EMBED = " + json.dumps(MODELS, separators=(",", ":")) + ";\n" + js
 SFX = {}
 for f in sorted((root / "sfx").glob("*.mp3")):
     if f.stat().st_size > 200_000: sys.exit(f"build refused: sfx/{f.name} is over 200 KB; keep sound effects short")

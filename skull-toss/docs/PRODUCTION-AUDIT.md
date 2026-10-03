@@ -16,7 +16,7 @@ It is a working document: each asset's status changes here as it moves through t
 - Every performance number below is a *relative* baseline for comparing before and after a change. Real-device numbers
   are listed as outstanding.
 
-**The owner's directives since this audit was written** (both 2026-10-03):
+**The owner's directives since this audit was written** (all 2026-10-03):
 - *"When you continue I want every asset regenerated as well, not just rendering 2D assets into 3D."* So a cut-out
   (a painting traced and extruded) and a projected painting (Morty's face today) are **not end states**: every asset
   in §2 is to be rebuilt as a model, with its own geometry and materials, before it can be COMPLETE.
@@ -24,6 +24,10 @@ It is a working document: each asset's status changes here as it moves through t
   Aether prototype. Its engine layers came over first, in v71: the r186 runtime and renderer standards, a world scene
   (its terrain foundation), its instanced scatter, its character pipeline and its authored-asset bridge
   (`docs/RENDER3D.md`, "The engine"). The asset-by-asset overhaul builds on them.
+- *"Use the skull for Morty's head"*, *"Use this for his eyes"* and *"Use this for the sling shot"*: three models the
+  owner supplied (a Fab free pack's human skull, a low-poly eye, a slingshot OBJ). Since v73 they are Morty's head and
+  eyes and the slingshot in 3D (§13, ASSET-001 pass 4 and ASSET-007 pass 2). Their sources and provenance are in
+  `src/models/source` (`MANIFEST.json`); none is marked for shipping until the owner records its licence there.
 
 **Statuses** (the brief's scale):
 `NOT STARTED` · `IN PROGRESS` · `IMPLEMENTED` · `VERIFICATION` · `OPTIMIZED` · `COMPLETE`
@@ -82,13 +86,13 @@ They describe the **3D production pass**, not the 2D game. Every asset listed al
 
 | ID | Asset | Source | Now | 3D today | G | V | Strategy | Status |
 |---|---|---|---|---|---|---|---|---|
-| ASSET-001 | Morty (the skull): cranium, sockets, pupils, brows, nose, teeth, jaw | `08a_skull.js`, `src/art/skull/*.svg` | Rubber rig (vector) | model: a sculpted face shell (sockets, nose, brow, cheekbones) with the 2D face projected onto it (v70) | 3 | 3 | Sculpted skull with modelled sockets, nose and jaw on a hinge; eyes and brows as geometry with morph targets; bone material; volume-preserving squash | IN PROGRESS (pass 1 of 3, §13) |
+| ASSET-001 | Morty (the skull): cranium, sockets, pupils, brows, nose, teeth, jaw | `08a_skull.js`, `src/art/skull/*.svg` | Rubber rig (vector) | model: the owner's skull (cranium, hinged mandible, 28 teeth) with the owner's eyeballs, lids, glyph eyes and brows (v73); the v72 built face for looks not carried yet | 3 | 3 | Sculpted skull with modelled sockets, nose and jaw on a hinge; eyes and brows as geometry with morph targets; bone material; volume-preserving squash | IN PROGRESS (pass 4, §13) |
 | ASSET-002 | Morty's expressions and speech | `08a_skull.js`, `08g_voice.js` | Rig poses, speech bubbles | via the painted face | 2 | 3 | Morph targets and brow and pupil rigs; speech stays a 2D bubble | NOT STARTED |
 | ASSET-003 | Squash, stretch and smear in flight | `08c_scene.js` (`drawSmear`), `08k_feel.js` | Vector deformation | 2D smear over the model | 2 | 3 | Render-only non-uniform scale (`s`, `1/√s`) and a bounded smear mesh; never fed back into collision | NOT STARTED |
 | ASSET-004 | Morty's shadow | `drawSkullShadow` | Painted ellipse | 2D | 2 | 2 | Contact shadow (a projected blob or a short ray) | NOT STARTED |
 | ASSET-005 | Morty's body sections (the collected bones) and frame launcher | `07p_body.js`, `08i_body.js` | Vector | cut-out | 1 | 2 | Modelled bones, sharing the bone material | NOT STARTED |
 | ASSET-006 | Morty's wings (Rush, cosmetic wings) | `drawRushWings`, `08i_body.js` | Vector | live cut-out | 1 | 2 | Modelled feathers or membranes with secondary motion | NOT STARTED |
-| ASSET-007 | The slingshot (launcher, bands, sling pouch) | `08c_scene.js`, `src/art/launcher/launcher.svg` | SVG + vector bands | model (turned wood, rubber bands) | 3 | 3 | Keep the model; add wood grain, iron fittings and a band stretch shader; contact with the ground | IMPLEMENTED |
+| ASSET-007 | The slingshot (launcher, bands, sling pouch) | `08c_scene.js`, `src/art/launcher/launcher.svg` | SVG + vector bands | model: the owner's slingshot (frame, cord wraps, leather pouch) with the game's stretched bands (v73) | 3 | 3 | Keep the model; add wood grain, iron fittings and a band stretch shader; contact with the ground | IMPLEMENTED (pass 2, §13) |
 | ASSET-008 | Aim guide: reticle, dots, chevrons, effort gauge, ghost shot, aim arc | `08c_scene.js`, `08k_feel.js` | Vector | 2D | 3 | 2 | Stays screen-space (readability beats 3D here), redrawn in the art direction's ink language | NOT STARTED |
 | ASSET-009 | The ring (all cosmetic styles; fire, wings, light, reflection) | `08b_ring.js`, `src/art/rings/hoop.webp` | Vector/bitmap | model (torus per style) | 3 | 3 | Keep; material per style; the opening must match collision exactly (§6) | IMPLEMENTED |
 | ASSET-010 | Ring post, pole and anchors (post, gear, branch, arch, signpost, batten, rail) | `drawPole`, `drawPost`, `07n_environment.js` | Vector | model (post) and live cut-out (anchors) | 2 | 2 | Modelled anchors per map | IN PROGRESS |
@@ -210,7 +214,7 @@ The cast per map comes from the map's `ecosystem` field; wildlife behaviour is i
 
 | ID | Slot (count) | Status |
 |---|---|---|
-| COS-SKULL | Skull skins (43): material swaps on ASSET-001 | NOT STARTED (3D paints the 2D skin on the face shell) |
+| COS-SKULL | Skull skins (43): material swaps on ASSET-001 | IN PROGRESS (v73: on the skull, each skin's colour, socket colour and pattern; the glow-behind, own-eyes and own-jaw skins keep the built face) |
 | COS-EYES / COS-TEETH / COS-PAINT | Eyes (24), teeth (18), face paint (32) | NOT STARTED |
 | COS-HAT / COS-HAIR / COS-BEARD / COS-GLASSES / COS-MASK | Hats (54), hair (12), beards (9), glasses (12), masks (8) | hats: live cut-out; the rest NOT STARTED |
 | COS-WINGS | Wings (9) | live cut-out |
@@ -760,3 +764,70 @@ projected face was. Not measured on a device.
 
 **Next dependency.** Pass 2, the jaw: it needs the 2D rig's jaw value (`o.jaw`) driving a hinged mesh, with the
 painted jaw masked out of the face texture.
+
+### ASSET-001 Morty, pass 4, and ASSET-007 the slingshot, pass 2 (v73): the owner's models
+
+**Status: IN PROGRESS** for Morty (masks, hair, beards and a few skins and cosmetics still use the v72 face);
+**IMPLEMENTED** for the slingshot (the default launcher; Vault launchers are still cut-outs).
+
+**The owner's calls.** "Use the skull for Morty's head", "Use this for his eyes", "Use this for the sling shot", each
+with a model: `human-skull.glb` (a Fab free pack: one anatomical skull at five levels of detail and a text plate, no
+textures), `low-poly-eye.glb` (an eyeball with a 4K iris and sclera map, a cornea) and a slingshot OBJ (3ds Max, 2012:
+a Y-fork, cord wraps, a leather pouch and two slack bands; its material and texture files are empty).
+
+**Files.** New: `tools/model-bake.mjs`, `src/models/morty-head.bin` and `slingshot.bin` (baked), `src/models/source`
+(the three sources, the OBJ gzipped, and `MANIFEST.json`), `src/js/08ro_r3d_models.js` (reads the bakes),
+`src/js/08rp_r3d_mortyhead.js` (the head). Modified: `src/build.py` (embeds `src/models/*.bin` as `MODEL_EMBED`),
+`08rb_r3d_skull.js` (the head first, then the v72 face, then the projected one; a thinner outline for the skull),
+`08rc_r3d_launcher.js` (the slingshot model), `08rn_r3d_glasses.js` (the glasses take any face's surface),
+`08rm_r3d_mortyface.js` (wires the glasses in and fixes a v72 line a comment had swallowed), `99_dev_hooks.js`, the spec.
+
+**The bake.** Two of the skull's levels (v1, 18,620 triangles, for hero size; v3, 3,392, when Morty is under 24 px of
+radius on screen, with a dead zone to 30) are welded, stood with the chin at 0, scaled to a height of 1 and split by
+connectivity into the cranium, the mandible and 28 teeth. Each tooth goes to the row of the bone it sits closest to
+(14 and 14), numbered left to right. The mandible's hinge is the top of its back quarter (the condyles, not the
+coronoid processes). Every vertex gets its ambient occlusion from 96 orthographic depth maps. The eye keeps its ball
+(with UVs), its cornea and its colour map, cut to 512 px. The slingshot keeps its frame and pouch whole and its four
+wraps simplified by vertex clustering (from 13-25 thousand triangles each to 1-3 thousand); its bands are dropped.
+Positions are 16-bit, so the two bins come to 268 KB and 182 KB.
+
+**Implemented.**
+- The head replaces the sphere and its face whenever the look allows. The bone takes the skin's colour, or its pattern
+  painted flat and projected straight on, and darkens toward the skin's socket colour where the baked occlusion says the
+  skull hides its own sky: the sockets, the nose and the gaps between the teeth read in any skin.
+- The mandible and the lower teeth swing open on the hinge with the rig's jaw (0.5 radians a unit), take the teeth's
+  jaw shape, and slide with the face's skew. The teeth cosmetics are the skull's own teeth: toothless hides them all,
+  one keeps a single upper incisor, gold gilds an upper lateral incisor, fangs lengthen the upper canines, tiny, big and
+  jumbo scale them where they stand.
+- An eyeball in each socket looks where the face looks, crosses for the crossed eyes, swells with the sockets (fear,
+  shock), and is giant or tiny with those eyes. Lids in the skin's colour close for blinks, sleep and the shut eyes and
+  half close for sleepy; lower lids push up for the cheeks and the happy eyes. The x, star and spiral glyphs stand in
+  the empty socket. A catch light stands for the cornea's shine.
+- Brows are ink bars on the brow ridge. Glasses sit on the skull: each pair is built over the real sockets on the
+  skull's outer envelope (its front surface, each point the highest within about 0.07 skull radii), with arms to the
+  skull's temples.
+- The slingshot's frame is posed on the game's anchors (its tip wraps on the band tips, its foot toward the handle's
+  foot), its pouch on the pouch's two ends; the bands are still the game's own, stretched every frame.
+
+**Visual checks.** The 16 moods, the eye and teeth cosmetics, all 12 glasses, wood and candy skins, close-ups at
+170 px of radius, and play at rest, 2D against 3D. Defects found and fixed in the pass: the house ink hull drew black
+scribbles round the skull's real hollows and covered the eyes in their sockets (the head's ink now writes no depth, so
+it is the outline only); the cornea darkened the eye beneath it in the cel render (replaced by a catch light); the eye
+showed black until its map had decoded (plain until then); the bandit's mask sank into the sockets (the envelope);
+the glasses' arms stood out past the narrower skull (to its temples). A comment had swallowed v72's mouth-backing
+sizing.
+
+**Gameplay regression.** None: render only, 3D still off by default; the 2D Morty and slingshot are untouched.
+
+**Performance.** The hero head is 18,620 triangles plus its ink copy (the light level 3,392); the eyes 1,150 each;
+the slingshot's frame and pouch about 13,900 and its wraps about 7,100, each with ink. Decoding the bins takes a few
+milliseconds once. Not measured on a device.
+
+**Remaining.**
+- Masks, hair and beards on the skull; the skins that draw their own eyes or jaw, or a glow behind; the eye and teeth
+  cosmetics not listed above.
+- The skull is anatomical, not Morty's cartoon proportions; whether to keep it as is or push it toward him is the
+  owner's call.
+- The slingshot's frame is chunkier than the 2D launcher (the model's own proportions at the game's tip spacing).
+- The three sources' licences, for `MANIFEST.json`, before any of them can ship.
+
