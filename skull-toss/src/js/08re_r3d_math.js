@@ -13,7 +13,7 @@
   const R3D_M = new THREE.Matrix4(), R3D_MI = new THREE.Matrix4(), R3D_V = new THREE.Vector3();
   function r3dDeform(root, f) {
     root.updateMatrixWorld(true); const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), seen = new Map();
-    root.traverse(o => { if (!o.isMesh || !o.geometry) return; const g = o.geometry, m = new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld); const had = seen.get(g); if (had && !had.m.equals(m)) had.shared = true; else if (!had) seen.set(g, { m, shared: false }); });
+    root.traverse(o => { if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return; const g = o.geometry, m = new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld); const had = seen.get(g); if (had && !had.m.equals(m)) had.shared = true; else if (!had) seen.set(g, { m, shared: false }); });
     for (const [g, S] of seen) {
       if (S.shared) continue;
       const P = g.attributes.position;

@@ -4,6 +4,14 @@ Lob the skull through a ring in a haunted graveyard. Play **Story** to climb thr
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
 
+## New in v72: the visual overhaul begins: Morty's face is geometry
+
+On the owner's call ("Continue with the visual overhaul", every asset regenerated rather than 2D drawn into 3D), the
+first asset is Morty (3D renderer still off unless you add `?r3d`): his pupils, glyph eyes, brows and each tooth are
+meshes, his jaw drops on a hinge over a dark mouth, and his skin is a surface texture on the sculpted head, all driven
+by the same face state as the 2D. Every one of his 16 moods is built; masks, glasses, hair, beards and a few skins and
+eye cosmetics keep the old projected face until their own pass. `docs/PRODUCTION-AUDIT.md` (ASSET-001).
+
 ## New in v71: the Wilds of Aether engine, under the 3D renderer
 
 The owner's call: upgrade Skull Toss with the Wilds of Aether engine before the visual overhaul. Its engine layers are

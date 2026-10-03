@@ -3114,6 +3114,24 @@
     assert(L1.map === 0 && L6.map === 5 && L1.key !== L6.key && L1.rim !== L6.rim && L6.rim === T.maps()[5].look.moonColor.toLowerCase() && T.r3dRim() > 0, `each map's light from its own palette: the key and the rim take the moon's colour (${JSON.stringify([L1, L6])})`);
     T.r3d(null); T.toTitle(); T.setStats(ZERO);
   });
+  // ── v72: the visual overhaul, ASSET-001 Morty: his face as geometry ──
+  test("v72 Morty's face is geometry, not his drawing: pupils, glyph eyes and brows are meshes, each tooth is a mesh, the jaw drops on a hinge over a dark mouth, the skin is a surface texture; looks not yet built fall back; nothing fails", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); const on = T.r3d(true);
+    if (!T.r3dState().ok) { assert(!on, "no WebGL here: it stays off"); T.r3d(null); T.toTitle(); T.setStats(ZERO); return; }
+    T.pause(true); const at = (mood, o = {}) => { T.mortyTest(195, 400, 80, mood, { blink: 0, ...o }); return T.mortyFace(); };
+    const idle = at("idle");
+    assert(idle && idle.geom && !idle.old && idle.eyes.every(Boolean) && idle.glyphs.every(g => g === null), `idle: the geometric face, two pupils (${JSON.stringify(idle)})`);
+    assert(idle.upper === 6 && idle.lower === 5 && !idle.mouth && idle.jawDrop < 0.02, `six upper teeth and five lower, one mesh each, the jaw shut (${idle.upper}/${idle.lower}, drop ${idle.jawDrop})`);
+    const fear = at("fear"); assert(fear.jawDrop > 0.2 && fear.mouth && fear.brows.every(Boolean), `fear: the jaw drops on its hinge over the dark mouth, the brows up (drop ${fear.jawDrop})`);
+    assert(at("dizzy").glyphs.every(g => g === "spiral") && at("ko").glyphs.every(g => g === "x1") && at("perfect").glyphs.every(g => g === "star"), "dizzy spirals, KO crosses, a perfect's stars");
+    assert(at("sleep").glyphs.every(g => g === "line") && at("ouch").glyphs.every(g => g === "line") && at("happy").glyphs.every(g => g === "line"), "eyes shut, screwed shut and happy are ink curves");
+    const wink = at("gleeful"); assert(wink.eyes[0] && wink.brows.every(Boolean), "the wink: one pupil showing, brows set");
+    assert(at("idle", { look: { teeth: "toothless" } }).upper === 0 && at("idle", { look: { teeth: "gold" } }).gold === 1 && at("idle", { look: { teeth: "fangs" } }).fangs === 2 && at("idle", { look: { teeth: "one" } }).upper === 1, "toothless, a gold tooth, fangs, one tooth");
+    const wood = at("idle", { look: { skull: "wood", eyes: "giant" } }); assert(wood.geom, "a patterned skin and giant eyes are built too");
+    const glasses = at("idle", { look: { glasses: "round" } }); assert(!glasses.geom && glasses.old, "a look not yet built (glasses) falls back to the projected face");
+    assert(T.r3dState().fails === 0 && idle.frames > 0, "nothing fails");
+    T.pause(false); T.r3d(null); T.toTitle(); T.setStats(ZERO);
+  });
   // ── v71: the engine upgrade (the owner's Wilds of Aether engine, in Skull Toss: docs/RENDER3D.md "The engine") ──
   const r3dOrSkip = () => { const on = T.r3d(true); if (T.r3dState().ok) return true; assert(!on, "no WebGL here: it stays off"); T.r3d(null); T.toTitle(); T.setStats(ZERO); return false; };
   test("v71 engine: Three.js r186 bundled in the page (not fetched), sRGB out, ACES filmic tone mapping, a PCF shadow map; the cel family stays out of the curve, so the cartoon palette holds; GLTFLoader is in", () => {

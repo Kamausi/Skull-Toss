@@ -94,10 +94,11 @@
     if (alpha <= 0.01 || r < 0.6) return;
     if (c === ctx && r3dOn() && r3dSkull(x, y, r, o)) return;   // (v68: on the stage, the 3D renderer's Morty when it's on: 08rb_r3d_skull.js)
     const look = o.look || cos, S = SKINS[look.skull] || SKINS.bone, t = o.t || 0;
-    const f = o.face || faceFor("idle", t), jaw = o.jaw == null ? f.jawT : o.jaw;
+    const surf = !!o.surface;   // (v72: the surface texture of the 3D Morty, whose face is geometry: the skin and its hollows, without pupils, brows, teeth, face pieces, and with the jaw at rest: 08rm_r3d_mortyface.js)
+    const f = o.face || faceFor("idle", t), jaw = surf ? 0 : o.jaw == null ? f.jawT : o.jaw;
     const wax = look.skull === "wax" ? 1.35 : 1, along = clamp(1 + ((o.a == null ? 1 : o.a) - 1) * wax, 0.35, 1.9), perp = 1 / Math.pow(along, 0.62), dir = o.dir || 0;
     const pal = (S.flick && S.flick(t)) || S, flat = !!pal.flat || !!S.flat;
-    const js = JAW_SHAPE[look.teeth] || [1, 1], dropA = (jaw * 0.42) / ART_K, skewA = (f.skew || 0) / ART_K, hinge = BOX.jaw.y0;
+    const js = surf ? [1, 1] : JAW_SHAPE[look.teeth] || [1, 1], dropA = (jaw * 0.42) / ART_K, skewA = surf ? 0 : (f.skew || 0) / ART_K, hinge = BOX.jaw.y0;
     const minW = 1.1 / Math.max(0.02, r * ART_K);   // outlines never thinner than about a pixel
     const paint = look.paint && look.paint !== "none" ? look.paint : null;
     c.save();
@@ -105,8 +106,7 @@
     c.translate(x, y); c.rotate(dir); c.scale(along, perp); c.rotate(-dir); c.rotate(o.ang || 0); c.scale(r, r);
     c.lineJoin = "round"; c.lineCap = "round";
     const U = c.getTransform();   // skull units: r = 1
-    drawBodyBehind(c, look, t);   // wings (08i_body.js)
-    if (S.behind) S.behind(c, t);
+    if (!surf) { drawBodyBehind(c, look, t); if (S.behind) S.behind(c, t); }   // wings (08i_body.js)
     // cranium, with the skin's texture and any paint job clipped inside it
     c.save(); toArt(c);
     paintLayer(c, "cranium", pal, minW, null, path => {
@@ -118,8 +118,7 @@
     });
     c.restore();
     if (!flat) { c.fillStyle = pal.hi; c.beginPath(); c.ellipse(-0.5, -0.8, 0.14, 0.08, -0.6, 0, TAU); c.fill(); }
-    drawSockets(c, look, f, pal, t, S);
-    c.save(); toArt(c); paintLayer(c, "nose", pal, minW); c.restore();
+    drawSockets(c, look, f, pal, t, S, surf); c.save(); toArt(c); paintLayer(c, "nose", pal, minW); c.restore();   // (the surface keeps the hollows, their lids and cheeks; its pupils and brows are geometry)
     // the open mouth: a dark hole from the upper teeth down to wherever the jaw has dropped to
     const mt = BOX.mouth.y0, mh = BOX.mouth.y1 - mt, mb = hinge + (BOX.mouth.y1 - hinge) * js[1] + dropA;
     c.save(); toArt(c); c.translate(ART_CX + skewA * 0.5, mt); c.scale(js[0], Math.max(0.2, (mb - mt) / mh)); c.translate(-ART_CX, -mt);
@@ -133,16 +132,16 @@
       if (paint && PAINT_ON_JAW[paint]) drawPaint(c, paint, t);
       c.restore();
     });
-    drawTeeth(c, "teeth-lower", look.teeth, pal, minW);
+    if (!surf) drawTeeth(c, "teeth-lower", look.teeth, pal, minW);
     c.restore();
     c.save(); toArt(c);
     if (look.teeth === "big") { c.translate(ART_CX, BOX.upper.y0); c.scale(1.12, 1.04); c.translate(-ART_CX, -BOX.upper.y0); }
-    drawTeeth(c, "teeth-upper", look.teeth, pal, minW);
+    if (!surf) drawTeeth(c, "teeth-upper", look.teeth, pal, minW);
     c.restore();
-    if (S.jawTop) S.jawTop(c, t, dropA * ART_K, pal, (hinge + (BOX.jaw.y1 - hinge) * js[1] + dropA - ART_CY) * ART_K);
+    if (S.jawTop && !surf) S.jawTop(c, t, dropA * ART_K, pal, (hinge + (BOX.jaw.y1 - hinge) * js[1] + dropA - ART_CY) * ART_K);
     if (pal.crack && !flat) { c.strokeStyle = pal.crack; c.lineWidth = 0.045; c.beginPath(); c.moveTo(0.22, -1.02); c.lineTo(0.3, -0.84); c.lineTo(0.2, -0.72); c.lineTo(0.32, -0.6); c.moveTo(0.3, -0.84); c.lineTo(0.46, -0.84); c.stroke(); }
     if (S.top) S.top(c, t, pal, f);
-    drawBodyFront(c, look, t, dropA * ART_K, faceSocks(f));   // hair, glasses, masks, facial hair (08i_body.js)
+    if (!surf) drawBodyFront(c, look, t, dropA * ART_K, faceSocks(f));   // hair, glasses, masks, facial hair (08i_body.js)
     c.restore();
   }
 
@@ -151,7 +150,7 @@
     return SOCK.map((s, i) => { const k = i ? f.sockR : f.sockL, kx = 1 + ((k || 1) - 1) * 0.55, px = s.x + (i ? -1 : 1) * s.rx * 0.9; return { ...s, x: px + (s.x - px) * kx, rx: s.rx * kx, ry: s.ry * (k || 1) }; });
   }
   // ───────────────────────── sockets, lids, brows, pupils ─────────────────────────
-  function drawSockets(c, look, f, pal, t, S) {
+  function drawSockets(c, look, f, pal, t, S, surf = false) {
     const eyes = look.eyes || "pie", sleepyLid = eyes === "sleepy" ? 0.42 : 0, U = c.getTransform();
     // a socket swells outward and upward from its inner edge, so the two never run into each other or the nose
     const socks = SOCK.map((s, i) => {
@@ -159,6 +158,7 @@
       return { ...s, k, kx, px, x: cx, rx: s.rx * kx, ry: s.ry * k, lid: Math.max(i ? f.lidR : f.lidL, f.blink, sleepyLid), low: i ? f.lowR : f.lowL };
     });
     if (f.glyph === "closed" || f.glyph === "happy" || f.glyph === "squeeze") { // eyes shut: just ink curves (screwed shut: > <)
+      if (surf) return;
       c.strokeStyle = pal.socket; c.lineWidth = 0.08;
       socks.forEach((s, i) => {
         const w = s.rx * 0.62; c.beginPath();
@@ -175,13 +175,13 @@
       c.translate(s.px, s.y); c.scale(s.kx, s.k); c.translate(-s.px, -s.y); toArt(c);
       c.fillStyle = pal.socket; c.fill(s.path); c.clip(s.path);
       c.setTransform(U);
-      if (S.eyes) S.eyes(c, s, i, t, f, pal, eyes); else drawPupil(c, eyes, s, i, t, f, pal);
+      if (!surf) { if (S.eyes) S.eyes(c, s, i, t, f, pal, eyes); else drawPupil(c, eyes, s, i, t, f, pal); }
       // lids (skull-coloured) drop over the top; cheeks push up from the bottom
       if (s.lid > 0.01) { const ly = s.y - s.ry + s.lid * 2 * s.ry; c.fillStyle = pal.base; c.fillRect(s.x - 1, s.y - 1.4, 2, ly - (s.y - 1.4)); c.strokeStyle = pal.line; c.lineWidth = 0.06; c.beginPath(); c.moveTo(s.x - s.rx, ly); c.quadraticCurveTo(s.x, ly + 0.05, s.x + s.rx, ly); c.stroke(); }
       if (s.low > 0.01) { const ly = s.y + s.ry - s.low * 2 * s.ry; c.fillStyle = pal.base; c.beginPath(); c.ellipse(s.x, ly + s.ry * 1.1, s.rx * 1.3, s.ry * 1.1, 0, 0, TAU); c.fill(); }
       c.restore();
     });
-    if (f.brow) drawBrows(c, socks, f, pal);
+    if (f.brow && !surf) drawBrows(c, socks, f, pal);
   }
   function drawBrows(c, socks, f, pal) {
     c.strokeStyle = pal.line; c.lineWidth = 0.09;

@@ -667,10 +667,51 @@ thousand in the scatter, in one draw call per kind; one 1024² shadow map. The v
 **Next dependency.** The asset-by-asset overhaul, on these layers: Morty's face as geometry through `r3dFace` and its
 controller (ASSET-001 passes 2 and 3), then the cast and wildlife through the character pipeline.
 
+### ASSET-001 Morty, passes 2 and 3 (v72): the face as geometry
+
+**Status: IN PROGRESS** (the default look and most cosmetics built; the face pieces and a few skins still fall back).
+
+**Files modified.** New `src/js/08rm_r3d_mortyface.js`; `08rb_r3d_skull.js` (a finer shell, the geometric face built
+and used first), `08a_skull.js` (the 2D rig's surface mode), `08re_r3d_math.js` (the deformer skips empty geometry),
+`99_dev_hooks.js`, the spec.
+
+**Implemented.**
+- The skin is the shell's UV-mapped surface texture: colour, pattern, paint job and the dark of the hollows (sockets
+  swelling from their inner edges, lids, cheeks pushing up, the nose, the mouth), painted by the 2D rig with no pupils,
+  brows, teeth or face pieces, and with the jaw at rest.
+- Pupils, glyph eyes and brows are meshes, from the same face state as the 2D (`faceFor`): look direction, pupil size,
+  lids and cheeks cut the pupil to what shows; the spiral turns, the star rocks.
+- Eleven teeth, one mesh each, each at its own height on the grin's curve (read from the artwork's column above it),
+  inked; gold, fangs, one, toothless and the jaw shapes.
+- The jaw: the shell below the mouth's top, inside the jaw and mouth artwork, split off as its own mesh, hinged; it
+  drops 0.42 skull radii a unit of the rig's jaw (as the 2D) with a small swing, and a dark mouth fills only the gap.
+- The outline is cut by the skin's own silhouette (it used to ring the shell's ellipsoid).
+
+**Visual checks.** All 16 of the rig's moods, 2D against 3D (contact sheets); close-ups of idle, fear, strain,
+gleeful and excited; wood with a gold tooth, tiger with fangs and giant eyes, neon with X eyes; glasses falling back;
+in play at rest and in flight. Defects found and fixed in the pass: socket edges stepped when darkened per vertex
+(moved to the material), dentures (the teeth row's box is taller than any tooth), a dark blob under the chin (an
+oversized mouth backing), a pale band under the upper teeth when the jaw dropped (split at the hinge line instead of
+the mouth's top), a faint ink ring round the head.
+
+**Gameplay regression.** None: render only, off by default.
+
+**Performance.** The shell is 96 × 72 (about 13,800 triangles with its ink copy), split in two; 11 teeth at 12
+triangles plus ink; the pupils, glyphs and brows a few hundred. The surface texture is repainted each frame, as the
+projected face was. Not measured on a device.
+
+**Remaining.**
+- The face pieces as models: masks, glasses, hair, beards (they still fall back).
+- The pumpkin, radio and flaming skulls' eyes, the ice skull's jaw, the five glow-behind skulls; eye cosmetics beyond
+  pie, tiny, giant, crossed and sleepy; teeth cosmetics beyond the eight listed.
+- Bone a touch warmer than the 2D's white (the bone ramp under the map's key); a look on a phone.
+- The jaw's split edge is a little ragged at its sides at hero size.
+
+**Next dependency.** The face pieces (COS-MASK, COS-GLASSES, COS-HAIR, COS-BEARD) as models on the head's slots.
+
 ### ASSET-001 Morty, pass 1 (v70)
 
-**Status: IN PROGRESS.** Pass 1 of 3. Pass 2 is the jaw on a hinge and the teeth as geometry; pass 3 is eyes and
-brows as geometry with morph targets.
+**Status: IN PROGRESS.** Pass 1 of 3. Passes 2 and 3 (the jaw, teeth, eyes and brows as geometry) landed together in v72, above.
 
 **Files modified.** `src/js/08rb_r3d_skull.js`.
 
