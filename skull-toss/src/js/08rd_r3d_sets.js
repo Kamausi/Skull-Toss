@@ -48,6 +48,23 @@
     }
     return pts.filter((_, i) => keep[i]);
   }
+  // (v74, the owner: "remove the black outline, we're going for realistic 3D now, not cartoon") the 2D drawings still
+  // stood up in 3D (set pieces and live pieces) are painted without their ink: a canvas made inkless skips every
+  // near-black stroke (the INK outline and its kin); fills, coloured lines and highlights still draw
+  function r3dDarkInk(s) {
+    if (typeof s !== "string") return false;
+    let r, gg, b;
+    if (s[0] === "#" && s.length >= 7) { r = parseInt(s.slice(1, 3), 16); gg = parseInt(s.slice(3, 5), 16); b = parseInt(s.slice(5, 7), 16); }
+    else { const m = s.match(/[\d.]+/g); if (!m || m.length < 3) return false; [r, gg, b] = m.map(Number); if (m.length > 3 && +m[3] < 0.35) return false; }
+    return 0.2126 * r + 0.7152 * gg + 0.0722 * b < 42;
+  }
+  function r3dInkless(g) {
+    if (g.__inkless) return g;
+    const st = g.stroke.bind(g), sr = g.strokeRect.bind(g);
+    g.stroke = (...a) => { if (!r3dDarkInk(g.strokeStyle)) st(...a); };
+    g.strokeRect = (...a) => { if (!r3dDarkInk(g.strokeStyle)) sr(...a); };
+    g.__inkless = true; return g;
+  }
   // a set piece from any painting: paint(g) draws it in canvas units into a cw × ch box with its foot at foot
   // (null if this frame's build budget is spent: it's cut later, the most visible first, and stays painted till then)
   function r3dSetPiece(key, cw, ch, foot, paint, edge = "#2A2018", prio = R3D_RCM.E) {
@@ -55,7 +72,7 @@
     if (!r3dMayBuild(key, prio, () => r3dSetPiece(key, cw, ch, foot, paint, edge, Infinity))) return null;
     const t0 = performance.now(), q = R3D_SETS.res / Math.max(cw, ch), w = Math.max(8, Math.ceil(cw * q)), h = Math.max(8, Math.ceil(ch * q));
     const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
-    const g = cv.getContext("2d", { willReadFrequently: true }); g.scale(q, q); paint(g); g.setTransform(1, 0, 0, 1, 0, 0);
+    const g = r3dInkless(cv.getContext("2d", { willReadFrequently: true })); g.scale(q, q); paint(g); g.setTransform(1, 0, 0, 1, 0, 0);
     const loops = r3dTrace(g, w, h, R3D_SETS.step);
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
     const grp = new THREE.Group(), face = new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0, map: tex, transparent: true, alphaTest: 0.35 }), side = r3dToon(edge);
@@ -122,7 +139,7 @@
     }
     const tc = performance.now();
     if (C.width !== Math.round(W * DPR) || C.height !== Math.round(H * DPR)) { C.width = Math.round(W * DPR); C.height = Math.round(H * DPR); }
-    const g = R3D_LIVE.g, main = ctx;
+    const g = r3dInkless(R3D_LIVE.g), main = ctx;
     g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(x0 * DPR - 2, y0 * DPR - 2, (x1 - x0) * DPR + 4, (y1 - y0) * DPR + 4);
     g.setTransform(DPR, 0, 0, DPR, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = "source-over";
     ctx = g;
