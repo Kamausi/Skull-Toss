@@ -12,9 +12,8 @@
   //     and a model only has to look right, not be placed twice.
   //   - The camera is a pinhole at the eye looking down the lane, with its centre on the horizon (HY), so a model's
   //     perspective matches the 2D projection's: x = W/2 + F·X/Z, y = HY − F·Y/Z.
-  //   - The look: MeshToonMaterial with a three-step ramp (lit, half, shadow) and an ink hull drawn a fixed number of
-  //     pixels outside each model's silhouette, so a far model's line is as thick as a near one's, like a cel. Only faces
-  //     seen edge-on are pushed (a flat piece's back isn't slid out from behind it).
+  //   - The look (v74): lit, physically based surfaces under the key, the fill and the sky's environment light, through
+  //     the filmic curve; no cel ramp and no ink line (until v73 it was a toon ramp and an ink hull, like a cel).
   const R3D_REVISION = "186";
   const R3D = { runtime: null, clears: 0, renders: 0, shared: true, fresh: true, over: false, force: null, ok: null, gl: null, canvas: null, scene: null, cam: null, key: null, fill: null, ramp: null, inkU: null, drawn: 0, fails: 0, ids: 0, cache: {} };
   const r3dAsked = (() => { try { return /[?&]r3d(=1|&|$)/.test(location.search); } catch (e) { return false; } })();
@@ -42,6 +41,15 @@
       const key = new THREE.DirectionalLight(0xfff4e0, 2.3); key.position.set(-1.1, 1.6, 1.4);   // the map's key light, up and to the left, from behind the camera
       const fill = new THREE.HemisphereLight(0xcfd8ff, 0x3a2a20, 0.9);
       scene.add(key, fill);
+      // (v74) the sky's light all round, for the lit surfaces: a soft gradient from the sky to the ground, prefiltered
+      // once into an environment map, so a bone, a tooth or a gold cap catches the light it would under an open sky
+      try {
+        const envScene = new THREE.Scene(), sg = new THREE.SphereGeometry(10, 32, 16), col = [], sp = sg.attributes.position, top = new THREE.Color(0xdfe6ff), mid = new THREE.Color(0x8a8278), bot = new THREE.Color(0x2a221c);
+        for (let i = 0; i < sp.count; i++) { const k = sp.getY(i) / 10, c = k > 0 ? mid.clone().lerp(top, k) : mid.clone().lerp(bot, -k); col.push(c.r, c.g, c.b); }
+        sg.setAttribute("color", new THREE.Float32BufferAttribute(col, 3)); envScene.add(new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide })));
+        const pm = new THREE.PMREMGenerator(gl); scene.environment = pm.fromScene(envScene, 0.04).texture; scene.environmentIntensity = 0.55; pm.dispose(); sg.dispose();
+        fill.intensity = 0.55;
+      } catch (e) { Debug.warn("RENDER", e, "08r_r3d:env"); }
       const ramp = new THREE.DataTexture(new Uint8Array([90, 90, 90, 255, 175, 175, 175, 255, 255, 255, 255, 255]), 3, 1, THREE.RGBAFormat);   // shadow, half, lit
       ramp.minFilter = ramp.magFilter = THREE.NearestFilter; ramp.generateMipmaps = false; ramp.needsUpdate = true;
       Object.assign(R3D, { gl, canvas, scene, cam, key, fill, ramp, inkU: { uInk: { value: 2 }, uRes: { value: new THREE.Vector2(1, 1) } }, rimU: { uRimC: { value: new THREE.Color(0xf2e7c9) }, uRimK: { value: 0.35 } } });
@@ -65,7 +73,14 @@
     return Z;
   }
   // ── materials: toon, and the ink hull (pushed out along the normal in screen space, a fixed number of pixels)
-  function r3dToon(color, o = {}) { const m = new THREE.MeshToonMaterial({ toneMapped: false, color: new THREE.Color(color), gradientMap: R3D.ramp, ...o }); m.onBeforeCompile = r3dRim; return m; }
+  // (v74, the owner's call: "Remove the ink and cel shading, we're no longer doing 2D, we're doing 3D". Every model's
+  // surface is a lit, physically based one: a diffuse colour and a roughness, shaded smoothly by the key, the fill and
+  // the sky's environment light, through the renderer's filmic curve. The name stays, so every model changed at once;
+  // a toon ramp passed in is ignored. metal and rough set the surface: 0 and 0.68 unless a model says otherwise.)
+  function r3dToon(color, o = {}) {
+    const { gradientMap, metal, rough, ...rest } = o; void gradientMap;
+    return new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: rough == null ? 0.68 : rough, metalness: metal == null ? 0 : metal, ...rest });
+  }
   // (Phase 1, docs/PRODUCTION-AUDIT.md §5) the rim: a thin band of the map's light round every lit model's edge, where
   // its surface turns away from the camera (a Fresnel term, (1 − n·v)³), so a model reads off the painted backdrop
   // the way a 1930s cel's highlight line does. One set of uniforms for every material, set per map (r3dLightRig).
@@ -84,8 +99,9 @@
     R3D.fill.color.set(sky[sky.length - 1]).lerp(new THREE.Color(0xffffff), 0.55); R3D.fill.groundColor.set(sky[0]).lerp(new THREE.Color(0x3a2a20), 0.5);
     R3D.rimU.uRimC.value.copy(moon);
   }
+  // (v74: no ink. The hull's material is kept for the pieces that still make one, but it never draws.)
   function r3dInk() {
-    const m = new THREE.MeshBasicMaterial({ toneMapped: false, color: new THREE.Color(INK), side: THREE.BackSide });
+    const m = new THREE.MeshBasicMaterial({ toneMapped: false, color: new THREE.Color(INK), side: THREE.BackSide, visible: false });
     m.onBeforeCompile = sh => {
       Object.assign(sh.uniforms, R3D.inkU);
       sh.vertexShader = "uniform float uInk; uniform vec2 uRes;\n" + sh.vertexShader.replace("#include <project_vertex>",
@@ -93,9 +109,9 @@
     };
     return m;
   }
-  function r3dInked(geo, mat) {   // a model and its ink hull, sharing the geometry
-    const g = new THREE.Group(), body = new THREE.Mesh(geo, mat), ink = new THREE.Mesh(geo, R3D.cache.ink || (R3D.cache.ink = r3dInk()));
-    ink.renderOrder = -1; g.add(ink, body); g.userData.body = body; return g;
+  function r3dInked(geo, mat) {   // a model in its group (v74: without the ink hull it used to carry)
+    const g = new THREE.Group(), body = new THREE.Mesh(geo, mat);
+    g.add(body); g.userData.body = body; return g;
   }
   // ── drawing. A hero piece with 2D drawn over it (Morty under his hat, the ring under its sparkle) is drawn at once:
   // rendered into its box and copied into the 2D frame under the 2D canvas's current transform. Everything else (the

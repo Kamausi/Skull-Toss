@@ -58,7 +58,7 @@
     const g = cv.getContext("2d", { willReadFrequently: true }); g.scale(q, q); paint(g); g.setTransform(1, 0, 0, 1, 0, 0);
     const loops = r3dTrace(g, w, h, R3D_SETS.step);
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
-    const grp = new THREE.Group(), face = new THREE.MeshToonMaterial({ toneMapped: false, map: tex, gradientMap: R3D.ramp, transparent: true, alphaTest: 0.35 }), side = r3dToon(edge);
+    const grp = new THREE.Group(), face = new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0, map: tex, transparent: true, alphaTest: 0.35 }), side = r3dToon(edge);
     side.color.copy(r3dEdgeTone(g, w, h));   // (edge: kept as the fallback when a painting has no solid pixels)
     // the cut: every blob big enough (a tree's crown and its trunk are one; a cluster of pumpkins several), each extruded
     const depth = R3D_SETS.depth * Math.min(cw, ch * 0.8);
@@ -141,7 +141,7 @@
     // the piece: its painting (downsampled for the texture and the trace), re-cut on twos
     let P = R3D.cache["live:" + key];
     const bw = x1 - x0, bh = y1 - y0, q = Math.min(1, maxPx / Math.max(bw, bh)) * DPR, tw = Math.max(4, Math.round(bw * q)), th = Math.max(4, Math.round(bh * q));
-    if (!P) { const cv = document.createElement("canvas"), tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; P = R3D.cache["live:" + key] = { cv, pg: cv.getContext("2d", { willReadFrequently: true }), tex, grp: new THREE.Group(), frame: -1, face: new THREE.MeshToonMaterial({ toneMapped: false, map: tex, gradientMap: R3D.ramp, transparent: true, alphaTest: 0.42 }), side: r3dToon("#231A14"), bw: 0, bh: 0 }; }
+    if (!P) { const cv = document.createElement("canvas"), tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; P = R3D.cache["live:" + key] = { cv, pg: cv.getContext("2d", { willReadFrequently: true }), tex, grp: new THREE.Group(), frame: -1, face: new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0, map: tex, transparent: true, alphaTest: 0.42 }), side: r3dToon("#231A14"), bw: 0, bh: 0 }; }
     if (P.cv.width !== tw || P.cv.height !== th) { P.cv.width = tw; P.cv.height = th; P.tex.dispose(); P.tex = new THREE.CanvasTexture(P.cv); P.tex.colorSpace = THREE.SRGBColorSpace; P.face.map = P.tex; P.frame = -1; }
     P.pg.setTransform(1, 0, 0, 1, 0, 0); P.pg.clearRect(0, 0, tw, th); P.pg.drawImage(C, x0 * DPR, y0 * DPR, bw * DPR, bh * DPR, 0, 0, tw, th); P.tex.needsUpdate = true;
     const frame = Math.floor(performance.now() / 1000 * r3dTraceHz(key, bw * bh / (W * H)));   // (on twos while there's room: 08rf_r3d_budget.js)

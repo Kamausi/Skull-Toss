@@ -64,7 +64,7 @@
   // the parts, built once with the head (08rb r3dSkullModel calls this)
   function r3dFaceBuild(head, shell, smooth, tex) {
     const D = head.userData, hY = MF_HINGE();
-    const mat = new THREE.MeshToonMaterial({ toneMapped: false, map: tex, gradientMap: r3dBoneRamp(), transparent: true, alphaTest: 0.5 }); mat.onBeforeCompile = r3dRim;
+    const mat = new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0, map: tex, transparent: true, alphaTest: 0.5 });
     const S = r3dFaceSplit(shell), K = r3dFaceSplit(smooth), ink = r3dInk(); ink.map = tex; ink.alphaTest = 0.5;   // (the outline cut by the skin's own silhouette, so it rings the skull and not the shell's ellipsoid)
     const geom = new THREE.Group(); geom.name = "MortyFace";
     const inkU = new THREE.Mesh(K.upper, ink); inkU.renderOrder = -1;
@@ -78,7 +78,7 @@
     const back = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ toneMapped: false, color: 0x111111 })); back.name = "MouthBack"; back.renderOrder = -2;   // (sized each frame to the gap: r3dFacePose)
     geom.add(back);
     // the teeth: one box per tooth between the artwork's dividers
-    const teeth = { upper: [], lower: [] }, toothMat = r3dToon("#F7F1DF", { gradientMap: r3dBoneRamp() }), goldMat = r3dToon(GOLD, { gradientMap: r3dBoneRamp() });
+    const teeth = { upper: [], lower: [] }, toothMat = r3dToon("#F7F1DF", {}), goldMat = r3dToon(GOLD, {});
     const Mk = r3dFaceMasks();
     for (const row of ["upper", "lower"]) {
       const E = TEETH[row], box = BOX[row], parent = row === "upper" ? geom : jawBody;

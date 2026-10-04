@@ -43,7 +43,7 @@
     if (R3D.cache.actorMetal) return R3D.cache.actorMetal;
     const ramp = new THREE.DataTexture(new Uint8Array([70, 70, 70, 255, 150, 150, 150, 255, 150, 150, 150, 255, 255, 255, 255, 255]), 4, 1, THREE.RGBAFormat);   // (dark, mid, mid, and a narrow lit band)
     ramp.minFilter = ramp.magFilter = THREE.NearestFilter; ramp.generateMipmaps = false; ramp.needsUpdate = true;
-    return (R3D.cache.actorMetal = r3dToon(0xffffff, { vertexColors: true, gradientMap: ramp }));
+    void ramp; return (R3D.cache.actorMetal = r3dToon(0xffffff, { vertexColors: true, metal: 0.8, rough: 0.34 }));   // (v74: a metal, not a narrow toon band)
   }
   // ── faceted shading: every triangle its own vertices and colour (Wilds' tintHeroGeometry), UVs into its region
   const ACTOR_PROFILES = { bone: [0.95, 1.035, 0.014], cloth: [0.89, 1.045, 0.03], leather: [0.86, 1.035, 0.038], wood: [0.83, 1.055, 0.045], metal: [0.9, 1.06, 0.02] };

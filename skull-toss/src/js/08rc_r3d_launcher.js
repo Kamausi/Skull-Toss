@@ -49,8 +49,12 @@
     if (U.model) {   // (v73) the model's frame on the tips and the handle's foot, its pouch on the pouch's ends
       const A = U.model.A, mid = tipL.clone().add(tipR).multiplyScalar(0.5), ex = tipR.clone().sub(tipL), sc = ex.length(); ex.normalize();
       const down = mid.clone().sub(base), hl = down.length(), ey = down.clone().addScaledVector(ex, -down.dot(ex)).normalize(), ez = new THREE.Vector3().crossVectors(ex, ey);
-      const ky = clamp(hl / (sc * Math.abs(A.base[1])), 0.7, 1.4), m = new THREE.Matrix4().makeBasis(ex.multiplyScalar(sc), ey.multiplyScalar(sc * ky), ez.multiplyScalar(sc)).setPosition(mid);
-      U.model.frame.matrix.copy(m);
+      // (v74, the owner: the slingshot dwarfed Morty) the frame at 80% of the painted launcher's span, about its tips'
+      // midpoint, so its arms, knobs and handle sit in proportion to his head; the bands start from its own tips
+      const k = 0.8, ky = clamp(hl / (sc * Math.abs(A.base[1])), 0.7, 1.4), m = new THREE.Matrix4().makeBasis(ex.multiplyScalar(sc * k), ey.multiplyScalar(sc * ky * k), ez.multiplyScalar(sc * k)).setPosition(mid);
+      U.model.frame.matrix.copy(m); U.model.span = k;
+      const mtL = new THREE.Vector3(...A.tipL).applyMatrix4(m), mtR = new THREE.Vector3(...A.tipR).applyMatrix4(m);
+      r3dLimb(U.bandL, mtL, pouchL, w * 0.075); r3dLimb(U.bandR, mtR, pouchR, w * 0.075);
       const tL = new THREE.Vector3(...A.tieL), tR = new THREE.Vector3(...A.tieR), px = pouchR.clone().sub(pouchL), ps = Math.max(1e-4, px.length() / Math.max(1e-4, Math.hypot(tR.x - tL.x, tR.y - tL.y))); px.normalize();
       const py = new THREE.Vector3(0, 1, 0).addScaledVector(px, -px.y).normalize(), pz = new THREE.Vector3().crossVectors(px, py), pm = new THREE.Matrix4().makeBasis(px.multiplyScalar(ps), py.multiplyScalar(ps), pz.multiplyScalar(ps));
       const tieMid = tL.clone().add(tR).multiplyScalar(0.5).applyMatrix4(pm); pm.setPosition(pouchL.clone().add(pouchR).multiplyScalar(0.5).sub(tieMid).add(new THREE.Vector3(0, 0, -w * 0.15)));

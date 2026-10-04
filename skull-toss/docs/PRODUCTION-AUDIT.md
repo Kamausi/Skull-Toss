@@ -28,6 +28,12 @@ It is a working document: each asset's status changes here as it moves through t
   owner supplied (a Fab free pack's human skull, a low-poly eye, a slingshot OBJ). Since v73 they are Morty's head and
   eyes and the slingshot in 3D (§13, ASSET-001 pass 4 and ASSET-007 pass 2). Their sources and provenance are in
   `src/models/source` (`MANIFEST.json`); none is marked for shipping until the owner records its licence there.
+- *"Remove the ink and cel shading, we're no longer doing 2D, we're doing 3D"*: since v74 the 3D renderer's look is lit,
+  physically based surfaces (a colour, a roughness, metal where it's metal) under the key, the fill and the sky's
+  environment light, through the filmic curve. No toon ramp, no ink hull, no cel rim. §5's 1930s-cel direction is
+  superseded on this point; the palette and the staging stand.
+- *"The slingshot isn't proportionate to Morty's head, he looks way too small"*: since v74 the slingshot's frame is 80%
+  of the painted launcher's span and Morty's skull is as wide as the 2D Morty.
 
 **Statuses** (the brief's scale):
 `NOT STARTED` · `IN PROGRESS` · `IMPLEMENTED` · `VERIFICATION` · `OPTIMIZED` · `COMPLETE`
@@ -830,4 +836,34 @@ milliseconds once. Not measured on a device.
   owner's call.
 - The slingshot's frame is chunkier than the 2D launcher (the model's own proportions at the game's tip spacing).
 - The three sources' licences, for `MANIFEST.json`, before any of them can ship.
+
+### Look pass (v74): no ink, no cel shading; the slingshot in proportion
+
+**The owner's calls.** "Remove the ink and cel shading, we're no longer doing 2D, we're doing 3D." "The slingshot isn't
+proportionate to Morty's head, he looks way too small."
+
+**Implemented.**
+- `r3dToon`, the house material every model is built from, is a `MeshStandardMaterial` (roughness 0.68 and no metal
+  unless a model says otherwise), tone-mapped by the renderer's ACES curve; a toon ramp passed to it is ignored. The
+  materials built directly as toon (Morty's head and eyes, the v72 and v70 faces, the cut-out and live pieces) are
+  standard too. The rim shader is no longer applied.
+- No ink: `r3dInked` no longer adds a hull, and the hull material that pieces still build for themselves never draws.
+- The scene has an environment map, prefiltered once from a sky-to-ground gradient (intensity 0.55; the hemisphere fill
+  lowered to 0.55 to match), so surfaces take the light all round them and metal reflects.
+- Morty's head: bone matte (0.74), enamel glossier (0.4), the gold cap metal (0.26), the eyes wet (0.16; the drawn catch
+  light is gone), brows a dark matte. The skull is 2.75 skull radii tall (was 2.3), as wide as the 2D Morty.
+- The slingshot's frame is 80% of the painted launcher's span about its tips' midpoint; the bands start from its own
+  tips. The character pipeline's metal class is a metal (0.8, 0.34) instead of a narrow toon band.
+
+**Visual checks.** Morty close up (idle, fear, a gold tooth, wood), in the slingshot at rest, map 6 at rest and in
+flight with the ring, the scenery and the slingshot after the release.
+
+**Tests.** The v71 runtime check and the character pipeline's material check now expect standard surfaces and no ink;
+a new v74 check (the house material, the environment, no toon or visible ink on Morty, his surfaces, the slingshot's span).
+
+**Found by the spec.** A spirit spawned as the map jumped could sit inside the ring's cone until its first step (the
+v58 ecosystem check failed once); spirits are born outside it at their own depth now (`08n_wildlife.js`).
+
+**Remaining.** The world's land is still the v71 Lambert calibrated to the painted plate, and the 2D-traced cut-outs
+still carry their paintings as textures: both are later passes of the overhaul.
 

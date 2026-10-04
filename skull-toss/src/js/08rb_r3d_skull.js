@@ -16,7 +16,7 @@
     const cv = document.createElement("canvas"); cv.width = cv.height = R3D_SK.tex;
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
     const cranium = new THREE.SphereGeometry(1, 36, 28);
-    const back = r3dToon("#F7F1DF", { gradientMap: r3dBoneRamp() });
+    const back = r3dToon("#F7F1DF", {});
     // the face shell: the front of an ellipsoid reaching down past the jaw, its UVs projected straight from the front
     const shell = new THREE.SphereGeometry(1, 96, 72, 0, Math.PI, 0, Math.PI);   // (v72: finer, so the sockets' edges, darkened per vertex, stay clean)
     const pos = shell.attributes.position, uv = shell.attributes.uv, S = R3D_SK.span;
@@ -31,7 +31,7 @@
     const smooth = shell.clone(), sp = smooth.attributes.position;   // (the same shell before the sculpt, for the ink line)
     for (let i = 0; i < sp.count; i++) { const x = sp.getX(i), y = sp.getY(i), z = sp.getZ(i); if (z > 0.02) sp.setZ(i, z - r3dSkullRelief(x, -y) * Math.min(1, z * 2.5)); }
     smooth.computeVertexNormals();
-    const faceMat = new THREE.MeshToonMaterial({ toneMapped: false, map: tex, gradientMap: r3dBoneRamp(), transparent: true, alphaTest: 0.5 }); faceMat.onBeforeCompile = r3dRim;
+    const faceMat = new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0, map: tex, transparent: true, alphaTest: 0.5 });
     const head = new THREE.Group(), tilt = new THREE.Group(), squash = new THREE.Group(), spin = new THREE.Group();
     const craniumG = r3dInked(cranium, back); craniumG.scale.set(0.86, 0.86, 0.84); craniumG.position.set(0, 0.1, -0.26);   // (set back behind the face, so the sculpted hollows (the sockets, the nose) never have the back of his head showing through them)
     const face = new THREE.Group(), ink = new THREE.Mesh(smooth, R3D.cache.ink || (R3D.cache.ink = r3dInk())); ink.renderOrder = -1;
@@ -81,5 +81,5 @@
     M.lookAt(0, 0, 0);   // (he faces the camera wherever he is, as the drawing does; the light still falls from the map's side)
     M.scale.set(SKULL_R * 1.06, SKULL_R, SKULL_R);
     const pad = r * 1.7 + 6;
-    return r3dDraw(M, { x: x - pad, y: y - pad, w: pad * 2, h: pad * 2 }, Math.max(1.4, r * (D.head && D.head.root.visible ? 0.04 : 0.07)), o.alpha == null ? 1 : o.alpha);   // (v73: the skull's outline thinner: it has a real silhouette, jaw and cheekbones)
+    return r3dDraw(M, { x: x - pad, y: y - pad, w: pad * 2, h: pad * 2 }, Math.max(1.4, r * 0.07), o.alpha == null ? 1 : o.alpha);
   }

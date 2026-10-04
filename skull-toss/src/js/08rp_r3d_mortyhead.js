@@ -15,7 +15,7 @@
   //   - two levels (the skull's v1 for hero size, v3 when he's small), picked by his size on screen with a dead zone.
   // Looks this head doesn't carry yet (masks, hair, beards, the eyes and jaws some skins draw themselves, the glow behind
   // five skins, eye and teeth cosmetics not listed) keep the v72 built face; r3dHeadOK says which.
-  const MH = { s: 2.3, y: -1.3, z: -0.06, eye: { x: 0.118, y: 0.548, z: 0.236, r: 0.066 }, lod: "hero", depth: null };
+  const MH = { s: 2.75, y: -1.58, z: -0.06, eye: { x: 0.118, y: 0.548, z: 0.236, r: 0.066 }, lod: "hero", depth: null };
   const MH_EYES = { pie: 1, tiny: 1, giant: 1, crossed: 1, sleepy: 1, x: 1, star: 1, spiral: 1 }, MH_GLYPHS = { x: 1, star: 1, spiral: 1, closed: 1, happy: 1, squeeze: 1 };
   const MH_TEETH = { grin: 1, toothless: 1, tiny: 1, big: 1, jumbo: 1, gold: 1, fangs: 1, one: 1 };
   const mhX = x => x * MH.s, mhY = y => y * MH.s + MH.y, mhZ = z => z * MH.s + MH.z;   // the skull's units (height 1, chin at 0) → skull radii
@@ -30,10 +30,10 @@
   // the bone: toon-lit, the skin's colour (or its pattern), darkened toward the socket colour where the baked occlusion
   // says the skull hides its own sky
   function r3dBoneMat(color) {
-    const m = new THREE.MeshToonMaterial({ toneMapped: false, color: new THREE.Color(color), gradientMap: r3dBoneRamp() });
+    const m = new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0, color: new THREE.Color(color) });
     m.userData.sock = { value: new THREE.Color("#111111") }; m.userData.ao = { value: new THREE.Vector2(0.5, 0.9) };
     m.onBeforeCompile = sh => {
-      r3dRim(sh); sh.uniforms.uSock = m.userData.sock; sh.uniforms.uAo = m.userData.ao;
+      sh.uniforms.uSock = m.userData.sock; sh.uniforms.uAo = m.userData.ao;
       sh.vertexShader = "attribute float ao; varying float vAo;\n" + sh.vertexShader.replace("#include <begin_vertex>", "#include <begin_vertex>\n  vAo = ao;");
       sh.fragmentShader = "uniform vec3 uSock; uniform vec2 uAo; varying float vAo;\n" + sh.fragmentShader.replace("#include <color_fragment>", "#include <color_fragment>\n  diffuseColor.rgb = mix(diffuseColor.rgb, uSock, smoothstep(uAo.x, uAo.y, vAo));");
     };
@@ -64,10 +64,8 @@
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { let m = -99; for (let dj = -3; dj <= 3; dj++) for (let di = -3; di <= 3; di++) { const a = i + di, b = j + dj; if (a >= 0 && b >= 0 && a < n && b < n) m = Math.max(m, Z[b * n + a]); } E[j * n + i] = m; }
     MH.depth = { n, x0, x1, y0, y1, z: E };
   }
-  // the head's ink: its outline only. It writes no depth, so the bone and the eyes paint over every scrap of it inside
-  // the silhouette (the house ink hull, round the skull's real hollows, the sockets, the nose, between the teeth, came
-  // out as black scribbles and covered the eyes in their sockets)
-  function mhInked(geo, mat, mats) { const g = r3dInked(geo, mat); g.children[0].material = mats.ink; return g; }
+  // (v73 gave the head an outline-only ink; v74 has no ink at all, on the owner's call)
+  const mhInked = (geo, mat) => r3dInked(geo, mat);
   // one detail level of the head
   function r3dHeadLevel(lod, mats) {
     const S = r3dSkullParts(lod), g = new THREE.Group(); g.name = "MortyHead_" + lod;
@@ -90,7 +88,7 @@
     // (the eye's cornea, a clear shell over the ball, darkened the eye it covered in the cel render; a catch light
     // stands for its shine, fixed to the socket so it stays put as the eye looks about)
     const look = new THREE.Group(), ball = new THREE.Mesh(E.ball, mats.eye), cornea = new THREE.Mesh(E.cornea, mats.cornea); cornea.visible = false; look.add(ball, cornea); g.add(look);
-    const glint = new THREE.Mesh(mats.glintGeo || (mats.glintGeo = new THREE.CircleGeometry(0.17, 16)), mats.glint); glint.position.set(-0.32, 0.36, 0.99); glint.renderOrder = 4; g.add(glint);
+    const glint = new THREE.Mesh(mats.glintGeo || (mats.glintGeo = new THREE.CircleGeometry(0.17, 16)), mats.glint); glint.position.set(-0.32, 0.36, 0.99); glint.renderOrder = 4; glint.visible = false; g.add(glint);   // (v74: the eye's own gloss takes the light; no drawn catch light)
     const lidGeo = mats.lidGeo || (mats.lidGeo = [new THREE.SphereGeometry(1.1, 28, 10, 0, TAU, 0, Math.PI / 2), new THREE.SphereGeometry(1.1, 28, 10, 0, TAU, Math.PI / 2, Math.PI / 2)]);
     const up = mhInked(lidGeo[0], mats.lid, mats), low = mhInked(lidGeo[1], mats.lid, mats); g.add(up, low);
     // the glyph eyes, standing in the socket in place of the eyeball (drawn flat, facing out)
@@ -107,15 +105,16 @@
   function r3dHeadBuild(M) {
     const D = M.userData; if (D.head) return D.head;
     const E = r3dEyeParts();
-    const mats = { bone: r3dBoneMat("#F7F1DF"), tooth: r3dBoneMat("#F7F1DF"), gold: r3dBoneMat(GOLD), lid: r3dToon("#F7F1DF", { gradientMap: r3dBoneRamp() }),
+    const mats = { bone: r3dBoneMat("#F7F1DF"), tooth: r3dBoneMat("#F7F1DF"), gold: r3dBoneMat(GOLD), lid: r3dToon("#F7F1DF", {}),
       // (the eye plain until its map has decoded: r3dHeadFrame)
-      eye: new THREE.MeshToonMaterial({ toneMapped: false, color: 0xf4efe6, gradientMap: r3dBoneRamp() }), cornea: new THREE.MeshPhongMaterial({ toneMapped: false, color: 0xffffff, transparent: true, opacity: 0.16, shininess: 140, specular: 0xffffff, depthWrite: false }), glint: new THREE.MeshBasicMaterial({ toneMapped: false, color: 0xfffcec, transparent: true, opacity: 0.85 }) };
-    mats.ink = r3dInk(); mats.ink.depthWrite = false;
-    mats.tooth.userData.ao.value.set(0.55, 0.95); mats.gold.userData.ao.value.set(0.55, 0.95); mats.eye.onBeforeCompile = r3dRim;
+      eye: new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0, color: 0xf4efe6 }), cornea: new THREE.MeshPhongMaterial({ toneMapped: false, color: 0xffffff, transparent: true, opacity: 0.16, shininess: 140, specular: 0xffffff, depthWrite: false }), glint: new THREE.MeshBasicMaterial({ toneMapped: false, color: 0xfffcec, transparent: true, opacity: 0.85 }) };
+    // (v74) real surfaces: matte bone, glossier enamel, a gold cap that's metal, wet eyes that take the sky's light
+    mats.bone.roughness = 0.74; mats.tooth.roughness = 0.4; mats.gold.roughness = 0.26; mats.gold.metalness = 1; mats.lid.roughness = 0.74; mats.eye.roughness = 0.16;
+    mats.tooth.userData.ao.value.set(0.55, 0.95); mats.gold.userData.ao.value.set(0.55, 0.95);
     const root = new THREE.Group(); root.name = "MortyHead"; root.scale.setScalar(MH.s); root.position.set(0, MH.y, MH.z);
     const levels = { hero: r3dHeadLevel("hero", mats), low: r3dHeadLevel("low", mats) }; root.add(levels.hero, levels.low);
     const eyes = [r3dHeadEye(mats, "L"), r3dHeadEye(mats, "R")]; root.add(...eyes);
-    const brows = [0, 1].map(() => { const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.02), new THREE.MeshBasicMaterial({ toneMapped: false, color: new THREE.Color(INK) })); D.spin.add(b); return b; });
+    const brows = [0, 1].map(() => { const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.02), r3dToon("#2A1E18", { rough: 0.9 })); D.spin.add(b); return b; });
     r3dHeadDepth(levels.hero.userData.cranium);
     D.spin.add(root);
     return (D.head = { root, levels, eyes, brows, mats, key: "" });
@@ -166,7 +165,7 @@
       const s = socks[i], side = i ? 1 : -1, U = G.userData, k = s.k || 1, er = MH.eye.r * size * (0.75 + 0.25 * Math.pow(k, 1.6));
       G.position.set(side * MH.eye.x, MH.eye.y, MH.eye.z + (er - MH.eye.r) * 0.8); G.scale.setScalar(er);
       const glyph = g0 && !(g0 === "closed" || g0 === "happy" || g0 === "squeeze") ? g0 : null;
-      U.look.visible = !glyph; U.glyph.visible = !!glyph; U.glint.visible = !glyph;
+      U.look.visible = !glyph; U.glyph.visible = !!glyph;
       let lx = f.lx || 0; if (eyes === "crossed" && !f.glyph) lx = i ? -0.8 : 0.8;
       U.look.rotation.set(clamp(f.ly || 0, -1, 1) * 0.42, clamp(lx, -1, 1) * 0.5, 0);
       // the lids: the upper closes from above (blinks, sleep, shut eyes), the lower pushes up from the cheek
@@ -186,7 +185,7 @@
       const B = H.brows[i]; B.visible = !!f.brow;
       if (f.brow) {
         const b = f.brow[i], bx = mhX(side * MH.eye.x), by = mhY(MH.eye.y + 0.1), x0 = bx - side * 0.16, x1 = bx + side * 0.18, y0 = by + b * 0.1, y1 = by - b * 0.05, mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
-        B.position.set(mx, my, r3dHeadZ(mx, my) + 0.03); B.scale.set(Math.hypot(x1 - x0, y1 - y0), 0.08, 1); B.rotation.set(0, 0, Math.atan2(y1 - y0, x1 - x0)); B.material.color.set(pal.line || INK);
+        B.position.set(mx, my, r3dHeadZ(mx, my) + 0.03); B.scale.set(Math.hypot(x1 - x0, y1 - y0), 0.08, 3); B.rotation.set(0, 0, Math.atan2(y1 - y0, x1 - x0)); B.material.color.set(pal.line || "#2A1E18");
       }
     });
     // glasses, over this head's sockets (in skull radii), sitting on its surface

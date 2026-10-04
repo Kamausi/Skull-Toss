@@ -3134,6 +3134,22 @@
     assert(T.r3dState().fails === 0 && idle.frames > 0, "nothing fails");
     T.mortyHeadOff(false); T.pause(false); T.r3d(null); T.toTitle(); T.setStats(ZERO);
   });
+  // ── v74: the owner's call: no ink and no cel shading ("we're doing 3D"), and the slingshot in proportion to Morty ──
+  test("v74 no ink and no cel shading: every model a lit, physically based surface under the sky's environment light; no ink hull drawn on Morty, his eyes or the slingshot; the slingshot in proportion to his head", () => {
+    T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); const on = T.r3d(true);
+    if (!T.r3dState().ok) { assert(!on, "no WebGL here: it stays off"); T.r3d(null); T.toTitle(); T.setStats(ZERO); return; }
+    const K = T.r3dKit(), THREE = K.THREE, g = K.r3dToon("#ffffff");
+    assert(g.isMeshStandardMaterial && !g.isMeshToonMaterial && g.roughness > 0.3 && g.metalness === 0, "the house material is a lit standard surface (no toon ramp)");
+    assert(T.r3dEnv(), "the sky's light all round: an environment map on the scene");
+    T.pause(true); T.mortyTest(195, 400, 80, "idle", { blink: 0 }); const H = T.mortyHeadRaw();
+    let toon = 0, ink = 0, std = 0; H.root.traverse(o => { if (!o.isMesh) return; const m = o.material; if (m.isMeshToonMaterial) toon++; if (m.side === THREE.BackSide && m.visible !== false) ink++; if (m.isMeshStandardMaterial) std++; });
+    assert(toon === 0 && ink === 0 && std > 20, `Morty's head: no toon surface, no ink hull, standard surfaces throughout (${toon}/${ink}/${std})`);
+    assert(H.mats.gold.metalness === 1 && H.mats.tooth.roughness < H.mats.bone.roughness && H.mats.eye.roughness < 0.3, "bone matte, enamel glossier, the gold cap a metal, the eyes wet");
+    T.pause(false); T.step(0.2); const S = T.r3dSling();
+    assert(S && S.model && S.span > 0 && S.span < 0.85, `the slingshot's frame at 80% of the painted launcher's span, so Morty's head is in proportion (${S && S.span})`);
+    assert(T.r3dState().fails === 0, "nothing fails");
+    T.r3d(null); T.toTitle(); T.setStats(ZERO);
+  });
   // ── v73: the owner's models: the skull is Morty's head, the eye his eyes, and the slingshot the slingshot ──
   test("v73 Morty's head is the owner's skull and his eyes the owner's eye: baked and embedded (provenance kept, nothing shipped without a licence); the jaw hinges, every tooth its own, eyeballs that look, swell, blink and give way to glyphs, brows and glasses on the skull, two detail levels; masks fall back; the slingshot is the owner's model; nothing fails", () => {
     T.setStats({ ...ZERO, bestStage: 9 }); fresh(); T.calm(); const on = T.r3d(true);
@@ -3166,7 +3182,7 @@
     const R = T.r3dState().runtime, K = T.r3dKit();
     assert(R && R.revision === "186" && K.THREE.REVISION === "186", `r186 (${R && R.revision})`);
     assert(R.colorSpace === "sRGB" && R.toneMapping === "ACESFilmic" && R.shadows === "PCF", `the Wilds renderer's standards (${JSON.stringify(R)})`);
-    assert(K.r3dToon(0xffffff).toneMapped === false && K.r3dInk().toneMapped === false, "toon and ink aren't tone mapped");
+    assert(K.r3dToon(0xffffff).isMeshStandardMaterial && K.r3dToon(0xffffff).toneMapped !== false && K.r3dInk().visible === false, "v74: lit, physically based surfaces through the filmic curve, and no ink");
     assert(typeof K.THREE.GLTFLoader === "function" && ![...document.scripts].some(sc => /cdn\.jsdelivr|unpkg|three@/.test(sc.src || "")), "the GLB loader is bundled, and nothing is fetched from a CDN");
     T.r3d(null); T.toTitle(); T.setStats(ZERO);
   });
@@ -3214,7 +3230,7 @@
     const A = K.r3dActorLOD(build, { name: "Test" }), tris = A.levels.map(L => L.tris);
     assert(tris[0] > tris[1] && tris[1] > tris[2] && A.levels.every(L => typeof L.inBudget === "boolean"), `three levels, fewer triangles each (${tris})`);
     const mats = new Set(); let faceted = true;
-    A.levels[0].mesh.traverse(o => { if (o.isMesh && o.material.isMeshToonMaterial) { mats.add(o.material.uuid); if (o.geometry.index || !o.geometry.attributes.color) faceted = false; } });
+    A.levels[0].mesh.traverse(o => { if (o.isMesh && o.material.isMeshStandardMaterial) { mats.add(o.material.uuid); if (o.geometry.index || !o.geometry.attributes.color) faceted = false; } });
     assert(mats.size === 2 && faceted, `two material classes (${mats.size}), every part faceted and shaded per triangle`);
     const pk = h => A.pick(h), seq = [pk(300), pk(160), pk(150), pk(190), pk(210), pk(50), pk(75), pk(85)];
     assert(seq.join() === "0,0,1,1,0,2,2,1", `level by height on screen, with a dead zone either side (${seq})`);

@@ -22,7 +22,7 @@
       case "owl": c.x = side * (3.6 + r() * 6); c.y = 2.2 + r() * 1.2; c.z = first ? 7 + r() * 24 : 26 + r() * 8; c.look = 0; break;
       case "deer": c.x = side * (6 + r() * 9); c.z = first ? 16 + r() * 20 : 30 + r() * 8; c.st = "graze"; break;
       case "fox": c.z = 9 + r() * 12; c.x = side * 12; c.st = first ? "away" : "trot"; c.t = first ? 3 + r() * 10 : 0; break;
-      case "spirit": c.y = 0.8 + r() * 2.2; c.x = side * (2.6 + r() * 6); break;
+      case "spirit": c.y = 0.8 + r() * 2.2; c.x = side * (2.6 + c.z * 0.14 + r() * 6); break;   // (v74: born outside the ring's cone at its own depth; a spirit spawned when the map jumped sat inside it until its first step)
       case "vulture": c.cx = side * (4 + r() * 8); c.cz = 14 + r() * 16; c.rad = 2.5 + r() * 3; c.y = 7 + r() * 3; c.ang = r() * TAU; c.v = (r() < 0.5 ? -1 : 1) * (0.25 + r() * 0.15); break;
       case "scorpion": c.x = (r() * 2 - 1) * 6; c.hide = 0; c.st = "walk"; break;
       case "tumbleweed": c.x = -Math.sign(windNow() || side) * 14; c.z = 8 + r() * 22; c.rot = 0; c.st = first && i % 2 ? "away" : "roll"; c.t = first ? r() * 12 : 0; c.vy = 0; break;

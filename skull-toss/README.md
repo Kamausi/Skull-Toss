@@ -4,6 +4,13 @@ Lob the skull through a ring in a haunted graveyard. Play **Story** to climb thr
 
 Open `index.html` in any browser, on a phone or a desktop. The fonts and all the artwork are embedded in the file, so the game looks the same offline. Most sound effects are generated in code; three are recordings, embedded too. The music is six recorded loops (see [The music](#the-music)); nothing else ever plays in their place.
 
+## New in v74: real 3D shading, and a slingshot in proportion
+
+On the owner's calls, the 3D renderer (still behind `?r3d`) drops the ink outlines and the cel shading: every model is
+a lit, physically based surface under its map's light and the sky's, so Morty's skull is matte bone with glossy teeth,
+a metal gold tooth and wet eyes. The slingshot is scaled to 80% and Morty's skull to the 2D Morty's width, so he no
+longer looks too small for it.
+
 ## New in v73: Morty's head, eyes and slingshot are the owner's models
 
 On the owner's calls ("Use the skull for Morty's head", "Use this for his eyes", "Use this for the sling shot"), the
